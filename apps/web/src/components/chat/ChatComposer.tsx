@@ -3312,7 +3312,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
               data-chat-composer-body="true"
               className={cn(
                 "relative px-4 pb-2",
-                "pt-3.5 sm:pt-4",
+                "pt-3.5 sm:pt-3",
                 isComposerCollapsedMobile && "hidden",
               )}
             >
@@ -3408,7 +3408,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     buildContextClipboardFragment={buildContextClipboardFragmentStable}
                     importContextFragment={importContextFragmentStable}
                     skills={selectedProviderSkills}
-                    className={cn(showMobilePendingAnswerActions && "max-sm:pb-12")}
+                    className={cn(
+                      "sm:min-h-[calc(1lh+--spacing(2))] sm:max-h-40",
+                      showMobilePendingAnswerActions && "max-sm:pb-12",
+                    )}
                     onChange={onPromptChangeStable}
                     onCommandKeyDown={onComposerCommandKeyStable}
                     onPageScrollKeyDown={onPageScrollKeyDown}
