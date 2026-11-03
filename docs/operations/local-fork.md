@@ -4,13 +4,14 @@
 
 ## 版本与源码
 
-| 对象                | 用途                       | 约定                                                             |
-| ------------------- | -------------------------- | ---------------------------------------------------------------- |
-| 当前安装版          | 日常工作与开发指挥         | /Applications/T3 Code (Beta).app；使用正式 T3 home 下的 userdata |
-| fork/stable         | 已安装版本声明的源码提交   | 安装并验证新版本后才快进；构建完成不能提前移动                   |
-| fork/develop        | 已整合、可构建的 fork 改进 | 功能分支验证后合入；保留自己的改动再核对上游更新                 |
-| 功能分支 / worktree | 单项改动                   | 从 fork/develop 开始，开发数据放在对应 checkout 内               |
-| 候选标签            | 一份待安装构建的固定提交   | local-candidate/<完整版本号>，一个标签对应一个提交               |
+| 对象         | 用途                       | 约定                                                             |
+| ------------ | -------------------------- | ---------------------------------------------------------------- |
+| 当前安装版   | 日常工作与开发指挥         | /Applications/T3 Code (Beta).app；使用正式 T3 home 下的 userdata |
+| fork/stable  | 已安装版本声明的源码提交   | 安装并验证新版本后才快进；构建完成不能提前移动                   |
+| main         | 已整合、可构建的 fork 改进 | 日常开发主分支；功能分支验证后合入，保留自己的改动再核对上游更新 |
+| fork/develop | 旧开发参考分支             | 保留既有提交，后续以 main 为开发与合入入口                       |
+| 功能分支     | 单项改动                   | 需要时从 main 创建，在当前 checkout 内切换，不创建 worktree      |
+| 候选标签     | 一份待安装构建的固定提交   | local-candidate/<完整版本号>，一个标签对应一个提交               |
 
 日常安装版本沿用已有的 X.Y.Z-fork.YYYYMMDD.N 格式，同一天递增 N，版本须高于当前已安装版本。源码 package.json 的上游版号不直接作为本机 fork 的下一版号。通过打包器的 --build-version 对齐包内版本，打包结束后原始源码版号会恢复。
 
@@ -42,7 +43,7 @@ vp run dev:desktop --home-dir "$PWD/.t3/dev" --no-seed
 
 默认先用空库和免费的 Replay (dev) 测试通用会话流程。需要真实项目数据时，按 development.md 中的 migrate-dev-db 流程，从正式库取得只读快照并裁剪到隔离目录；不要复制回正式环境。本机正式库较大，执行前先检查大小、空闲空间和工具的空间需求。
 
-在 T3 中创建 worktree 时使用仓库的 Setup Worktree 动作，等待 .t3/setup-running 对应进程结束，并确认 setup-done；不要并发再跑安装。手动 worktree 使用 Git 标准命令建立在主 checkout 旁，按既有开发文档安装依赖。
+本机默认只使用当前 checkout，不新建 worktree，也不自动执行 Setup Worktree。直接在当前仓库切换 main 或功能分支；切换前检查并保留未提交改动。分支切换和源码合入不代表安装更新，不应触发稳定版退出或重启。
 
 需要界面或前台手势验证时，沿用用户的后台验证限制并安排可操作时间。启动一个桌面开发实例会产生窗口，本流程的后台准备阶段只执行 dry-run。
 
@@ -54,7 +55,7 @@ T3 home 决定服务端数据库、配置和日志位置；Electron userData 另
 - 源码开发版使用独立开发目录，通常为 t3code-dev；已有旧开发目录时可能复用 T3 Code (Dev)。
 - 更改 T3CODE_HOME 不会为另一个打包版创建独立 Electron 资料目录。
 
-因此，一次只运行一个日常打包版和一个桌面开发实例。额外 worktree 优先运行 web/server。不要在日常安装版运行时直接打开候选 .app；包内 CLI/后端验证使用独立 T3 home 和 Electron 的 Node 模式，完整桌面验收安排在维护窗口。
+因此，一次只运行一个日常打包版和一个桌面开发实例。后台调试优先在当前 checkout 运行 web/server，并使用独立 T3 home。不要在日常安装版运行时直接打开候选 .app；包内 CLI/后端验证使用独立 T3 home 和 Electron 的 Node 模式，完整桌面验收安排在维护窗口。
 
 这些路径来自 DesktopStatePaths、DesktopEnvironment、DesktopUserData 和 DesktopClerk；后者先设置 userData，再取得单实例锁。
 
@@ -110,4 +111,4 @@ codesign --verify --deep --strict "release/$fork_version/mac-arm64/T3 Code (Beta
 
 ## 接入上游
 
-main 保持上游对照用途。需要同步时 fetch upstream，在独立集成分支核对并合并，再走定向验证、候选构建和本地更新。不要用覆盖式重置丢弃 fork 改进；不要因为上游发布新版本就自动替换日常安装版。
+main 保存本地已经整合的 fork 改进，上游远程跟踪引用用于对照。需要同步时 fetch upstream，在当前 checkout 从 main 创建集成分支，核对并合并上游，完成定向验证后再合回 main；后续候选构建和安装仍按上述流程进行。不要用覆盖式重置丢弃 fork 改进；不要因为上游发布新版本就自动替换日常安装版。
