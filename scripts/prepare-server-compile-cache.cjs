@@ -49,16 +49,15 @@ module.exports = async ({ appOutDir, electronPlatformName, arch, packager }) => 
   }
   const state = fs.mkdtempSync(path.join(os.tmpdir(), "t3-release-cache-"));
   env.T3CODE_HOME = state;
+  const runner = path.join(state, "prepare.cjs");
   let result;
   try {
-    result = spawnSync(
-      executable,
-      [
-        "-e",
-        `require(${JSON.stringify(helper)}).generatePreparedServerCache(${JSON.stringify(resources)}).then(()=>process.exit(0),e=>{console.error(e);process.exit(1)})`,
-      ],
-      { env, encoding: "utf8", timeout: 120000 },
+    // Eval exposes a global "[eval]" filename that breaks ESM dependencies' createRequire fallback.
+    fs.writeFileSync(
+      runner,
+      `require(${JSON.stringify(helper)}).generatePreparedServerCache(${JSON.stringify(resources)}).then(()=>process.exit(0),e=>{console.error(e);process.exit(1)})`,
     );
+    result = spawnSync(executable, [runner], { env, encoding: "utf8", timeout: 120000 });
   } finally {
     fs.rmSync(state, { recursive: true, force: true });
   }
