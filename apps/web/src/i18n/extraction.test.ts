@@ -2,6 +2,7 @@ import { expect, it } from "vite-plus/test";
 import { IndexTracker } from "wuchale";
 
 import config, { reactiveUiScope } from "../../wuchale.config";
+import { assertTranslationContextBindings } from "../../vite/i18nSafety";
 
 const transformUi = config.adapters!.main!.transform!;
 
@@ -65,6 +66,10 @@ it("emits bound translations for mixed JSX with conditional siblings", async () 
       'export function Units() { return <Label title="Changed files">Unit<Select><SelectTrigger/><SelectPopup><SelectItem value="minutes">Minutes</SelectItem><SelectItem value="hours">Hours</SelectItem></SelectPopup></Select></Label> }',
       "Minutes",
     ],
+    [
+      'export function Files({groups}) { return <section title="Changed files">{groups.map(group => <div>{group.files.map(file => <span>Files</span>)}</div>)}</section>; }',
+      "Files",
+    ],
   ]) {
     const result = await transformUi({
       content: source!,
@@ -77,6 +82,7 @@ it("emits bound translations for mixed JSX with conditional siblings", async () 
     const output = result.output("").code!;
     expect(result.txts.map((text) => text.body)).toContain(label);
     expect(output).not.toContain(`>${label}</`);
+    expect(output).toContain("const _w_runtime_ = useRuntime();");
   }
 });
 
@@ -97,4 +103,17 @@ it("acquires React hooks in components and memo components, and uses plain runti
     ]),
   ).toBe(true);
   expect(reactiveUiScope([])).toBe(null);
+});
+
+it("rejects an outer translation call when only a nested callback declares its runtime", () => {
+  expect(() =>
+    assertTranslationContextBindings(
+      "function Component() { const nested = () => { const _w_runtime_ = getRuntime(); return _w_runtime_(0); }; return _w_runtime_(1); }",
+    ),
+  ).toThrow("Unbound generated translation variable: _w_runtime_");
+  expect(() =>
+    assertTranslationContextBindings(
+      "function Component() { const _w_runtime_ = useRuntime(); const nested = () => _w_runtime_(0); return _w_runtime_(1); }",
+    ),
+  ).not.toThrow();
 });

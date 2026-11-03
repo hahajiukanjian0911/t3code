@@ -23,3 +23,24 @@ index 8ced19ab67b23cfeb816988eed23ff4ae32c2e59..b119799f7e841a7375a480ba7f055b69
                      if (nums.text > 0 || nums.element > 0) {
                          body += this.#expression(exprFuncs, chRange, iArg, placeholders, lastChildEnd);
                          iArg++;
+diff --git a/dist/adapter-vanilla/transformer.js b/dist/adapter-vanilla/transformer.js
+index 19ab969096150c4b568670360305d7bb4c8da599..441d08fe9518b03cc64eaad6c4b2940f7fec97a8 100644
+--- a/dist/adapter-vanilla/transformer.js
++++ b/dist/adapter-vanilla/transformer.js
+@@ -507,6 +507,7 @@ export class Transformer extends InertVisitors {
+         // - before any return statement: to respect react hooks requirement of always calling the same
+         // - after any function calls: to handle the case where one of them is loading the catalogs
+         // - but before hoited function calls of the ones down below: to make it available at call time
++        const inFuncTxtsBefore = this.inFuncTxts;
+         const txts = [];
+         let bodyStart = null;
+         const firstCalls = new Map();
+@@ -541,7 +542,7 @@ export class Transformer extends InertVisitors {
+                 bodyStart = this.#updateBodyStart(bodyStart, bod.start);
+             }
+         }
+-        this.inFuncTxts += txts.length;
++        this.inFuncTxts = inFuncTxtsBefore + txts.length;
+         return [txts, hasBareTxts, bodyStart];
+     }
+     visitFunctionBody(node, end) {
