@@ -478,6 +478,100 @@ it.layer(
       }),
     );
 
+    it.effect("recovers from a workspace routing timeout in a fresh probe scope", () =>
+      Effect.gen(function* () {
+        const started = yield* Deferred.make<void>();
+        const timedOut = yield* Deferred.make<void>();
+        const recovered = yield* Deferred.make<CodexAppServerProviderSnapshot>();
+        const lifecycle: Array<string> = [];
+        let attempts = 0;
+        const fiber = yield* checkCodexProviderStatus(defaultCodexSettings, () =>
+          Effect.gen(function* () {
+            const attempt = ++attempts;
+            lifecycle.push(`start:${attempt}`);
+            yield* Effect.addFinalizer(() =>
+              Effect.sync(() => {
+                lifecycle.push(`release:${attempt}`);
+              }),
+            );
+            if (attempt === 1) {
+              yield* Deferred.succeed(started, undefined);
+              yield* Deferred.await(timedOut);
+              return yield* CodexErrors.CodexAppServerRequestError.fromProtocolError(
+                { code: -32603, message: "workspace routing discovery timed out" },
+                "account/read",
+                "1",
+              );
+            }
+            return yield* Deferred.await(recovered);
+          }),
+        ).pipe(
+          Effect.provide(layerMockSpawner(() => ({ stdout: "0.163.0", stderr: "", code: 0 }))),
+          Effect.forkChild,
+        );
+
+        yield* Deferred.await(started);
+        yield* TestClock.adjust("16 seconds");
+        yield* Deferred.succeed(timedOut, undefined);
+        yield* TestClock.adjust("5 seconds");
+        const snapshot = makeCodexProbeSnapshot();
+        yield* Deferred.succeed(recovered, snapshot);
+        const status = yield* Fiber.join(fiber);
+
+        assert.strictEqual(status.status, "ready");
+        assert.strictEqual(status.auth.status, "authenticated");
+        assert.strictEqual(status.version, snapshot.version);
+        assert.deepStrictEqual(status.models, snapshot.models);
+        assert.isUndefined(status.message);
+        assert.deepStrictEqual(lifecycle, ["start:1", "release:1", "start:2", "release:2"]);
+      }),
+    );
+
+    it.effect.each([
+      {
+        name: "persistent workspace routing timeout",
+        method: "account/read",
+        message: "workspace routing discovery timed out",
+        expectedAttempts: 2,
+      },
+      {
+        name: "authentication failure",
+        method: "account/read",
+        message: "unauthorized (401)",
+        expectedAttempts: 1,
+      },
+      {
+        name: "unrelated request failure",
+        method: "skills/list",
+        message: "workspace routing discovery timed out",
+        expectedAttempts: 1,
+      },
+    ])("preserves a $name after bounded probing", ({ method, message, expectedAttempts }) =>
+      Effect.gen(function* () {
+        let attempts = 0;
+        const status = yield* checkCodexProviderStatus(defaultCodexSettings, () =>
+          Effect.suspend(() => {
+            attempts++;
+            return Effect.fail(
+              CodexErrors.CodexAppServerRequestError.fromProtocolError(
+                { code: -32603, message },
+                method,
+                "1",
+              ),
+            );
+          }),
+        ).pipe(
+          Effect.provide(layerMockSpawner(() => ({ stdout: "0.163.0", stderr: "", code: 0 }))),
+        );
+
+        assert.strictEqual(attempts, expectedAttempts);
+        assert.strictEqual(status.status, "error");
+        assert.strictEqual(status.auth.status, "unknown");
+        assert.strictEqual(status.installed, true);
+        assert.strictEqual(status.message, `Codex app-server provider probe failed: ${message}.`);
+      }),
+    );
+
     it.effect("reads the version of a Codex CLI too old to run app-server (#20351)", () =>
       Effect.gen(function* () {
         if ((yield* HostProcess.Platform) === "win32") return;

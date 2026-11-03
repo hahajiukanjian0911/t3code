@@ -786,6 +786,14 @@ export const checkCodexProviderStatus = Effect.fn("checkCodexProviderStatus")(fu
     // Process teardown can outlast the work budget without discarding a completed snapshot.
     Effect.timeoutOption(Duration.millis(CODEX_AUTH_PROBE_TIMEOUT_MS)),
     Effect.scoped,
+    // Codex has a separate 15s routing deadline; release the failed process before retrying.
+    Effect.retry({
+      times: 1,
+      while: (error) =>
+        error._tag === "CodexAppServerRequestError" &&
+        error.method === "account/read" &&
+        error.message === "workspace routing discovery timed out",
+    }),
     Effect.result,
   );
 
