@@ -1,0 +1,25 @@
+diff --git a/dist/adapter-utils/mixed-visitor.js b/dist/adapter-utils/mixed-visitor.js
+index 8ced19ab67b23cfeb816988eed23ff4ae32c2e59..b119799f7e841a7375a480ba7f055b69f6234e22 100644
+--- a/dist/adapter-utils/mixed-visitor.js
++++ b/dist/adapter-utils/mixed-visitor.js
+@@ -65,7 +65,7 @@ export class MixedVisitor {
+             }
+         }
+         for (const childMod of mod.children) {
+-            txts.push(...this.#applyMod(childMod, depth + (modify ? 1 : 0)));
++            txts.push(...this.#applyMod(childMod, modify && mod.txt ? depth + 1 : 0));
+         }
+         mod.pending = false;
+         return txts;
+@@ -272,7 +272,11 @@ export class MixedVisitor {
+                     this.#mod = prevMod; // restore
+                 }
+                 else if (this.#props.isExpression(child)) {
++                    // JSX inside an expression owns an independent message builder.
++                    const parentMods = this.#mod;
++                    this.#mod = new Map();
+                     txts.push(...this.#props.visitFunc(child));
++                    this.#mod = parentMods;
+                     if (nums.text > 0 || nums.element > 0) {
+                         body += this.#expression(exprFuncs, chRange, iArg, placeholders, lastChildEnd);
+                         iArg++;

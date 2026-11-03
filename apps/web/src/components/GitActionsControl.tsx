@@ -1,3 +1,4 @@
+import { useUiLabel } from "../i18n/staticUiLabels";
 import { ThreadDetailsControl } from "./chat/ThreadDetailsControl";
 import { useAtomMount, useAtomValue } from "@effect/atom-react";
 import {
@@ -933,6 +934,7 @@ export default function GitActionsControl({
   showChanges = true,
   onOpenChanges,
 }: GitActionsControlProps) {
+  const uiLabel = useUiLabel();
   const panelAnchorRef = useRef<HTMLDivElement | null>(null);
   const updateThreadMetadata = useAtomCommand(
     threadEnvironment.updateMetadata,
@@ -1429,7 +1431,7 @@ export default function GitActionsControl({
               >
                 <MenuItem className="w-full" disabled>
                   <GitActionItemIcon icon={item.icon} SourceControlIcon={SourceControlIcon} />
-                  <MenuItemLabel>{item.label}</MenuItemLabel>
+                  <MenuItemLabel>{uiLabel(item.label)}</MenuItemLabel>
                 </MenuItem>
               </PopoverTrigger>
               <PopoverPopup tooltipStyle side="left" align="center">
@@ -1448,7 +1450,7 @@ export default function GitActionsControl({
             }}
           >
             <GitActionItemIcon icon={item.icon} SourceControlIcon={SourceControlIcon} />
-            <MenuItemLabel>{item.label}</MenuItemLabel>
+            <MenuItemLabel>{uiLabel(item.label)}</MenuItemLabel>
           </MenuItem>
         );
       })}
@@ -1554,7 +1556,7 @@ export default function GitActionsControl({
                     cn("not-sr-only ml-0 truncate", THREAD_DETAILS_PANEL_LABEL_CLASS),
                   )}
                 >
-                  {quickAction.label}
+                  {uiLabel(quickAction.label)}
                 </span>
               </PopoverTrigger>
               <PopoverPopup tooltipStyle side="bottom" align="start">
@@ -1581,7 +1583,7 @@ export default function GitActionsControl({
                   cn("not-sr-only ml-0 truncate", THREAD_DETAILS_PANEL_LABEL_CLASS),
                 )}
               >
-                {quickAction.label}
+                {uiLabel(quickAction.label)}
               </span>
             </ThreadDetailsControl>
           )}

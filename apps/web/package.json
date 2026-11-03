@@ -9,6 +9,8 @@
     "dev:built": "vp build --watch",
     "build": "vp build",
     "preview": "vp preview",
+    "i18n:extract": "wuchale --clean",
+    "i18n:check": "wuchale check --full",
     "test": "vp test run --passWithNoTests --project unit --project browser"
   },
   "dependencies": {
@@ -90,9 +92,11 @@
     "unified": "catalog:",
     "use-sync-external-store": "^1.6.0",
     "vfile": "^6.0.3",
+    "wuchale": "0.26.7",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@babel/parser": "7.29.8",
     "@effect/platform-node": "catalog:",
     "@effect/vitest": "catalog:",
     "@tailwindcss/vite": "^4.0.0",
@@ -108,6 +112,7 @@
     "@vercel/config": "^0.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/browser-playwright": "5.0.5",
+    "@wuchale/jsx": "0.13.0",
     "compression": "^1.8.2",
     "micromark-util-types": "catalog:",
     "oxc-transform-react": "~0.152.0",

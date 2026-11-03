@@ -1,4 +1,5 @@
 import { SettingsGroup } from "./SettingsGroup";
+import { useUiLabel } from "../../i18n/staticUiLabels";
 import { AuthSettingsWriteScope } from "@t3tools/contracts";
 import { usePrimaryEnvironmentId, usePrimaryEnvironment } from "../../state/environments";
 import { useEnvironmentScope, useEnvironmentsWithScope } from "../../state/session";
@@ -331,6 +332,8 @@ export function SettingsRow({
   managed?: string | undefined;
   children?: ReactNode;
 }) {
+  const uiLabel = useUiLabel();
+  title = typeof title === "string" ? uiLabel(title) : title;
   const targetRef = useSettingsSearchTarget<HTMLDivElement>(rowProps.id);
   const primarySettingsAvailable = usePrimarySettingsAvailable();
   const context = useOptionalSettingsScope();

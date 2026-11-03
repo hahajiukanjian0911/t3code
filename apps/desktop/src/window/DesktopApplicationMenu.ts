@@ -12,6 +12,8 @@ import * as ElectronMenu from "../electron/ElectronMenu.ts";
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopUpdates from "../updates/DesktopUpdates.ts";
 import * as DesktopWindow from "./DesktopWindow.ts";
+import * as DesktopClientSettings from "../settings/DesktopClientSettings.ts";
+import { localizeMenu } from "./menuLocale.ts";
 
 export class DesktopApplicationMenuActionError extends Schema.TaggedError<DesktopApplicationMenuActionError>()(
   "DesktopApplicationMenuActionError",
@@ -116,6 +118,7 @@ const handleCheckForUpdatesMenuClick = Effect.gen(function* () {
 export const make = Effect.gen(function* () {
   const electronMenu = yield* ElectronMenu.ElectronMenu;
   const environment = yield* DesktopEnvironment.DesktopEnvironment;
+  const clientSettings = yield* DesktopClientSettings.DesktopClientSettings;
   const context = yield* Effect.context<DesktopApplicationMenuRuntimeServices>();
   const runPromise = Effect.runPromiseWith(context);
 
@@ -314,7 +317,9 @@ export const make = Effect.gen(function* () {
       },
     );
 
-    yield* electronMenu.setApplicationMenu(template);
+    const settings = yield* clientSettings.get.pipe(Effect.orElseSucceed(() => Option.none()));
+    const locale = Option.getOrUndefined(settings)?.uiLocale ?? "en";
+    yield* electronMenu.setApplicationMenu(localizeMenu(template, locale, environment.displayName));
   }).pipe(Effect.withSpan("desktop.menu.configure"));
 
   return DesktopApplicationMenu.of({

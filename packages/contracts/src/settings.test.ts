@@ -302,6 +302,30 @@ describe("resolveIdleCompaction", () => {
   });
 });
 
+describe("ClientSettings interface language", () => {
+  it.each([
+    [undefined, "en"],
+    ["en", "en"],
+    ["zh-CN", "zh-CN"],
+    ["fr", "en"],
+  ] as const)(
+    "reads %s without losing other client preferences",
+    (storedLocale, expectedLocale) => {
+      const settings = decodeClientSettings({ uiLocale: storedLocale, chatWidth: "wide" });
+
+      expect(settings.uiLocale).toBe(expectedLocale);
+      expect(settings.chatWidth).toBe("wide");
+      expect(encodeClientSettings(settings).uiLocale).toBe(expectedLocale);
+    },
+  );
+
+  it("validates explicit language changes without adding a missing preference to a patch", () => {
+    expect(decodeClientSettingsPatch({})).not.toHaveProperty("uiLocale");
+    expect(decodeClientSettingsPatch({ uiLocale: "zh-CN" }).uiLocale).toBe("zh-CN");
+    expect(() => decodeClientSettingsPatch({ uiLocale: "fr" })).toThrow();
+  });
+});
+
 describe("ClientSettings notifications", () => {
   it("requires opt-in when existing settings omit notification preferences", () => {
     expect(decodeClientSettings({}).notificationMode).toBe("off");

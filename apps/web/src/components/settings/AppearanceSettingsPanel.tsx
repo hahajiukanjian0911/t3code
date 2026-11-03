@@ -36,6 +36,8 @@ import { AdvancedSettings } from "./AdvancedSettings";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
 import { TypographySection } from "./TypographySettings";
 import { ThreadDetailsItemsRow } from "./ThreadDetailsItemsRow";
+import { InterfaceLanguageSetting } from "./InterfaceLanguageSetting";
+import { useUiLabel } from "../../i18n/staticUiLabels";
 
 const ENVIRONMENT_IDENTIFICATION_LABELS: Record<EnvironmentIdentificationMode, string> = {
   artwork: "Artwork",
@@ -85,6 +87,7 @@ const EFFORT_DISPLAY_LABELS: Record<EffortDisplay, string> = {
 };
 
 export function AppearanceSettingsPanel() {
+  const uiLabel = useUiLabel();
   const {
     appearanceMode,
     refreshTheme,
@@ -163,6 +166,7 @@ export function AppearanceSettingsPanel() {
       </SettingsSection>
 
       <SettingsSection id="appearance-interface" title="Interface">
+        <InterfaceLanguageSetting />
         <SettingsRow
           {...searchableSetting("setting-appearance-contrast")}
           description="Adjust the contrast of colors and borders across the interface."
@@ -278,7 +282,7 @@ export function AppearanceSettingsPanel() {
                 }}
               >
                 <SelectTrigger size="sm" className="w-full min-w-0" aria-label="Chat width">
-                  <SelectValue>{CHAT_WIDTH_LABELS[settings.chatWidth]}</SelectValue>
+                  <SelectValue>{uiLabel(CHAT_WIDTH_LABELS[settings.chatWidth])}</SelectValue>
                 </SelectTrigger>
                 <SelectPopup align="end" alignItemWithTrigger={false}>
                   <SelectItem value="comfortable">Comfortable (default)</SelectItem>
@@ -313,7 +317,9 @@ export function AppearanceSettingsPanel() {
                 }}
               >
                 <SelectTrigger size="sm" className="w-full min-w-0" aria-label="Effort display">
-                  <SelectValue>{EFFORT_DISPLAY_LABELS[settings.effortDisplay]}</SelectValue>
+                  <SelectValue>
+                    {uiLabel(EFFORT_DISPLAY_LABELS[settings.effortDisplay])}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectPopup align="end" alignItemWithTrigger={false}>
                   <SelectItem value="label">Word (default)</SelectItem>
@@ -438,12 +444,12 @@ export function AppearanceSettingsPanel() {
                   className="w-full sm:w-40"
                   aria-label="Environment identification"
                 >
-                  <SelectValue>{environmentIdentificationLabel}</SelectValue>
+                  <SelectValue>{uiLabel(environmentIdentificationLabel)}</SelectValue>
                 </SelectTrigger>
                 <SelectPopup align="end" alignItemWithTrigger={false}>
                   {environmentIdentificationOptionList.map(([value, label]) => (
                     <SelectItem hideIndicator key={value} value={value}>
-                      {label}
+                      {uiLabel(label)}
                     </SelectItem>
                   ))}
                 </SelectPopup>

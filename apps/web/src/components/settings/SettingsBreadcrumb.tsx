@@ -4,6 +4,7 @@ import {
   WorkspaceBreadcrumbSeparator,
 } from "../WorkspaceBreadcrumb";
 import { SETTINGS_SECTION_LABELS } from "./settingsSearch";
+import { useUiLabel } from "../../i18n/staticUiLabels";
 
 const SETTINGS_BREADCRUMB_LABELS: Readonly<Record<string, string>> = {
   ...SETTINGS_SECTION_LABELS,
@@ -17,6 +18,7 @@ function settingsBreadcrumbLabel(pathname: string): string | null {
 }
 
 export function SettingsBreadcrumb({ pathname }: { pathname: string }) {
+  const uiLabel = useUiLabel();
   const sectionLabel = settingsBreadcrumbLabel(pathname);
 
   return (
@@ -28,7 +30,7 @@ export function SettingsBreadcrumb({ pathname }: { pathname: string }) {
         </>
       ) : null}
       <WorkspaceBreadcrumbItem current className="truncate">
-        {sectionLabel ?? "Settings"}
+        {uiLabel(sectionLabel ?? "Settings")}
       </WorkspaceBreadcrumbItem>
     </WorkspaceBreadcrumb>
   );

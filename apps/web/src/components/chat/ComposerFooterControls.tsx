@@ -20,6 +20,7 @@ import { resolveModelPickerSelectedModel } from "./ModelPickerContent";
 import { ProviderModelPicker } from "./ProviderModelPicker";
 import { runtimeModeConfig } from "./runtimeModeConfig";
 import { useComposerMenuState } from "./useComposerMenuState";
+import { useUiLabel } from "../../i18n/staticUiLabels";
 
 export type RuntimeModeOption = {
   mode: RuntimeMode;
@@ -43,14 +44,20 @@ export const ComposerFooterModeControls = memo(function ComposerFooterModeContro
   onToggleInteractionMode: () => void;
   onRuntimeModeChange: (mode: RuntimeMode) => void;
 }) {
+  const uiLabel = useUiLabel();
   const size = props.size ?? "sm";
   const accessDisplay = props.accessDisplay ?? "label";
   const composerFloatingLayerProps = useComposerMenuProps();
   const [open, setOpen] = useComposerMenuState(props.hidden);
   const permissionsChipRef = useRef<HTMLButtonElement>(null);
-  const runtimeModeOption =
+  const selectedRuntimeModeOption =
     props.runtimeModeOptions.find((option) => option.mode === props.runtimeMode) ??
     supervisedRuntimeModeOption;
+  const runtimeModeOption = {
+    ...selectedRuntimeModeOption,
+    label: uiLabel(selectedRuntimeModeOption.label),
+    description: uiLabel(selectedRuntimeModeOption.description),
+  };
   const RuntimeModeIcon = runtimeModeOption.icon;
   const interactionModeTooltip =
     props.interactionMode === "plan"
@@ -167,12 +174,16 @@ export function ComposerPermissionsSection(props: {
   runtimeModeOptions: ReadonlyArray<RuntimeModeOption>;
   onRuntimeModeChange: (mode: RuntimeMode) => void;
 }) {
+  const uiLabel = useUiLabel();
+  const options = props.runtimeModeOptions.map((option) => ({
+    ...option,
+    label: uiLabel(option.label),
+    description: uiLabel(option.description),
+  }));
   // Hover or keyboard focus previews a mode's name and description before a pick.
   const [previewMode, setPreviewMode] = useState<RuntimeMode | null>(null);
   const shownMode = previewMode ?? props.runtimeMode;
-  const shown =
-    props.runtimeModeOptions.find((option) => option.mode === shownMode) ??
-    supervisedRuntimeModeOption;
+  const shown = options.find((option) => option.mode === shownMode) ?? supervisedRuntimeModeOption;
   const descriptionId = useId();
   return (
     <div data-composer-permissions className="grid w-72 gap-1.5 px-2 py-1.5">
@@ -198,7 +209,7 @@ export function ComposerPermissionsSection(props: {
           next.focus();
         }}
       >
-        {props.runtimeModeOptions.map((option) => {
+        {options.map((option) => {
           const OptionIcon = option.icon;
           return (
             <MenuPrimitive.RadioItem
@@ -221,7 +232,7 @@ export function ComposerPermissionsSection(props: {
         })}
       </MenuPrimitive.RadioGroup>
       {/* Static per-mode descriptions for screen readers; the preview below is visual only. */}
-      {props.runtimeModeOptions.map((option) => (
+      {options.map((option) => (
         <span key={option.mode} id={`${descriptionId}-${option.mode}`} className="sr-only">
           {option.disabledReason ?? option.description}
         </span>

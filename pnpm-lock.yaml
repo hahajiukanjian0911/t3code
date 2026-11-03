@@ -268,6 +268,7 @@ catalogs:
       version: 11.0.5
 
 overrides:
+  wuchale: 0.26.7
   react-native-image-viewing: 0.2.2
   mdast-util-math: 3.0.0
   micromark-extension-llm-math: 3.1.0
@@ -396,6 +397,7 @@ patchedDependencies:
   react-native-pdf-jsi@5.0.0: 6f52854210f61bef499850ebd498229a111bc34ec5b2a4925e644f2f48f42760
   react-native-reanimated@4.7.1: 95ee26e5fcab5f50bc4b4c47b3f7e6278a0b20850205efb9f6ee7e70a22d2b59
   react-native-webview@14.0.1: 81caa279ec3dc1f81209062133b66e8f824e13f106cca57f1fa732a72c2ab378
+  wuchale@0.26.7: 75c14cb3d2d7aba3f555d1fb19f21a5c9529100a69cba8570b1d554f2006b8f8
 
 importers:
 
@@ -1251,10 +1253,16 @@ importers:
       vfile:
         specifier: ^6.0.3
         version: 6.0.3
+      wuchale:
+        specifier: 0.26.7
+        version: 0.26.7(patch_hash=75c14cb3d2d7aba3f555d1fb19f21a5c9529100a69cba8570b1d554f2006b8f8)
       zustand:
         specifier: ^5.0.11
         version: 5.0.14(@types/react@19.3.0)(react@19.3.0)(use-sync-external-store@1.6.0(react@19.3.0))
     devDependencies:
+      '@babel/parser':
+        specifier: 7.29.8
+        version: 7.29.8
       '@effect/platform-node':
         specifier: 4.1.2
         version: 4.1.2(bufferutil@4.1.0)(effect@4.1.2)(redis@6.2.1)(utf-8-validate@6.0.6)
@@ -1300,6 +1308,9 @@ importers:
       '@vitest/browser-playwright':
         specifier: 5.0.5
         version: 5.0.5(@tsc-rs/typescript@0.8.0)(@types/node@24.12.4)(@volar/typescript@2.4.28(@tsc-rs/typescript@0.8.0))(bufferutil@4.1.0)(esbuild@0.28.2)(jiti@2.7.0)(playwright@1.60.0)(terser@5.48.0)(unrun@0.2.39)(utf-8-validate@6.0.6)(vitest@5.0.5)(yaml@2.9.0)
+      '@wuchale/jsx':
+        specifier: 0.13.0
+        version: 0.13.0(react@19.3.0)
       compression:
         specifier: ^1.8.2
         version: 1.8.2(supports-color@8.1.1)
@@ -6572,6 +6583,11 @@ packages:
     resolution: {integrity: sha512-w8CEY73X/7tw2KKlL3iOk679V9bWseE4GzNz3zlaYxcTjmcmWOathRb0emgo/QQ3eoNzmq68+2Y2gxluAv3xGw==}
     engines: {node: '>=12.16'}
 
+  '@sveltejs/acorn-typescript@1.0.13':
+    resolution: {integrity: sha512-wgKggnhZVL9Bfx1OaKKTrYY9BFRk6C8UAkQNUcIv1+llzYrIqy+RZm5HPKzn0NpEBvTVhTqB4kQyllZywsRBRQ==}
+    peerDependencies:
+      acorn: ^8.9.0
+
   '@swc/helpers@0.5.21':
     resolution: {integrity: sha512-jI/VAmtdjB/RnI8GTnokyX7Ug8c+g+ffD6QRLa6XQewtnGyukKkKSk3wLTM3b5cjt1jNh9x0jfVlagdN2gDKQg==}
 
@@ -7389,6 +7405,17 @@ packages:
   '@webgpu/types@0.1.74':
     resolution: {integrity: sha512-lgiI4hbuLcI9unnm2cL/tvCaQU45dp0xcLWJh5uB/9MBGvIA4F8XIk7nSiBeg+K4xWGYwgZKn80LmERI5CxoTA==}
 
+  '@wuchale/jsx@0.13.0':
+    resolution: {integrity: sha512-CQhwbbIjl/ncMdHE5zurn9/l/jd0YSbSYWQEGmnRrTvpkwklnxQ9Xk2dD8n1Ik/Rpj1schxFJycZoFStfTYXGg==}
+    peerDependencies:
+      react: ^19.1
+      solid-js: ^1.9
+    peerDependenciesMeta:
+      react:
+        optional: true
+      solid-js:
+        optional: true
+
   '@xmldom/xmldom@0.8.15':
     resolution: {integrity: sha512-/5NV/vDALVFDXgLmfsy9TRCBlKwO2LNBFzpzvb9iIj+jR+eSc6DLYYvVOdivT/jm7MtU6TebYuRmzEOI7w40UA==}
     engines: {node: '>=10.0.0'}
@@ -7560,6 +7587,11 @@ packages:
 
   acorn@8.16.0:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+
+  acorn@8.19.0:
+    resolution: {integrity: sha512-oJlA3XiRm7Cyk6qFD2Jn8ak9B7jSy0qy00ADO3+8dpT0LSjFihQYv4C02LFCSYJV3Q37xYwwRy5m+IpIiUzqWw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -10790,6 +10822,9 @@ packages:
     resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
     engines: {node: '>=14.19.0'}
 
+  pofile@1.1.4:
+    resolution: {integrity: sha512-r6Q21sKsY1AjTVVjOuU02VYKVNQGJNQHjTIvs4dEbeuuYfxgYk/DGD2mqqq4RDaVkwdSq0VEtmQUOPe/wH8X3g==}
+
   postcss@8.5.30:
     resolution: {integrity: sha512-zkd+e9S1AQHhmaBKye9zlFHWjOwVgqXl1q3ECYy8561K7qxR2cREf/STLskulBFd78k6AOFeA+ff1TtEzk9bAA==}
     engines: {node: ^10 || ^12 || >=14}
@@ -12366,6 +12401,10 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
+
+  wuchale@0.26.7:
+    resolution: {integrity: sha512-G9V612ezxLmXQ8vm6R3kETsBOCubvN1yxYv9I3GoU7uIVXPpCThgGrRyxD8ZZPJUOizz0IljZp6UgSlKPyILsQ==}
+    hasBin: true
 
   xcode@3.0.1:
     resolution: {integrity: sha512-kCz5k7J7XbJtjABOvkc5lJmkiDh8VhjVCGNiqdKCscmVpdVUpEAyXv1xmCLkQJ5dsHqx3IPO4XW+NTDhU/fatA==}
@@ -16133,6 +16172,10 @@ snapshots:
 
   '@stripe/stripe-js@5.6.0': {}
 
+  '@sveltejs/acorn-typescript@1.0.13(acorn@8.19.0)':
+    dependencies:
+      acorn: 8.19.0
+
   '@swc/helpers@0.5.21':
     dependencies:
       tslib: 2.8.1
@@ -17075,6 +17118,14 @@ snapshots:
 
   '@webgpu/types@0.1.74': {}
 
+  '@wuchale/jsx@0.13.0(react@19.3.0)':
+    dependencies:
+      '@sveltejs/acorn-typescript': 1.0.13(acorn@8.19.0)
+      acorn: 8.19.0
+      wuchale: 0.26.7(patch_hash=75c14cb3d2d7aba3f555d1fb19f21a5c9529100a69cba8570b1d554f2006b8f8)
+    optionalDependencies:
+      react: 19.3.0
+
   '@xmldom/xmldom@0.8.15': {}
 
   '@xmldom/xmldom@0.9.12': {}
@@ -17173,6 +17224,8 @@ snapshots:
       negotiator: 1.0.0
 
   acorn@8.16.0: {}
+
+  acorn@8.19.0: {}
 
   agent-base@7.1.4: {}
 
@@ -21059,6 +21112,8 @@ snapshots:
 
   pngjs@7.0.0: {}
 
+  pofile@1.1.4: {}
+
   postcss@8.5.30:
     dependencies:
       nanoid: 3.3.20
@@ -22878,6 +22933,16 @@ snapshots:
     optionalDependencies:
       bufferutil: 4.1.0
       utf-8-validate: 6.0.6
+
+  wuchale@0.26.7(patch_hash=75c14cb3d2d7aba3f555d1fb19f21a5c9529100a69cba8570b1d554f2006b8f8):
+    dependencies:
+      '@sveltejs/acorn-typescript': 1.0.13(acorn@8.19.0)
+      acorn: 8.19.0
+      chokidar: 5.0.0
+      magic-string: 1.4.3
+      picomatch: 4.0.7
+      pofile: 1.1.4
+      tinyglobby: 0.2.17
 
   xcode@3.0.1:
     dependencies:

@@ -1,6 +1,13 @@
 {
   "customNotices": [
     {
+      "name": "T3 Code Simplified Chinese translations",
+      "bundles": ["desktop", "web"],
+      "license": "MIT",
+      "sourceUrl": "https://github.com/ZhiweiXiao98/t3code/blob/ea0a62dcacb1f450e4cde81b2ab1432d0e0f8599/apps/web/src/i18n/messages.ts",
+      "noticeFile": "apps/web/src/locales/NOTICE.md"
+    },
+    {
       "name": "opencode Office viewers",
       "bundles": ["web"],
       "license": "MIT",
@@ -229,6 +236,24 @@
     }
   ],
   "packageOverrides": [
+    {
+      "name": "wuchale",
+      "version": "0.26.7",
+      "sourceUrl": "https://github.com/wuchalejs/wuchale/blob/b3a927d11564668b2582b321ea56de4dae9017be/LICENSE",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2025 Kidus Adugna"]
+      }
+    },
+    {
+      "name": "@wuchale/jsx",
+      "version": "0.13.0",
+      "sourceUrl": "https://github.com/wuchalejs/wuchale/blob/07d793ca859939878671ab27199630c11fc187a4/LICENSE",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2025 Kidus Adugna"]
+      }
+    },
     {
       "name": "entities",
       "version": "8.1.0",

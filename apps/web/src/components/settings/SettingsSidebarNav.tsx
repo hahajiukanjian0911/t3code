@@ -59,6 +59,7 @@ import { useAvailableSettingsSearchItems } from "./useAvailableSettingsSearchIte
 import { validateSettingsScopeSearch } from "./settingsScope";
 import { useSettingsSectionNavigation } from "./useSettingsSectionNavigation";
 import { workspaceAreaProps } from "../../lib/workspaceFocus";
+import { useUiLabel } from "../../i18n/staticUiLabels";
 
 const SnapShotIcon = createLucideIcon("snap-shot", [
   [
@@ -127,6 +128,7 @@ function SettingsSectionIcon({ to }: { to: SettingsPath }) {
 }
 
 export function SettingsSidebarNav({ pathname }: { pathname: string }) {
+  const uiLabel = useUiLabel();
   const navArea = workspaceAreaProps("settings-nav", 0, "Settings sections");
   const navigate = useNavigate();
   const currentHash = useLocation({ select: (location) => location.hash });
@@ -355,7 +357,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                           {item.title}
                         </span>
                         <span className="block truncate text-2xs text-sidebar-muted-foreground/75">
-                          {SETTINGS_SECTION_LABELS[item.to]}
+                          {uiLabel(SETTINGS_SECTION_LABELS[item.to])}
                         </span>
                       </span>
                     </SidebarMenuButton>
@@ -386,7 +388,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                     <div
                       key={group.heading ?? index}
                       role="group"
-                      aria-label={group.heading ?? undefined}
+                      aria-label={group.heading ? uiLabel(group.heading) : undefined}
                       className="flex flex-col gap-1 max-md:border-t max-md:border-sidebar-border max-md:pt-4 max-md:first:border-t-0 max-md:first:pt-0"
                     >
                       {group.heading ? (
@@ -398,7 +400,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                             !compactSearchOpen && "max-md:hidden",
                           )}
                         >
-                          {group.heading}
+                          {uiLabel(group.heading)}
                         </h3>
                       ) : null}
                       <SidebarMenu role="presentation">
@@ -420,7 +422,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                                 <span
                                   className={cn("truncate", !compactSearchOpen && "max-md:sr-only")}
                                 >
-                                  {SETTINGS_SECTION_LABELS[to]}
+                                  {uiLabel(SETTINGS_SECTION_LABELS[to])}
                                 </span>
                               </SidebarMenuButton>
                             </SidebarMenuItem>

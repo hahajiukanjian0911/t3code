@@ -9,8 +9,7 @@ import { isElectron } from "./env";
 import { startAppServices } from "./appInit";
 import { AppRoot } from "./AppRoot";
 import { clearChunkReloadGuard, reloadOnceForChunkLoadError } from "./lib/chunkReloadGuard";
-
-const router = startAppServices();
+import { startInterfaceLocale } from "./i18n/locale";
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 
@@ -24,8 +23,6 @@ window.addEventListener("vite:preloadError", (event) => {
   }
 });
 
-const app = <AppRoot router={router} />;
-
 // Split by runtime to keep Clerk out of local startup and clerk-js out of browser builds.
 const managedAuthShellModule =
   clerkPublishableKey && hasCloudPublicConfig()
@@ -36,12 +33,17 @@ const managedAuthShellModule =
 
 export const startup = Promise.all([
   managedAuthShellModule?.then((module) => module.default) ?? null,
-  router.load(),
+  startInterfaceLocale().then(async () => {
+    const router = startAppServices();
+    await router.load();
+    return router;
+  }),
 ])
-  .then(([ManagedAuthShell]) => {
+  .then(([ManagedAuthShell, router]) => {
     // Route chunk failures resolve router.load() and surface later through the error boundary.
     if (reloadScheduled) return;
     if (!chunkLoadFailed) clearChunkReloadGuard();
+    const app = <AppRoot router={router} />;
     ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <React.StrictMode>
         {ManagedAuthShell && clerkPublishableKey ? (

@@ -29,6 +29,7 @@
     "src",
     "vite",
     "vite.config.ts",
+    "wuchale.config.ts",
     "vercel.ts",
     "test",
     "scripts/verify-built-boot.ts",

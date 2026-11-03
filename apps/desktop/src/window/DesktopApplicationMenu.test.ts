@@ -3,6 +3,8 @@ import { assert, describe, it } from "@effect/vitest";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import { DEFAULT_CLIENT_SETTINGS, type UiLocale } from "@t3tools/contracts/settings";
 
 import type * as Electron from "electron";
 
@@ -14,6 +16,7 @@ import * as DesktopConfig from "../app/DesktopConfig.ts";
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopUpdates from "../updates/DesktopUpdates.ts";
 import * as DesktopWindow from "./DesktopWindow.ts";
+import * as DesktopClientSettings from "../settings/DesktopClientSettings.ts";
 
 const environmentInput = {
   dirname: "/repo/apps/desktop/dist-electron",
@@ -107,6 +110,7 @@ const configureMenu = (
   selectedAction: Deferred.Deferred<string>,
   applicationMenuTemplate: Deferred.Deferred<readonly Electron.MenuItemConstructorOptions[]>,
   environment: Partial<DesktopEnvironment.MakeDesktopEnvironmentInput> = {},
+  locale: UiLocale = "en",
 ) =>
   Effect.gen(function* () {
     const menu = yield* DesktopApplicationMenu.DesktopApplicationMenu;
@@ -114,6 +118,11 @@ const configureMenu = (
   }).pipe(
     Effect.provide(
       DesktopApplicationMenu.layer.pipe(
+        Layer.provideMerge(
+          DesktopClientSettings.layerTest(
+            Option.some({ ...DEFAULT_CLIENT_SETTINGS, uiLocale: locale }),
+          ),
+        ),
         Layer.provideMerge(layerElectronMenu(applicationMenuTemplate)),
         Layer.provideMerge(layerDesktopWindow(selectedAction)),
         Layer.provideMerge(layerDesktopUpdates),
@@ -131,30 +140,37 @@ const configureMenu = (
 describe("DesktopApplicationMenu", () => {
   it.effect("leaves the accelerator to Chromium instead of injecting a paste", () =>
     Effect.gen(function* () {
-      const selectedAction = yield* Deferred.make<string>();
-      const applicationMenuTemplate =
-        yield* Deferred.make<readonly Electron.MenuItemConstructorOptions[]>();
+      for (const locale of ["en", "zh-CN"] as const) {
+        const selectedAction = yield* Deferred.make<string>();
+        const applicationMenuTemplate =
+          yield* Deferred.make<readonly Electron.MenuItemConstructorOptions[]>();
 
-      yield* configureMenu(selectedAction, applicationMenuTemplate);
+        yield* configureMenu(selectedAction, applicationMenuTemplate, {}, locale);
 
-      const template = yield* Deferred.await(applicationMenuTemplate);
-      const editMenu = template.find((item) => item.label === "Edit");
-      if (!Array.isArray(editMenu?.submenu)) {
-        throw new Error("Expected Edit menu submenu to be an array.");
+        const template = yield* Deferred.await(applicationMenuTemplate);
+        const editMenu = template.find(
+          (item) => item.label === (locale === "en" ? "Edit" : "编辑"),
+        );
+        if (!Array.isArray(editMenu?.submenu)) {
+          throw new Error("Expected Edit menu submenu to be an array.");
+        }
+        const pasteAsTextItem = editMenu.submenu.find(
+          (item) => item.label === (locale === "en" ? "Paste as Text" : "粘贴为纯文本"),
+        );
+        if (typeof pasteAsTextItem?.click !== "function") {
+          throw new Error("Expected Paste as Text menu item to have a click handler.");
+        }
+
+        pasteAsTextItem.click(
+          {} as Electron.MenuItem,
+          {} as Electron.BrowserWindow,
+          {
+            triggeredByAccelerator: true,
+          } as unknown as KeyboardEvent,
+        );
+        assert.equal(pasteAsTextItem.accelerator, "CmdOrCtrl+Shift+V");
+        assert.isFalse(yield* Deferred.isDone(selectedAction));
       }
-      const pasteAsTextItem = editMenu.submenu.find((item) => item.label === "Paste as Text");
-      if (typeof pasteAsTextItem?.click !== "function") {
-        throw new Error("Expected Paste as Text menu item to have a click handler.");
-      }
-
-      pasteAsTextItem.click(
-        {} as Electron.MenuItem,
-        {} as Electron.BrowserWindow,
-        {
-          triggeredByAccelerator: true,
-        } as unknown as KeyboardEvent,
-      );
-      assert.isFalse(yield* Deferred.isDone(selectedAction));
     }),
   );
 

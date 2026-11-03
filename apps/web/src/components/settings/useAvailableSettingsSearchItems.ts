@@ -1,4 +1,5 @@
 import { AuthEnvironmentMaintainScope } from "@t3tools/contracts";
+import { useUiLabel } from "../../i18n/staticUiLabels";
 
 import { usePrimaryCloudLinkState } from "~/cloud/primaryCloudLinkState";
 import { hasCloudPublicConfig } from "~/cloud/publicConfig";
@@ -15,9 +16,11 @@ import type { SettingsScopeSearch } from "./settingsScope";
 import {
   filterAvailableSettingsSearchItems,
   getThreadAutoSettlementSearchAvailability,
+  SETTINGS_SECTION_LABELS,
 } from "./settingsSearch";
 
 export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch = {}) {
+  const uiLabel = useUiLabel();
   const { environments } = useEnvironments();
   // Explicit booleans keep flags out of the filter cache so environment updates do not rebuild the list.
   const hasEnvironment =
@@ -69,5 +72,13 @@ export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch
     hasThreadAutoSettlement,
     managedTunnelActive,
     hasPeerLinkHost,
-  });
+  }).map((item) => ({
+    ...item,
+    title: uiLabel(item.title),
+    searchTerms: [
+      item.title,
+      uiLabel(SETTINGS_SECTION_LABELS[item.to]),
+      ...(item.searchTerms ?? []),
+    ],
+  }));
 }

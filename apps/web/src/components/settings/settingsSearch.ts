@@ -217,6 +217,12 @@ const SOURCE_CONTROL_HOST_TERMS = sourceControlClients.definitions
 
 export const SETTINGS_SEARCH_ITEMS = [
   {
+    id: "interface-language",
+    title: "Interface language",
+    to: "/settings/appearance",
+    searchTerms: ["language locale English Chinese 中文 简体中文 汉化 语言"],
+  },
+  {
     id: "storage-worktree-keep-when",
     targetId: "storage-worktrees",
     title: "Keep worktrees with local changes",

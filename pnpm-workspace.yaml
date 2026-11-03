@@ -242,6 +242,7 @@ minimumReleaseAgeExclude:
 overrides:
   # Pin every patched package, including transitive dependencies, so lockfile-free
   # release installs cannot drift past the patch. Update these with patchedDependencies.
+  wuchale: 0.26.7
   react-native-image-viewing: 0.2.2
   mdast-util-math: 3.0.0
   micromark-extension-llm-math: 3.1.0
@@ -410,6 +411,7 @@ patchedDependencies:
   # Observe the owned host exit independently of descendants retaining its stdio.
   "@muse-code/sdk@1.4.6": patches/@muse-code__sdk@1.4.6.patch
   app-builder-lib@26.16.1: patches/app-builder-lib@26.16.1.patch
+  wuchale@0.26.7: patches/wuchale@0.26.7.patch
 
 peerDependencyRules:
   allowAny:
