@@ -444,6 +444,7 @@ msgstr "Workspace"
 #: src/components/settings/ArchivedThreadsPanel.tsx
 #: src/components/settings/ArchivedThreadsPanel.tsx
 #: src/components/settings/ProjectFaviconPickerDialog.tsx
+#: src/components/settings/ProjectSettingsPanel.tsx
 msgid "An error occurred."
 msgstr "An error occurred."
 
@@ -4928,6 +4929,7 @@ msgid "The provider has no record of which subagents this call started."
 msgstr "The provider has no record of which subagents this call started."
 
 #: src/components/chat/NativeChildWorkDialog.tsx
+#: src/components/chat/ProviderStatusBanner.tsx
 #: src/components/preview/PreviewChromeRow.tsx
 #: src/components/preview/PreviewChromeRow.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
@@ -7513,14 +7515,6 @@ msgstr "The annotation was kept without the screenshot."
 #: src/components/preview/PreviewView.tsx
 msgid "This tab is open in the T3 Code desktop app."
 msgstr "This tab is open in the T3 Code desktop app."
-
-#: src/components/promptLinks/HostedPromptLinkLanding.tsx
-msgid "Open this prompt"
-msgstr "Open this prompt"
-
-#: src/components/promptLinks/HostedPromptLinkLanding.tsx
-msgid "It opens as a draft. Nothing runs until you press Send."
-msgstr "It opens as a draft. Nothing runs until you press Send."
 
 #: src/components/promptLinks/HostedPromptLinkLanding.tsx
 msgid "This prompt had hidden characters, it may be malicious"
@@ -10149,6 +10143,7 @@ msgid "Hub URL"
 msgstr "Hub URL"
 
 #: src/components/settings/AddUsageLimitSourceDialog.tsx
+#: src/components/settings/AddUsageLimitSourceDialog.tsx
 msgid "Management key"
 msgstr "Management key"
 
@@ -11269,6 +11264,7 @@ msgstr "The environment's server signs in to Expo and starts the sessions. Witho
 msgid "Clear access token"
 msgstr "Clear access token"
 
+#: src/components/settings/EasDeviceHostEditor.tsx
 #: src/components/settings/EasDeviceHostEditor.tsx
 msgid "Expo access token"
 msgstr "Expo access token"
@@ -15518,8 +15514,10 @@ msgstr "Could not load older threads. Retry"
 
 #. 0: Math.min(hiddenSettledCount, SETTLED_TAIL_PAGE_COUNT)
 #. 0: rest.length
+#. 0: Math.min(hiddenCount, SERVER_PAGE_COUNT)
 #: src/components/Sidebar.tsx
 #: src/components/chat/ThreadDetailsPrRows.tsx
+#: src/components/chat/ThreadServersPanel.tsx
 msgid "Show {0} more"
 msgstr "Show {0} more"
 
@@ -16078,6 +16076,7 @@ msgstr "Load more files"
 
 #: src/components/chat/ModelPickerContent.tsx
 #: src/components/chat/ThreadDetailsPrRows.tsx
+#: src/components/chat/ThreadServersPanel.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
 #: src/components/chat/WorkflowOpeningBlock.tsx
 #: src/components/pullRequest/PullRequestChecksPopover.tsx
@@ -17295,6 +17294,7 @@ msgstr "No providers configured."
 msgid "Refreshing providers"
 msgstr "Refreshing providers"
 
+#: src/components/chat/ProviderStatusBanner.tsx
 #: src/components/settings/ProviderSettingsPanel.tsx
 #: src/components/settings/ProviderSettingsPanel.tsx
 msgid "Refresh provider status"
@@ -19554,3 +19554,58 @@ msgstr "Push"
 #: src/i18n/staticUiLabels.ts
 msgid "Sync ref"
 msgstr "Sync ref"
+
+#: src/components/GitHubStarPrompt.tsx
+msgid "Starring…"
+msgstr "Starring…"
+
+#: src/components/GitHubStarPrompt.tsx
+msgid "Thanks for the star!"
+msgstr "Thanks for the star!"
+
+#: src/components/GitHubStarPrompt.tsx
+msgid "It really helps T3 Code grow."
+msgstr "It really helps T3 Code grow."
+
+#: src/components/GitHubStarPrompt.tsx
+msgid "Open GitHub"
+msgstr "Open GitHub"
+
+#: src/components/promptLinks/HostedPromptLinkLanding.tsx
+msgid "Open this thread"
+msgstr "Open this thread"
+
+#: src/components/promptLinks/HostedPromptLinkLanding.tsx
+msgid "It opens in T3 Code if you're connected to the machine it runs on."
+msgstr "It opens in T3 Code if you're connected to the machine it runs on."
+
+#: src/components/chat/ProviderStatusBanner.tsx
+msgid "Refreshing..."
+msgstr "Refreshing..."
+
+#. 0: providerName
+#: src/components/chat/ProviderStatusBanner.tsx
+msgid "Refresh {0} provider status"
+msgstr "Refresh {0} provider status"
+
+#. 0: PROJECT_GROUPING_MODE_LABELS[globalMode]
+#: src/components/settings/ProjectSettingsPanel.tsx
+msgid "Default ({0})"
+msgstr "Default ({0})"
+
+#. 0: member.workspaceRoot; 1: member.environmentLabel ? `${member.environmentLabel} (${member.environmentId})` \\: member.environmentId
+#: src/components/settings/ProjectSettingsPanel.tsx
+msgid "Grouping rule for {0} on {1}"
+msgstr "Grouping rule for {0} on {1}"
+
+#: src/components/settings/ProjectSettingsPanel.tsx
+msgid "Use global default"
+msgstr "Use global default"
+
+#: src/components/settings/ProjectSettingsPanel.tsx
+msgid "Could not save grouping rule"
+msgstr "Could not save grouping rule"
+
+#: src/components/settings/ProjectSettingsPanel.tsx
+msgid "Grouping rule decides how each checkout joins project groups in the sidebar. Changing it can move a checkout to a different project."
+msgstr "Grouping rule decides how each checkout joins project groups in the sidebar. Changing it can move a checkout to a different project."

@@ -7,12 +7,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1\n"
 "X-Plurals-Order: other\n"
-"Project-Id-Version: \n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: \n"
-"PO-Revision-Date: \n"
-"Last-Translator: \n"
-"Language-Team: \n"
 
 #: src/browser/BrowserDeviceToolbar.tsx
 msgid "Dimensions"
@@ -450,6 +444,7 @@ msgstr "工作区"
 #: src/components/settings/ArchivedThreadsPanel.tsx
 #: src/components/settings/ArchivedThreadsPanel.tsx
 #: src/components/settings/ProjectFaviconPickerDialog.tsx
+#: src/components/settings/ProjectSettingsPanel.tsx
 msgid "An error occurred."
 msgstr "发生错误。"
 
@@ -4934,6 +4929,7 @@ msgid "The provider has no record of which subagents this call started."
 msgstr "服务提供方未记录此调用启动了哪些子 Agent。"
 
 #: src/components/chat/NativeChildWorkDialog.tsx
+#: src/components/chat/ProviderStatusBanner.tsx
 #: src/components/preview/PreviewChromeRow.tsx
 #: src/components/preview/PreviewChromeRow.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
@@ -7519,14 +7515,6 @@ msgstr "批注已保留，但不含截图。"
 #: src/components/preview/PreviewView.tsx
 msgid "This tab is open in the T3 Code desktop app."
 msgstr "此标签页在 T3 Code 桌面应用中打开。"
-
-#: src/components/promptLinks/HostedPromptLinkLanding.tsx
-msgid "Open this prompt"
-msgstr "打开此提示词"
-
-#: src/components/promptLinks/HostedPromptLinkLanding.tsx
-msgid "It opens as a draft. Nothing runs until you press Send."
-msgstr "将以草稿打开，点击发送前不会运行。"
 
 #: src/components/promptLinks/HostedPromptLinkLanding.tsx
 msgid "This prompt had hidden characters, it may be malicious"
@@ -10155,6 +10143,7 @@ msgid "Hub URL"
 msgstr "Hub URL"
 
 #: src/components/settings/AddUsageLimitSourceDialog.tsx
+#: src/components/settings/AddUsageLimitSourceDialog.tsx
 msgid "Management key"
 msgstr "管理密钥"
 
@@ -11275,6 +11264,7 @@ msgstr "此环境的服务器负责登录 Expo 并启动会话。如果未在此
 msgid "Clear access token"
 msgstr "清除访问令牌"
 
+#: src/components/settings/EasDeviceHostEditor.tsx
 #: src/components/settings/EasDeviceHostEditor.tsx
 msgid "Expo access token"
 msgstr "Expo 访问令牌"
@@ -15524,8 +15514,10 @@ msgstr "无法加载更早的对话，重试"
 
 #. 0: Math.min(hiddenSettledCount, SETTLED_TAIL_PAGE_COUNT)
 #. 0: rest.length
+#. 0: Math.min(hiddenCount, SERVER_PAGE_COUNT)
 #: src/components/Sidebar.tsx
 #: src/components/chat/ThreadDetailsPrRows.tsx
+#: src/components/chat/ThreadServersPanel.tsx
 msgid "Show {0} more"
 msgstr "再显示 {0} 项"
 
@@ -16084,6 +16076,7 @@ msgstr "加载更多文件"
 
 #: src/components/chat/ModelPickerContent.tsx
 #: src/components/chat/ThreadDetailsPrRows.tsx
+#: src/components/chat/ThreadServersPanel.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
 #: src/components/chat/WorkflowOpeningBlock.tsx
 #: src/components/pullRequest/PullRequestChecksPopover.tsx
@@ -17301,6 +17294,7 @@ msgstr "尚未配置服务提供方。"
 msgid "Refreshing providers"
 msgstr "正在刷新服务提供方"
 
+#: src/components/chat/ProviderStatusBanner.tsx
 #: src/components/settings/ProviderSettingsPanel.tsx
 #: src/components/settings/ProviderSettingsPanel.tsx
 msgid "Refresh provider status"
@@ -19560,3 +19554,58 @@ msgstr "推送"
 #: src/i18n/staticUiLabels.ts
 msgid "Sync ref"
 msgstr "同步引用"
+
+#: src/components/GitHubStarPrompt.tsx
+msgid "Starring…"
+msgstr "正在点星…"
+
+#: src/components/GitHubStarPrompt.tsx
+msgid "Thanks for the star!"
+msgstr "感谢点星！"
+
+#: src/components/GitHubStarPrompt.tsx
+msgid "It really helps T3 Code grow."
+msgstr "这会帮助 T3 Code 持续发展。"
+
+#: src/components/GitHubStarPrompt.tsx
+msgid "Open GitHub"
+msgstr "打开 GitHub"
+
+#: src/components/promptLinks/HostedPromptLinkLanding.tsx
+msgid "Open this thread"
+msgstr "打开此会话"
+
+#: src/components/promptLinks/HostedPromptLinkLanding.tsx
+msgid "It opens in T3 Code if you're connected to the machine it runs on."
+msgstr "连接到运行此会话的设备后，即可在 T3 Code 中打开。"
+
+#: src/components/chat/ProviderStatusBanner.tsx
+msgid "Refreshing..."
+msgstr "正在刷新..."
+
+#. 0: providerName
+#: src/components/chat/ProviderStatusBanner.tsx
+msgid "Refresh {0} provider status"
+msgstr "刷新 {0} 服务提供方状态"
+
+#. 0: PROJECT_GROUPING_MODE_LABELS[globalMode]
+#: src/components/settings/ProjectSettingsPanel.tsx
+msgid "Default ({0})"
+msgstr "默认（{0}）"
+
+#. 0: member.workspaceRoot; 1: member.environmentLabel ? `${member.environmentLabel} (${member.environmentId})` \\: member.environmentId
+#: src/components/settings/ProjectSettingsPanel.tsx
+msgid "Grouping rule for {0} on {1}"
+msgstr "{1} 上 {0} 的分组规则"
+
+#: src/components/settings/ProjectSettingsPanel.tsx
+msgid "Use global default"
+msgstr "使用全局默认值"
+
+#: src/components/settings/ProjectSettingsPanel.tsx
+msgid "Could not save grouping rule"
+msgstr "无法保存分组规则"
+
+#: src/components/settings/ProjectSettingsPanel.tsx
+msgid "Grouping rule decides how each checkout joins project groups in the sidebar. Changing it can move a checkout to a different project."
+msgstr "分组规则决定每个检出目录如何加入侧边栏的项目分组。更改规则可能会将检出目录移到其他项目中。"

@@ -49,10 +49,11 @@ module.exports = async ({ appOutDir, electronPlatformName, arch, packager }) => 
   }
   const state = fs.mkdtempSync(path.join(os.tmpdir(), "t3-release-cache-"));
   env.T3CODE_HOME = state;
-  const runner = path.join(state, "prepare.cjs");
   let result;
   try {
-    // Eval exposes a global "[eval]" filename that breaks ESM dependencies' createRequire fallback.
+    // Run a script file, not -e: -e defines a global __filename of "[eval]", which
+    // @effect/platform-node passes to createRequire and fails on.
+    const runner = path.join(state, "prepare-server-compile-cache-runner.cjs");
     fs.writeFileSync(
       runner,
       `require(${JSON.stringify(helper)}).generatePreparedServerCache(${JSON.stringify(resources)}).then(()=>process.exit(0),e=>{console.error(e);process.exit(1)})`,
