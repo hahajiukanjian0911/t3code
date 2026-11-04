@@ -1,0 +1,69 @@
+/* Keep the fork's floating shell local to the main sidebar, including its resize gutter. */
+@media (min-width: 768px) {
+  [data-app-sidebar-layout] {
+    --app-sidebar-topbar-height: var(--workspace-topbar-height);
+    background: var(--background);
+  }
+
+  [data-app-sidebar-layout] > [data-slot="sidebar"][data-side="left"] > [data-slot="sidebar-gap"] {
+    /* The rail measures and persists the panel width; the outer gutter stays separate. */
+    margin-right: calc(var(--app-sidebar-floating-inset) * 2);
+  }
+
+  [data-app-sidebar-layout]
+    > [data-slot="sidebar"][data-side="left"][data-state="collapsed"]
+    > [data-slot="sidebar-gap"] {
+    margin-right: 0;
+  }
+
+  [data-app-sidebar-layout][data-panel-animations="true"]
+    > [data-slot="sidebar"][data-side="left"]
+    > [data-slot="sidebar-gap"] {
+    transition-property: width, margin-right;
+  }
+
+  [data-app-sidebar-layout] [data-app-sidebar][data-slot="sidebar-container"] {
+    top: var(--app-sidebar-floating-inset);
+    bottom: var(--app-sidebar-floating-inset);
+    height: auto;
+    padding: 0;
+  }
+
+  [data-app-sidebar-layout]
+    > [data-slot="sidebar"][data-side="left"][data-state="expanded"]
+    > [data-app-sidebar] {
+    left: var(--app-sidebar-floating-inset);
+  }
+
+  [data-app-sidebar-layout]
+    > [data-slot="sidebar"][data-side="left"][data-state="collapsed"]
+    > [data-app-sidebar] {
+    /* Hide the shadow as well as the panel. */
+    left: calc(-1 * (var(--sidebar-width) + var(--app-sidebar-floating-inset) * 4));
+  }
+
+  [data-app-sidebar-layout] [data-app-sidebar] > [data-slot="sidebar-inner"] {
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent);
+    border-radius: 16px;
+    box-shadow:
+      0 2px 5px rgb(0 0 0 / 5%),
+      0 12px 30px rgb(0 0 0 / 10%);
+  }
+
+  [data-app-sidebar-layout][data-sidebar-state="expanded"] > [data-sidebar-control] {
+    translate: var(--app-sidebar-floating-inset) var(--app-sidebar-floating-inset);
+  }
+
+  /* Native macOS buttons stay at their original height, outside the web layout. */
+  [data-app-sidebar-layout][data-native-titlebar="true"] [data-app-sidebar] {
+    --workspace-topbar-height: calc(
+      var(--app-sidebar-topbar-height) - var(--app-sidebar-floating-inset) * 2
+    );
+  }
+
+  [data-app-sidebar-layout][data-native-titlebar="true"][data-sidebar-state="expanded"]
+    > [data-sidebar-control] {
+    translate: var(--app-sidebar-floating-inset) 0;
+  }
+}
