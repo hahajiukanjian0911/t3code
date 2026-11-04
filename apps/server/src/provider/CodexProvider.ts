@@ -55,7 +55,8 @@ import {
 import * as HostProcess from "@t3tools/shared/HostProcess";
 import packageJson from "../../package.json" with { type: "json" };
 const isCodexAppServerSpawnError = Schema.is(CodexErrors.CodexAppServerSpawnError);
-const RATE_LIMITS_PROBE_TIMEOUT_MS = 3_000;
+// Usage reads reach the remote account service and can exceed local discovery's 3s budget.
+const RATE_LIMITS_PROBE_TIMEOUT_MS = 10_000;
 
 type CodexRateLimitsProbe =
   | {

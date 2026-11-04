@@ -1,6 +1,118 @@
 import { assert, it } from "@effect/vitest";
+import { CodexSettings } from "@t3tools/contracts";
+import * as DateTime from "effect/DateTime";
+import * as Deferred from "effect/Deferred";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import * as FileSystem from "effect/FileSystem";
+import * as Path from "effect/Path";
+import * as Queue from "effect/Queue";
+import * as Schema from "effect/Schema";
+import * as Sink from "effect/Sink";
+import * as Stream from "effect/Stream";
+import * as TestClock from "effect/testing/TestClock";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 
-import { applyPreferredCodexDefaultModel, mapCodexModelCapabilities } from "./CodexProvider.ts";
+import {
+  applyPreferredCodexDefaultModel,
+  checkCodexProviderStatus,
+  mapCodexModelCapabilities,
+} from "./CodexProvider.ts";
+
+const decodeCodexSettings = Schema.decodeSync(CodexSettings);
+const defaultCodexSettings = decodeCodexSettings({});
+
+it.effect.each([
+  { name: "accepts a slow reply", delay: "4500 millis", reply: true },
+  {
+    name: "bounds a missing reply without losing authentication",
+    delay: "10 seconds",
+    reply: false,
+  },
+] as const)("Codex usage read $name", ({ delay, reply }) =>
+  Effect.gen(function* () {
+    const responses = yield* Queue.unbounded<Uint8Array>();
+    const usageRequested = yield* Deferred.make<number>();
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const respond = (id: number, result: unknown) =>
+      Queue.offer(responses, encoder.encode(`${JSON.stringify({ id, result })}\n`));
+    const replies: Readonly<Record<string, unknown>> = {
+      initialize: {
+        userAgent: "codex/0.166.0-alpha.5.1",
+        codexHome: "/codex-home",
+        platformFamily: "unix",
+        platformOs: "macos",
+      },
+      "account/read": {
+        account: { type: "chatgpt", email: "test@example.com", planType: "pro" },
+        requiresOpenaiAuth: true,
+      },
+      "skills/list": { data: [] },
+      "model/list": { data: [], nextCursor: null },
+      "config/read": { config: {} },
+    };
+    const spawner = ChildProcessSpawner.make(() =>
+      Effect.succeed(
+        ChildProcessSpawner.makeHandle({
+          pid: ChildProcessSpawner.ProcessId(1),
+          exitCode: Effect.never,
+          isRunning: Effect.succeed(true),
+          kill: () => Effect.void,
+          unref: Effect.succeed(Effect.void),
+          stdin: Sink.forEach((chunk: Uint8Array) => {
+            const message = JSON.parse(decoder.decode(chunk)) as { id?: number; method: string };
+            if (message.id === undefined) return Effect.void;
+            if (message.method === "account/rateLimits/read") {
+              return Deferred.succeed(usageRequested, message.id);
+            }
+            return respond(message.id, replies[message.method]);
+          }),
+          stdout: Stream.fromQueue(responses),
+          stderr: Stream.empty,
+          all: Stream.empty,
+          getInputFd: () => Sink.drain,
+          getOutputFd: () => Stream.empty,
+        }),
+      ),
+    );
+    const fetchedAt = DateTime.formatIso(yield* DateTime.now);
+    const fiber = yield* checkCodexProviderStatus(defaultCodexSettings).pipe(
+      Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
+      Effect.provideService(
+        FileSystem.FileSystem,
+        FileSystem.makeNoop({
+          readFileString: () => Effect.succeed(JSON.stringify({ fetched_at: fetchedAt })),
+        }),
+      ),
+      Effect.provide(Path.layer),
+      Effect.forkChild,
+    );
+    const requestId = yield* Deferred.await(usageRequested);
+    yield* TestClock.adjust(delay);
+    if (reply) {
+      yield* respond(requestId, {
+        rateLimits: {
+          limitId: "codex",
+          planType: "pro",
+          primary: { usedPercent: 25, windowDurationMins: 300, resetsAt: 1_800_000_000 },
+        },
+      });
+    }
+    const status = yield* Fiber.join(fiber);
+    assert.strictEqual(status.status, "ready");
+    assert.strictEqual(status.auth.status, "authenticated");
+    if (reply) {
+      assert.isUndefined(status.usageLimits?.unavailable);
+      assert.strictEqual(status.usageLimits?.windows[0]?.usedPercent, 25);
+    } else {
+      assert.deepStrictEqual(status.usageLimits?.unavailable, {
+        reason: "probeFailed",
+        message: "Codex did not answer the usage request.",
+      });
+    }
+  }),
+);
 
 it("maps current Codex model capability fields", () => {
   const capabilities = mapCodexModelCapabilities({
