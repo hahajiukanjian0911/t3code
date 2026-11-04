@@ -3408,8 +3408,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     buildContextClipboardFragment={buildContextClipboardFragmentStable}
                     importContextFragment={importContextFragmentStable}
                     skills={selectedProviderSkills}
+                    containerClassName="grid grid-cols-1 [&>div]:col-start-1 [&>div]:row-start-1"
+                    placeholderClassName="static"
                     className={cn(
-                      "sm:min-h-[calc(1lh+--spacing(2))] sm:max-h-40",
+                      "h-[calc(100%+--spacing(2))] sm:min-h-[calc(1lh+--spacing(2))] sm:max-h-40",
                       showMobilePendingAnswerActions && "max-sm:pb-12",
                     )}
                     onChange={onPromptChangeStable}
