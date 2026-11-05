@@ -70,7 +70,7 @@ import {
   type RememberedTimelinePosition,
   rememberTimelinePosition,
 } from "./timelineScrollAnchoring";
-import { AssistantSelectionToolbar } from "./AssistantSelectionToolbar";
+import { AssistantSelectionContextMenu } from "./AssistantSelectionContextMenu";
 import type { AssistantCitationSourceAnchor } from "~/lib/assistantTextSelection";
 import { type AssistantCitationRequest } from "./AssistantCitationSource";
 import { useAssistantCitationTarget } from "./useAssistantCitationTarget";
@@ -1298,7 +1298,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
             data-assistant-citation-viewport="true"
           >
             {onCiteAssistantText && citationThreadRef ? (
-              <AssistantSelectionToolbar
+              <AssistantSelectionContextMenu
                 viewport={timelineViewportElement}
                 threadRef={citationThreadRef}
                 onCite={onCiteAssistantText}

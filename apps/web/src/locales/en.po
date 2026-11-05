@@ -1037,6 +1037,7 @@ msgid "Unable to unlink pull request"
 msgstr "Unable to unlink pull request"
 
 #: src/components/ChatMarkdown.tsx
+#: src/components/chat/AssistantSelectionContextMenu.tsx
 msgid "The request failed."
 msgstr "The request failed."
 
@@ -2311,6 +2312,7 @@ msgstr "Add to chat"
 
 #: src/browser/ServerBrowserSurface.tsx
 #: src/components/ThreadTerminalDrawer.tsx
+#: src/components/chat/AssistantSelectionContextMenu.tsx
 #: src/components/chat/GuestShareControls.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Copy"
@@ -3864,13 +3866,12 @@ msgstr "Edit citation comment"
 msgid "Add comment to citation"
 msgstr "Add comment to citation"
 
-#: src/components/chat/AssistantSelectionToolbar.tsx
+#: src/components/chat/AssistantSelectionContextMenu.tsx
 msgid "Selection is too long to cite"
 msgstr "Selection is too long to cite"
 
-#: src/components/chat/AssistantSelectionToolbar.tsx
-msgid "Cite selection in composer"
-msgstr "Cite selection in composer"
+#~ msgid "Cite selection in composer"
+#~ msgstr "Cite selection in composer"
 
 #: src/components/chat/AssistantCitationCommentEditor.tsx
 msgid "Comment on selected text"
@@ -16415,11 +16416,10 @@ msgstr "Unlink from thread"
 msgid "Shorten comment"
 msgstr "Shorten comment"
 
-#: src/components/chat/AssistantSelectionToolbar.tsx
-msgid "Shorten selection"
-msgstr "Shorten selection"
+#~ msgid "Shorten selection"
+#~ msgstr "Shorten selection"
 
-#: src/components/chat/AssistantSelectionToolbar.tsx
+#: src/components/chat/AssistantSelectionContextMenu.tsx
 msgid "Cite"
 msgstr "Cite"
 
@@ -19609,3 +19609,7 @@ msgstr "Could not save grouping rule"
 #: src/components/settings/ProjectSettingsPanel.tsx
 msgid "Grouping rule decides how each checkout joins project groups in the sidebar. Changing it can move a checkout to a different project."
 msgstr "Grouping rule decides how each checkout joins project groups in the sidebar. Changing it can move a checkout to a different project."
+
+#: src/components/chat/AssistantSelectionContextMenu.tsx
+msgid "Unable to complete selection action"
+msgstr "Unable to complete selection action"

@@ -1037,6 +1037,7 @@ msgid "Unable to unlink pull request"
 msgstr "无法取消关联拉取请求"
 
 #: src/components/ChatMarkdown.tsx
+#: src/components/chat/AssistantSelectionContextMenu.tsx
 msgid "The request failed."
 msgstr "请求失败。"
 
@@ -2311,6 +2312,7 @@ msgstr "添加到对话"
 
 #: src/browser/ServerBrowserSurface.tsx
 #: src/components/ThreadTerminalDrawer.tsx
+#: src/components/chat/AssistantSelectionContextMenu.tsx
 #: src/components/chat/GuestShareControls.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Copy"
@@ -3864,13 +3866,12 @@ msgstr "编辑引用批注"
 msgid "Add comment to citation"
 msgstr "为引用添加批注"
 
-#: src/components/chat/AssistantSelectionToolbar.tsx
+#: src/components/chat/AssistantSelectionContextMenu.tsx
 msgid "Selection is too long to cite"
 msgstr "所选内容过长，无法引用"
 
-#: src/components/chat/AssistantSelectionToolbar.tsx
-msgid "Cite selection in composer"
-msgstr "在输入框中引用所选内容"
+#~ msgid "Cite selection in composer"
+#~ msgstr "在输入框中引用所选内容"
 
 #: src/components/chat/AssistantCitationCommentEditor.tsx
 msgid "Comment on selected text"
@@ -16415,11 +16416,10 @@ msgstr "取消关联任务"
 msgid "Shorten comment"
 msgstr "缩短批注"
 
-#: src/components/chat/AssistantSelectionToolbar.tsx
-msgid "Shorten selection"
-msgstr "缩短选择"
+#~ msgid "Shorten selection"
+#~ msgstr "缩短选择"
 
-#: src/components/chat/AssistantSelectionToolbar.tsx
+#: src/components/chat/AssistantSelectionContextMenu.tsx
 msgid "Cite"
 msgstr "引用"
 
@@ -19609,3 +19609,7 @@ msgstr "无法保存分组规则"
 #: src/components/settings/ProjectSettingsPanel.tsx
 msgid "Grouping rule decides how each checkout joins project groups in the sidebar. Changing it can move a checkout to a different project."
 msgstr "分组规则决定每个检出目录如何加入侧边栏的项目分组。更改规则可能会将检出目录移到其他项目中。"
+
+#: src/components/chat/AssistantSelectionContextMenu.tsx
+msgid "Unable to complete selection action"
+msgstr "无法完成所选内容的操作"

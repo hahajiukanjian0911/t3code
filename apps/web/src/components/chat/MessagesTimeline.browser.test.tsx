@@ -1,7 +1,8 @@
 import { flushSync } from "react-dom";
 import { AudioPreview } from "../files/AudioPreview";
-import { cdp, page } from "vite-plus/test/browser";
+import { cdp, page, userEvent } from "vite-plus/test/browser";
 import {
+  ASSISTANT_CITATION_MAX_TEXT_LENGTH,
   ComposerContextId,
   EnvironmentId,
   MessageId,
@@ -653,6 +654,92 @@ const CITATION_REQUEST = {
 } satisfies NonNullable<TimelineProps["citationRequest"]>;
 
 describe("MessagesTimeline citations", () => {
+  it("offers citations in the context menu without a selection popup", async () => {
+    const onCite = vi.fn<NonNullable<TimelineProps["onCiteAssistantText"]>>(() => true);
+    await using screen = await renderTimeline(
+      [message("Select this **answer** to cite it.", { role: "assistant" }, "selected")],
+      { onCiteAssistantText: onCite },
+    );
+    const answer = screen.getByText("Select this answer to cite it.");
+    using clipboard = vi.spyOn(navigator.clipboard, "write").mockResolvedValue();
+    await expect.element(answer).toBeVisible();
+    // Let the virtual list finish enabling pointer interaction before freezing its clock.
+    await userEvent.click(answer);
+    const paragraph = answer.element();
+    const selection = window.getSelection()!;
+    {
+      using _timers = fakeTimers();
+      paragraph.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, isPrimary: true, button: 0 }),
+      );
+      const range = document.createRange();
+      range.selectNodeContents(paragraph);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      paragraph.dispatchEvent(
+        new PointerEvent("pointerup", { bubbles: true, isPrimary: true, button: 0 }),
+      );
+      paragraph.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+      await act(() => vi.advanceTimersByTimeAsync(600));
+      expect(document.querySelector('[aria-label="Cite selection in composer"]')).toBeNull();
+    }
+    expect(selection.toString()).toBe("Select this answer to cite it.");
+    await userEvent.click(answer, { button: "right" });
+    await expect.element(page.getByRole("menuitem", { name: "Cite", exact: true })).toBeVisible();
+    await expect.element(page.getByRole("menuitem", { name: "Copy", exact: true })).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    await expect.element(page.getByRole("menu")).not.toBeInTheDocument();
+    expect(onCite).not.toHaveBeenCalled();
+    expect(selection.toString()).toBe("Select this answer to cite it.");
+
+    await userEvent.click(answer, { button: "right" });
+    await userEvent.click(page.getByRole("menuitem", { name: "Copy", exact: true }));
+    await vi.waitFor(() => expect(clipboard).toHaveBeenCalledOnce());
+    const copied = clipboard.mock.calls[0]![0][0]!;
+    expect(await (await copied.getType("text/plain")).text()).toBe(
+      "Select this **answer** to cite it.",
+    );
+    expect(await (await copied.getType("text/html")).text()).toContain("<strong>answer</strong>");
+    expect(selection.toString()).toBe("Select this answer to cite it.");
+
+    await userEvent.click(answer, { button: "right" });
+    await userEvent.click(page.getByRole("menuitem", { name: "Cite", exact: true }));
+    expect(onCite).toHaveBeenCalledOnce();
+    expect(onCite.mock.calls[0]).toEqual([
+      expect.objectContaining({
+        messageId: "selected",
+        text: "Select this answer to cite it.",
+        start: 0,
+        end: 30,
+      }),
+      expect.objectContaining({ source: expect.any(HTMLElement), range: expect.any(Range) }),
+    ]);
+    expect(selection.isCollapsed).toBe(true);
+  });
+
+  it("keeps copying available when a selected response is too long to cite", async () => {
+    const onCite = vi.fn(() => true);
+    const text = "a".repeat(ASSISTANT_CITATION_MAX_TEXT_LENGTH + 1);
+    await using screen = await renderTimeline(
+      [message(text, { role: "assistant" }, "long-selection")],
+      { onCiteAssistantText: onCite },
+    );
+    const answer = screen.getByText(text.trim());
+    await userEvent.click(answer);
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.selectNodeContents(answer.element());
+    selection.removeAllRanges();
+    selection.addRange(range);
+    await userEvent.click(answer, { button: "right" });
+    await expect
+      .element(page.getByRole("menuitem", { name: "Selection is too long to cite" }))
+      .toBeDisabled();
+    await expect.element(page.getByRole("menuitem", { name: "Copy", exact: true })).toBeEnabled();
+    await userEvent.keyboard("{Escape}");
+    expect(onCite).not.toHaveBeenCalled();
+  });
+
   it("lands a citation present at mount under StrictMode", async () => {
     await using _screen = await renderElement(
       <StrictMode>
