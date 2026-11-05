@@ -1,4 +1,5 @@
 import { parse } from "@babel/parser";
+import * as Schema from "effect/Schema";
 import type { HeuristicFunc } from "wuchale";
 
 type Node = { type: string; [key: string]: unknown };
@@ -10,7 +11,10 @@ const children = (node: Node): Node[] =>
   );
 
 /** Reject unbound generated translation variables before they can reach a client. */
-class InvalidTranslationContextError extends Error {}
+class InvalidTranslationContextError extends Schema.TaggedError<
+  InvalidTranslationContextError,
+  { readonly brand: unique symbol }
+>()("InvalidTranslationContextError", { message: Schema.String }) {}
 
 export function assertTranslationContextBindings(
   source: string,
@@ -50,9 +54,9 @@ export function assertTranslationContextBindings(
       generated.has(node.name) &&
       !inScope.has(node.name)
     ) {
-      throw new InvalidTranslationContextError(
-        `Unbound generated translation variable: ${node.name}.`,
-      );
+      throw new InvalidTranslationContextError({
+        message: `Unbound generated translation variable: ${node.name}.`,
+      });
     }
     for (const child of children(node)) visit(child, inScope);
   };

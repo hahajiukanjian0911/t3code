@@ -1204,6 +1204,7 @@ msgstr "提交 {0}"
 
 #: src/components/DiffPanel.tsx
 #: src/components/DiffPanel.tsx
+#: src/components/GitActionsControl.tsx
 msgid "Uncommitted"
 msgstr "未提交"
 
@@ -1415,7 +1416,7 @@ msgstr "尚无已完成的轮次。"
 msgid "Checking file access..."
 msgstr "正在检查文件访问权限…"
 
-#. 0: isGitSelection && selectedGitSource?.files ? " Totals include all changes." \\: ""
+#. 0: isGitSelection && selectedGitSource?.files && !preview?.incomplete ? " Totals include all changes." \\: ""
 #: src/components/DiffPanel.tsx
 msgid "This preview exceeds the size limit. Changes shown are incomplete. {0}"
 msgstr "此预览超出大小限制，显示的更改不完整。{0}"
@@ -3870,9 +3871,6 @@ msgstr "为引用添加批注"
 msgid "Selection is too long to cite"
 msgstr "所选内容过长，无法引用"
 
-#~ msgid "Cite selection in composer"
-#~ msgstr "在输入框中引用所选内容"
-
 #: src/components/chat/AssistantCitationCommentEditor.tsx
 msgid "Comment on selected text"
 msgstr "批注所选文本"
@@ -5470,10 +5468,12 @@ msgid "Could not copy the request"
 msgstr "无法复制请求"
 
 #: src/components/chat/ThreadErrorBanner.tsx
+#: src/components/chat/UsageLimitRecoveryBanner.tsx
 msgid "ChatGPT usage limit reached"
 msgstr "已达到 ChatGPT 使用上限"
 
 #: src/components/chat/ThreadErrorBanner.tsx
+#: src/components/chat/UsageLimitRecoveryBanner.tsx
 msgid "Copy request for admin"
 msgstr "复制给管理员的请求"
 
@@ -10546,7 +10546,7 @@ msgstr "无法撤销客户端访问"
 msgid "Revoked 1 other client"
 msgstr "已撤销另外 1 个客户端"
 
-#. 0: revokedCount
+#. 0: result.value
 #: src/components/settings/ConnectionsSettings.tsx
 msgid "Revoked {0} clients"
 msgstr "已撤销 {0} 个客户端"
@@ -12029,6 +12029,7 @@ msgstr "项目名称不能为空"
 msgid "Remove checkout {0}"
 msgstr "移除检出 {0}"
 
+#: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ProjectSettingsPanel.tsx
 #: src/components/settings/ProviderInstanceCard.tsx
 #: src/components/settings/ProviderSetupSection.tsx
@@ -13776,6 +13777,7 @@ msgid "Applying settings for"
 msgstr "正在应用设置，目标为"
 
 #: src/components/cloud/CloudEnvironmentConnectList.tsx
+#: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/SettingsScopeSentence.tsx
 msgid "Offline"
 msgstr "离线"
@@ -16416,9 +16418,6 @@ msgstr "取消关联任务"
 msgid "Shorten comment"
 msgstr "缩短批注"
 
-#~ msgid "Shorten selection"
-#~ msgstr "缩短选择"
-
 #: src/components/chat/AssistantSelectionContextMenu.tsx
 msgid "Cite"
 msgstr "引用"
@@ -16674,10 +16673,6 @@ msgstr "恢复分支"
 #: src/components/chat/ThreadErrorBanner.tsx
 msgid "You've reached your workspace's limit for using your ChatGPT plan in other apps. Copy a request to ask your workspace admin for increased usage limits."
 msgstr "你已达到工作区对其他应用使用 ChatGPT 套餐的限制。复制请求，向工作区管理员申请提高使用上限。"
-
-#: src/components/chat/ThreadErrorBanner.tsx
-msgid "Review your usage settings in ChatGPT."
-msgstr "在 ChatGPT 中检查用量设置。"
 
 #: src/components/chat/ThreadRelationshipsControl.tsx
 msgid "Complete a run in this fork before merging it back"
@@ -19613,3 +19608,31 @@ msgstr "分组规则决定每个检出目录如何加入侧边栏的项目分组
 #: src/components/chat/AssistantSelectionContextMenu.tsx
 msgid "Unable to complete selection action"
 msgstr "无法完成所选内容的操作"
+
+#: src/components/DiffPanel.tsx
+msgid "Showing tracked changes. Untracked changes could not be loaded. Refresh to retry."
+msgstr "已显示已跟踪的更改。无法加载未跟踪的更改，请刷新重试。"
+
+#: src/components/DiffPanel.tsx
+msgid "Showing tracked changes. Checking untracked files..."
+msgstr "已显示已跟踪的更改，正在检查未跟踪文件…"
+
+#: src/components/sidebar/SidebarThreadRow.tsx
+msgid "Setting up"
+msgstr "正在准备"
+
+#: src/components/chat/UsageLimitRecoveryBanner.tsx
+msgid "You've reached your workspace's limit for using your ChatGPT plan in other apps."
+msgstr "你已达到工作区对其他应用使用 ChatGPT 套餐的限制。"
+
+#: src/components/settings/ConnectionsSettings.tsx
+msgid "Showing access for"
+msgstr "正在显示访问权限，目标为"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Clones go to github.com/owner/repo under the folder above, like ghq."
+msgstr "克隆的仓库会按 github.com/owner/repo 存放在上述文件夹下，与 ghq 相同。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Clone into host folders"
+msgstr "按主机分目录克隆"

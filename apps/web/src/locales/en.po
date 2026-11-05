@@ -1204,6 +1204,7 @@ msgstr "Commit {0}"
 
 #: src/components/DiffPanel.tsx
 #: src/components/DiffPanel.tsx
+#: src/components/GitActionsControl.tsx
 msgid "Uncommitted"
 msgstr "Uncommitted"
 
@@ -1415,7 +1416,7 @@ msgstr "No completed turns yet."
 msgid "Checking file access..."
 msgstr "Checking file access..."
 
-#. 0: isGitSelection && selectedGitSource?.files ? " Totals include all changes." \\: ""
+#. 0: isGitSelection && selectedGitSource?.files && !preview?.incomplete ? " Totals include all changes." \\: ""
 #: src/components/DiffPanel.tsx
 msgid "This preview exceeds the size limit. Changes shown are incomplete. {0}"
 msgstr "This preview exceeds the size limit. Changes shown are incomplete. {0}"
@@ -3870,9 +3871,6 @@ msgstr "Add comment to citation"
 msgid "Selection is too long to cite"
 msgstr "Selection is too long to cite"
 
-#~ msgid "Cite selection in composer"
-#~ msgstr "Cite selection in composer"
-
 #: src/components/chat/AssistantCitationCommentEditor.tsx
 msgid "Comment on selected text"
 msgstr "Comment on selected text"
@@ -5470,10 +5468,12 @@ msgid "Could not copy the request"
 msgstr "Could not copy the request"
 
 #: src/components/chat/ThreadErrorBanner.tsx
+#: src/components/chat/UsageLimitRecoveryBanner.tsx
 msgid "ChatGPT usage limit reached"
 msgstr "ChatGPT usage limit reached"
 
 #: src/components/chat/ThreadErrorBanner.tsx
+#: src/components/chat/UsageLimitRecoveryBanner.tsx
 msgid "Copy request for admin"
 msgstr "Copy request for admin"
 
@@ -10546,7 +10546,7 @@ msgstr "Could not revoke client access"
 msgid "Revoked 1 other client"
 msgstr "Revoked 1 other client"
 
-#. 0: revokedCount
+#. 0: result.value
 #: src/components/settings/ConnectionsSettings.tsx
 msgid "Revoked {0} clients"
 msgstr "Revoked {0} clients"
@@ -12029,6 +12029,7 @@ msgstr "Project title cannot be empty"
 msgid "Remove checkout {0}"
 msgstr "Remove checkout {0}"
 
+#: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ProjectSettingsPanel.tsx
 #: src/components/settings/ProviderInstanceCard.tsx
 #: src/components/settings/ProviderSetupSection.tsx
@@ -13776,6 +13777,7 @@ msgid "Applying settings for"
 msgstr "Applying settings for"
 
 #: src/components/cloud/CloudEnvironmentConnectList.tsx
+#: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/SettingsScopeSentence.tsx
 msgid "Offline"
 msgstr "Offline"
@@ -16416,9 +16418,6 @@ msgstr "Unlink from thread"
 msgid "Shorten comment"
 msgstr "Shorten comment"
 
-#~ msgid "Shorten selection"
-#~ msgstr "Shorten selection"
-
 #: src/components/chat/AssistantSelectionContextMenu.tsx
 msgid "Cite"
 msgstr "Cite"
@@ -16674,10 +16673,6 @@ msgstr "Restore branch"
 #: src/components/chat/ThreadErrorBanner.tsx
 msgid "You've reached your workspace's limit for using your ChatGPT plan in other apps. Copy a request to ask your workspace admin for increased usage limits."
 msgstr "You've reached your workspace's limit for using your ChatGPT plan in other apps. Copy a request to ask your workspace admin for increased usage limits."
-
-#: src/components/chat/ThreadErrorBanner.tsx
-msgid "Review your usage settings in ChatGPT."
-msgstr "Review your usage settings in ChatGPT."
 
 #: src/components/chat/ThreadRelationshipsControl.tsx
 msgid "Complete a run in this fork before merging it back"
@@ -19613,3 +19608,31 @@ msgstr "Grouping rule decides how each checkout joins project groups in the side
 #: src/components/chat/AssistantSelectionContextMenu.tsx
 msgid "Unable to complete selection action"
 msgstr "Unable to complete selection action"
+
+#: src/components/DiffPanel.tsx
+msgid "Showing tracked changes. Untracked changes could not be loaded. Refresh to retry."
+msgstr "Showing tracked changes. Untracked changes could not be loaded. Refresh to retry."
+
+#: src/components/DiffPanel.tsx
+msgid "Showing tracked changes. Checking untracked files..."
+msgstr "Showing tracked changes. Checking untracked files..."
+
+#: src/components/sidebar/SidebarThreadRow.tsx
+msgid "Setting up"
+msgstr "Setting up"
+
+#: src/components/chat/UsageLimitRecoveryBanner.tsx
+msgid "You've reached your workspace's limit for using your ChatGPT plan in other apps."
+msgstr "You've reached your workspace's limit for using your ChatGPT plan in other apps."
+
+#: src/components/settings/ConnectionsSettings.tsx
+msgid "Showing access for"
+msgstr "Showing access for"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Clones go to github.com/owner/repo under the folder above, like ghq."
+msgstr "Clones go to github.com/owner/repo under the folder above, like ghq."
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Clone into host folders"
+msgstr "Clone into host folders"
