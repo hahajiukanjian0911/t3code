@@ -251,6 +251,8 @@ import { projectEnvironment } from "../../state/projects";
 import {
   needsWorkspaceBasenameLookup,
   pickWorkspaceBasenameMatch,
+  pickWorkspacePathMatch,
+  workspaceFileLookupQuery,
   WORKSPACE_BASENAME_LOOKUP_LIMIT,
 } from "@t3tools/client-runtime/workspace-basename-lookup";
 import {
@@ -2923,9 +2925,13 @@ export const ThreadFeed = memo(function ThreadFeed({
 
     const presentation = resolveMarkdownLinkPresentation(href);
     if (presentation.kind === "file") {
-      const path = resolveFileLinkPath(props.workspaceRoot, presentation.path);
+      const workspaceRoot = props.workspaceRoot;
+      const path = resolveFileLinkPath(workspaceRoot, presentation.path);
       if (path === null) return;
-      const relativePath = resolveWorkspaceRelativeFilePath(props.workspaceRoot, path);
+      const relativePath = resolveWorkspaceRelativeFilePath(workspaceRoot, path);
+      const query = workspaceRoot
+        ? workspaceFileLookupQuery(presentation.path, workspaceRoot)
+        : null;
       const openAt = (target: string) => {
         if (request.signal.aborted) return;
         void Haptics.selectionAsync();
@@ -2937,20 +2943,19 @@ export const ThreadFeed = memo(function ThreadFeed({
         });
       };
       if (
-        props.workspaceRoot &&
+        workspaceRoot &&
         relativePath &&
-        !/[\\/]$/.test(presentation.path) &&
-        needsWorkspaceBasenameLookup(relativePath) &&
+        query !== null &&
         readEnvironmentScope(props.environmentId, AuthFilesystemReadScope)
       ) {
-        const originalPath = resolveWorkspaceFilePath(props.workspaceRoot, relativePath);
+        const originalPath = resolveWorkspaceFilePath(workspaceRoot, relativePath);
         void executeAtomQuery(
           appAtomRegistry,
           projectEnvironment.searchEntries({
             environmentId: props.environmentId,
             input: {
-              cwd: props.workspaceRoot,
-              query: relativePath,
+              cwd: workspaceRoot,
+              query,
               kind: "file",
               limit: WORKSPACE_BASENAME_LOOKUP_LIMIT,
             },
@@ -2960,7 +2965,9 @@ export const ThreadFeed = memo(function ThreadFeed({
           (result) => {
             const match =
               result._tag === "Success"
-                ? pickWorkspaceBasenameMatch(relativePath, result.value.entries)
+                ? needsWorkspaceBasenameLookup(relativePath)
+                  ? pickWorkspaceBasenameMatch(relativePath, result.value.entries)
+                  : pickWorkspacePathMatch(query, workspaceRoot, result.value)
                 : null;
             if (!match || match === relativePath) {
               openAt(relativePath);
@@ -2977,7 +2984,10 @@ export const ThreadFeed = memo(function ThreadFeed({
             ).then(
               (metadata) =>
                 openAt(
-                  metadata._tag === "Success" && metadata.value?.kind !== "directory"
+                  metadata._tag === "Success" &&
+                    (needsWorkspaceBasenameLookup(relativePath)
+                      ? metadata.value?.kind !== "directory"
+                      : metadata.value === null)
                     ? match
                     : relativePath,
                 ),

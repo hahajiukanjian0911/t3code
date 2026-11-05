@@ -329,6 +329,26 @@ describe("ChatMarkdown workspace file opens", () => {
     threadId: ThreadId.make("thread"),
   };
 
+  it("opens a uniquely matching abbreviated path only when the literal file is missing", async () => {
+    setup();
+    const path = "html-visual-baseline/SKILL.md";
+    const match = `shared/skills/${path}`;
+    workspaceSearch.mockResolvedValue(
+      AsyncResult.success({ entries: [{ path: match, kind: "file" }], truncated: false }),
+    );
+    await using screen = await renderText(`\`${path}:12\``, { threadRef });
+    using openFile = vi
+      .spyOn(useRightPanelStore.getState(), "openFile")
+      .mockImplementation(() => {});
+
+    await act(async () => screen.container.querySelector("a")!.click());
+    await vi.waitFor(() => expect(openFile).toHaveBeenLastCalledWith(threadRef, match, 12));
+
+    filesystemMetadata.mockResolvedValue(AsyncResult.success({ entries: [{ kind: "file" }] }));
+    await act(async () => screen.container.querySelector("a")!.click());
+    await vi.waitFor(() => expect(openFile).toHaveBeenLastCalledWith(threadRef, path, 12));
+  });
+
   it("keeps a newer absolute file open when an earlier repo-relative lookup finishes", async () => {
     setup();
     const result = AsyncResult.success({

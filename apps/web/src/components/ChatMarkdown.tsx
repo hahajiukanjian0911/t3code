@@ -168,9 +168,9 @@ import { filesystemEnvironment } from "../state/filesystem";
 import {
   claimWorkspaceBasenameLookup,
   needsWorkspaceBasenameLookup,
-  pickStrippedWorkspaceMatch,
   pickWorkspaceBasenameMatch,
-  stripRepeatedWorkspacePrefix,
+  pickWorkspacePathMatch,
+  workspaceFileLookupQuery,
   WORKSPACE_BASENAME_LOOKUP_LIMIT,
 } from "@t3tools/client-runtime/workspace-basename-lookup";
 import { resolvePullRequestPreviewTarget } from "@t3tools/client-runtime/change-request-links";
@@ -768,32 +768,29 @@ function useChatMarkdownState({
       return null;
     }
     const isBasename = needsWorkspaceBasenameLookup(workspaceRelativePath);
-    const strippedPath = isBasename
-      ? null
-      : stripRepeatedWorkspacePrefix(workspaceRelativePath, cwd);
-    if (!isBasename && strippedPath === null) return null;
+    const query = workspaceFileLookupQuery(workspaceRelativePath, cwd);
+    if (query === null) return null;
+    if (!isBasename) {
+      const metadata = await getFilesystemMetadata({
+        environmentId,
+        input: { paths: [resolveWorkspaceFilePath(workspaceRelativePath, cwd)] },
+      });
+      if (metadata._tag !== "Success" || metadata.value.entries[0] !== null) return null;
+    }
     const result = await searchProjectEntries({
       environmentId,
       input: {
         cwd,
-        query: strippedPath ?? workspaceRelativePath,
+        query,
         limit: WORKSPACE_BASENAME_LOOKUP_LIMIT,
         kind: "file",
       },
     });
     if (result._tag !== "Success") return null;
-    if (strippedPath === null) {
+    if (isBasename) {
       return pickWorkspaceBasenameMatch(workspaceRelativePath, result.value.entries);
     }
-    const match = pickStrippedWorkspaceMatch(strippedPath, cwd, result.value.entries);
-    if (match === null) return null;
-    // Search can be truncated or still scanning, so it cannot rule out the
-    // literal path. Check the host before redirecting to the stripped match.
-    const metadata = await getFilesystemMetadata({
-      environmentId,
-      input: { paths: [resolveWorkspaceFilePath(workspaceRelativePath, cwd)] },
-    });
-    return metadata._tag === "Success" && metadata.value.entries[0] === null ? match : null;
+    return pickWorkspacePathMatch(query, cwd, result.value);
   };
   const openFileInPanel = (fileLinkMeta: MarkdownFileLinkMeta, panelPath: string) => {
     if (!threadRef) return;
@@ -804,8 +801,7 @@ function useChatMarkdownState({
     if (
       fileLinkMeta.workspaceLookupPath === null ||
       !cwd ||
-      (!needsWorkspaceBasenameLookup(panelPath) &&
-        stripRepeatedWorkspacePrefix(panelPath, cwd) === null)
+      workspaceFileLookupQuery(fileLinkMeta.workspaceLookupPath, cwd) === null
     ) {
       openAt(panelPath);
       return;

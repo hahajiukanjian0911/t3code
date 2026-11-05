@@ -49,7 +49,7 @@ export function pickWorkspaceBasenameMatch(
 }
 
 // Repository-relative paths can repeat the project's suffix in subfolder projects.
-export function stripRepeatedWorkspacePrefix(relativePath: string, cwd: string): string | null {
+function stripRepeatedWorkspacePrefix(relativePath: string, cwd: string): string | null {
   if (isAbsolutePath(relativePath)) return null;
   const pathSegments = relativePath.split(/[\\/]+/);
   const cwdSegments = cwd.split(/[\\/]+/).filter(Boolean);
@@ -65,7 +65,37 @@ export function stripRepeatedWorkspacePrefix(relativePath: string, cwd: string):
   return null;
 }
 
-export function pickStrippedWorkspaceMatch(
+export function workspaceFileLookupQuery(relativePath: string, cwd: string): string | null {
+  if (isAbsolutePath(relativePath) || /^~[\\/]/.test(relativePath)) return null;
+  const segments = relativePath.split(/[\\/]/);
+  if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) {
+    return null;
+  }
+  const query = stripRepeatedWorkspacePrefix(relativePath, cwd) ?? segments.join("/");
+  return query.length <= 256 ? query : null;
+}
+
+export function pickWorkspacePathMatch(
+  query: string,
+  cwd: string,
+  result: { readonly entries: ReadonlyArray<WorkspaceEntryCandidate>; readonly truncated: boolean },
+): string | null {
+  const exact = pickStrippedWorkspaceMatch(query, cwd, result.entries);
+  if (exact !== null) return exact;
+  // An incomplete index cannot prove that a shortened path has only one match.
+  if (result.truncated) return null;
+  const key = (path: string) => {
+    const normalized = path.replaceAll("\\", "/");
+    return isWindowsAbsolutePath(cwd) ? normalized.toLowerCase() : normalized;
+  };
+  const suffix = `/${key(query)}`;
+  const matches = result.entries.filter(
+    (entry) => entry.kind === "file" && key(entry.path).endsWith(suffix),
+  );
+  return matches.length === 1 ? (matches[0]?.path ?? null) : null;
+}
+
+function pickStrippedWorkspaceMatch(
   strippedPath: string,
   cwd: string,
   entries: ReadonlyArray<WorkspaceEntryCandidate>,
