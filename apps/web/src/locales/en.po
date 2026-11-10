@@ -340,14 +340,10 @@ msgid "Close (Esc)"
 msgstr "Close (Esc)"
 
 #: src/components/AppSidebarLayout.tsx
+#: src/components/AppSidebarLayout.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 msgid "Toggle main sidebar"
 msgstr "Toggle main sidebar"
-
-#. 0: shortcutLabel ? ` (${shortcutLabel})` \\: ""
-#: src/components/AppSidebarLayout.tsx
-msgid "Toggle main sidebar{0}"
-msgstr "Toggle main sidebar{0}"
 
 #: src/components/AppSidebarLayout.tsx
 #: src/i18n/staticUiLabels.ts
@@ -20941,3 +20937,12 @@ msgstr "The word or phrase you say to flag a correction, like “sorry” or “
 #: src/i18n/staticUiLabels.ts
 msgid "Voice"
 msgstr "Voice"
+
+#: src/components/AppSidebarLayout.tsx
+#: src/components/AppSidebarLayout.tsx
+msgid "Pin main sidebar"
+msgstr "Pin main sidebar"
+
+#: src/components/ui/sidebar.tsx
+msgid "Pin Sidebar"
+msgstr "Pin Sidebar"

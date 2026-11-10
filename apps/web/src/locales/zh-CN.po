@@ -346,14 +346,10 @@ msgid "Close (Esc)"
 msgstr "关闭 (Esc)"
 
 #: src/components/AppSidebarLayout.tsx
+#: src/components/AppSidebarLayout.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 msgid "Toggle main sidebar"
 msgstr "切换主侧栏"
-
-#. 0: shortcutLabel ? ` (${shortcutLabel})` \\: ""
-#: src/components/AppSidebarLayout.tsx
-msgid "Toggle main sidebar{0}"
-msgstr "切换主侧栏{0}"
 
 #: src/components/AppSidebarLayout.tsx
 #: src/i18n/staticUiLabels.ts
@@ -20947,3 +20943,12 @@ msgstr "用于标记纠正的词语或短语，例如「抱歉」「刚才那句
 #: src/i18n/staticUiLabels.ts
 msgid "Voice"
 msgstr "语音"
+
+#: src/components/AppSidebarLayout.tsx
+#: src/components/AppSidebarLayout.tsx
+msgid "Pin main sidebar"
+msgstr "固定主侧边栏"
+
+#: src/components/ui/sidebar.tsx
+msgid "Pin Sidebar"
+msgstr "固定侧边栏"

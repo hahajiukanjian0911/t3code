@@ -1,7 +1,7 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { PanelLeft, PanelLeftClose } from "lucide";
+import { PanelLeft, PanelLeftClose, Pin } from "lucide";
 import * as React from "react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -26,6 +26,7 @@ import {
 import { resolveSidebarState, type ResponsiveSidebarState } from "./sidebarState";
 import * as Schema from "effect/Schema";
 import { announceSidebarVisibility } from "~/lib/accessibilityAnnouncements";
+import { observeSidebarHoverReveal } from "./sidebarHoverReveal";
 
 const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "calc(100vw - var(--spacing) * 3)";
@@ -36,7 +37,9 @@ const SIDEBAR_TITLEBAR_CONTROL_SIZE = "max-sm:[--workspace-titlebar-control-size
 type SidebarContextProps = {
   state: ResponsiveSidebarState;
   open: boolean;
+  peek: boolean;
   setOpen: (open: boolean) => void;
+  holdOpen: () => () => void;
   openMobile: boolean;
   mobileSheetMounted: boolean;
   setMobileSheetElement: (element: HTMLDivElement | null) => void;
@@ -95,8 +98,8 @@ function useSidebar() {
 }
 
 function useSidebarVisibility() {
-  const { isMobile, open, openMobile } = useSidebar();
-  return isMobile ? openMobile : open;
+  const { isMobile, open, openMobile, peek } = useSidebar();
+  return isMobile ? openMobile : open || peek;
 }
 
 // The `max-md` breakpoint, also read when a shortcut fires.
@@ -132,6 +135,7 @@ function moveFocusOutOfCollapsingSidebar() {
 interface SidebarOpenState {
   readonly open: boolean;
   readonly openMobile: boolean;
+  readonly peek: boolean;
 }
 
 /** Per-provider open state, kept outside React so shortcuts can toggle it at event time. */
@@ -139,21 +143,31 @@ function createSidebarOpenStore(defaultOpen: boolean, storageKey: string | undef
   let state: SidebarOpenState = {
     open: readStoredSidebarOpen(storageKey) ?? defaultOpen,
     openMobile: false,
+    peek: false,
   };
   const listeners = new Set<() => void>();
   const collapseListeners = new Set<() => void>();
-  const publish = (next: SidebarOpenState) => {
-    state = next;
+  const holds = new Set<symbol>();
+  const notify = () => {
     for (const listener of listeners) listener();
   };
+  const publish = (next: SidebarOpenState) => {
+    state = next;
+    notify();
+  };
+  const setPeek = (peek: boolean) => {
+    if (peek === state.peek || (peek && state.open)) return;
+    if (!peek) moveFocusOutOfCollapsingSidebar();
+    publish({ ...state, peek });
+  };
   const setOpen = (open: boolean) => {
-    if (!open && state.open) {
+    if (!open && (state.open || state.peek)) {
       for (const listener of collapseListeners) listener();
       moveFocusOutOfCollapsingSidebar();
     }
-    if (open !== state.open) {
+    if (open !== state.open || state.peek) {
       if (!isMobileViewport()) announceSidebarVisibility(open);
-      publish({ ...state, open });
+      publish({ ...state, open, peek: false });
     }
     if (storageKey) writeLocalStorageValue(storageKey, open, defaultOpen, Schema.Boolean);
   };
@@ -170,6 +184,16 @@ function createSidebarOpenStore(defaultOpen: boolean, storageKey: string | undef
     getSnapshot: () => state,
     setOpen,
     setOpenMobile,
+    setPeek,
+    isHeld: () => holds.size > 0,
+    holdOpen: () => {
+      const hold = Symbol();
+      holds.add(hold);
+      notify();
+      return () => {
+        if (holds.delete(hold)) notify();
+      };
+    },
     toggle: () => (isMobileViewport() ? setOpenMobile(!state.openMobile) : setOpen(!state.open)),
     onCollapse: (listener: () => void) => {
       collapseListeners.add(listener);
@@ -182,6 +206,7 @@ function createSidebarOpenStore(defaultOpen: boolean, storageKey: string | undef
 
 function SidebarProvider({
   defaultOpen = true,
+  hoverReveal = false,
   storageKey,
   className,
   style,
@@ -189,15 +214,22 @@ function SidebarProvider({
   ...props
 }: React.ComponentProps<"div"> & {
   defaultOpen?: boolean;
+  hoverReveal?: boolean;
   storageKey?: string;
 }) {
   const isMobile = useMediaQuery(SIDEBAR_MOBILE_QUERY);
   const [store] = React.useState(() => createSidebarOpenStore(defaultOpen, storageKey));
-  const { open, openMobile } = React.useSyncExternalStore(
+  const { open, openMobile, peek } = React.useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
     store.getSnapshot,
   );
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- observes pointer, focus and popup activity outside React while hover reveal is enabled
+  React.useEffect(() => {
+    if (!hoverReveal || isMobile || !wrapperRef.current) return;
+    return observeSidebarHoverReveal(wrapperRef.current, store);
+  }, [hoverReveal, isMobile, store]);
   const [mobileSheetMounted, setMobileSheetMounted] = React.useState(false);
   const setMobileSheetElement = (element: HTMLDivElement | null) => {
     setMobileSheetMounted(element !== null);
@@ -208,6 +240,8 @@ function SidebarProvider({
   const contextValue: SidebarContextProps = {
     isMobile,
     open,
+    peek: !isMobile && peek,
+    holdOpen: store.holdOpen,
     openMobile,
     mobileSheetMounted,
     setMobileSheetElement,
@@ -221,12 +255,13 @@ function SidebarProvider({
   return (
     <SidebarContext value={contextValue}>
       <div
+        ref={wrapperRef}
         className={cn(
           "group/sidebar-wrapper flex min-h-svh w-full",
           SIDEBAR_TITLEBAR_CONTROL_SIZE,
           className,
         )}
-        data-sidebar-state={state}
+        data-sidebar-state={peek && !isMobile ? "expanded" : state}
         data-slot="sidebar-wrapper"
         style={
           {
@@ -282,8 +317,10 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none";
   resizable?: boolean | SidebarResizableOptions;
 }) {
-  const { isMobile, state, openMobile, setOpenMobile, setMobileSheetElement } = useSidebar();
-  const offcanvasCollapsed = !isMobile && collapsible === "offcanvas" && state === "collapsed";
+  const { isMobile, state, peek, openMobile, setOpenMobile, setMobileSheetElement } = useSidebar();
+  const peeking = peek && side === "left" && collapsible === "offcanvas";
+  const offcanvasCollapsed =
+    !isMobile && collapsible === "offcanvas" && state === "collapsed" && !peeking;
 
   const resolvedResizable = resolveSidebarResizable({ collapsible, isMobile, resizable });
   const instanceContextValue: SidebarInstanceContextProps = { side, resizable: resolvedResizable };
@@ -356,6 +393,7 @@ function Sidebar({
         data-side={side}
         data-slot="sidebar"
         data-state={state}
+        data-peek={peeking ? "true" : undefined}
         data-variant={variant}
       >
         <div
@@ -373,10 +411,11 @@ function Sidebar({
         <div
           className={cn(
             "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) md:flex",
-            "[[data-panel-animations=true]_&]:transition-[left,right,width] [[data-panel-animations=true]_&]:[transition-duration:var(--panel-animation-duration)] [[data-panel-animations=true]_&]:ease-out",
+            "[[data-panel-animations=true]_&]:transition-[translate,width] [[data-panel-animations=true]_&]:[transition-duration:var(--panel-animation-duration)] [[data-panel-animations=true]_&]:ease-out motion-reduce:transition-none",
             side === "left"
-              ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-              : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+              ? "left-0 group-data-[collapsible=offcanvas]:-translate-x-full group-data-[peek=true]:translate-x-0"
+              : "right-0 group-data-[collapsible=offcanvas]:translate-x-full",
+            "group-data-[peek=true]:z-40 group-data-[peek=true]:shadow-[8px_0_24px_-12px_rgb(0_0_0/25%)]",
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
               : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
@@ -399,8 +438,8 @@ function Sidebar({
 }
 
 function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar();
-  const isOpen = useSidebarVisibility();
+  const { toggleSidebar, peek, isMobile, open, openMobile } = useSidebar();
+  const isOpen = isMobile ? openMobile : open;
 
   return (
     <Button
@@ -419,8 +458,8 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       variant="ghost"
       {...props}
     >
-      <MorphIcon className="size-4" icon={isOpen ? PanelLeftClose : PanelLeft} />
-      <span className="sr-only">Toggle Sidebar</span>
+      <MorphIcon className="size-4" icon={peek ? Pin : isOpen ? PanelLeftClose : PanelLeft} />
+      <span className="sr-only">{peek ? "Pin Sidebar" : "Toggle Sidebar"}</span>
     </Button>
   );
 }
@@ -754,7 +793,7 @@ function SidebarMenuButton({
   isActive?: boolean;
   tooltip?: string | React.ComponentProps<typeof TooltipPopup>;
 } & VariantProps<typeof sidebarMenuButtonVariants>) {
-  const { isMobile, state } = useSidebar();
+  const { isMobile, state, peek } = useSidebar();
 
   const defaultProps = {
     className: cn(sidebarMenuButtonVariants({ size, variant }), className),
@@ -787,7 +826,7 @@ function SidebarMenuButton({
       <TooltipTrigger render={buttonElement as React.ReactElement<Record<string, unknown>>} />
       <TooltipPopup
         align="center"
-        hidden={state !== "collapsed" || isMobile}
+        hidden={state !== "collapsed" || peek || isMobile}
         side="right"
         {...tooltip}
       />

@@ -1,5 +1,9 @@
 import { attachSidebarTree } from "../lib/sidebarTree";
-import { type EnvironmentId, type ScopedProjectRef } from "@t3tools/contracts";
+import {
+  type ContextMenuItem,
+  type EnvironmentId,
+  type ScopedProjectRef,
+} from "@t3tools/contracts";
 import type { EnvironmentServerConfig } from "@t3tools/client-runtime/connection";
 import { ThreadContextDragGhost } from "./chat/ThreadContextDragGhost";
 import {
@@ -911,7 +915,18 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
   } = useSidebarLookups();
   const delegatedUnderParent = useDelegatedUnderParent();
   const router = useRouter();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile, holdOpen } = useSidebar();
+  const showSidebarContextMenu = useStableCallback(
+    async <T extends string>(
+      items: readonly ContextMenuItem<T>[],
+      position: { x: number; y: number },
+    ) => {
+      const api = readLocalApi();
+      if (!api) return null;
+      const release = holdOpen();
+      return api.contextMenu.show(items, position).finally(release);
+    },
+  );
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const confirmThreadDelete = useClientSettings((s) => s.confirmThreadDelete);
   const confirmThreadArchive = useClientSettings((s) => s.confirmThreadArchive);
@@ -1257,7 +1272,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
       if (!api) return;
       void (async () => {
         const clicked = await settlePromise(() =>
-          api.contextMenu.show(
+          showSidebarContextMenu(
             [
               { id: "new-thread", label: "New thread" },
               { id: "copy-path", label: "Copy path" },
@@ -2321,7 +2336,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
         selectedThreads[0]!.environmentId,
       );
       const clicked = await settlePromise(() =>
-        api.contextMenu.show(
+        showSidebarContextMenu(
           [
             ...(unpinMenuItem
               ? [{ ...unpinMenuItem, disabled: !canOperateThreads(pinnedSelectedThreads) }]
@@ -2547,7 +2562,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
           session.worktreePath ??
           projectByKey.get(`${session.environmentId}:${session.projectId}`)?.workspaceRoot;
         const clicked = await settlePromise(() =>
-          api.contextMenu.show(
+          showSidebarContextMenu(
             buildDraftActionMenuItems({
               hasPath: Boolean(workspacePath),
               hasBranch: Boolean(session.branch),
@@ -2621,7 +2636,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
             ),
           ) ?? null;
         const clicked = await settlePromise(() =>
-          api.contextMenu.show(
+          showSidebarContextMenu(
             buildThreadActionMenuItems({
               canOperate: readEnvironmentScope(
                 threadRef.environmentId,
