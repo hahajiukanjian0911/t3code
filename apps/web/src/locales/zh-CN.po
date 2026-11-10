@@ -5575,13 +5575,10 @@ msgstr "父 Agent"
 msgid "Fork"
 msgstr "分叉"
 
-#. 0: remoteChild.label; 1: threadRelationshipStatusLabel(status)
-#: src/components/chat/ThreadRelationshipsControl.tsx
-msgid "on {0} · {1}"
-msgstr "在 {0} 上 · {1}"
-
+#. 0: remoteChild.label
 #. 0: label
 #. 0: remote.label
+#: src/components/chat/ThreadRelationshipsControl.tsx
 #: src/components/chat/ThreadRelationshipsControl.tsx
 #: src/components/chat/V2LifecycleRow.tsx
 msgid "on {0}"
@@ -20312,11 +20309,6 @@ msgstr "该位置的 T3 Code 将重启，约 {0} 分钟后恢复。"
 msgid "Could not reclaim space on {0}"
 msgstr "无法回收 {0} 上的空间"
 
-#. 0: minutes
-#: src/components/settings/DatabaseStorageNotice.tsx
-msgid "Restarts T3 Code there. It is offline for about {0} min."
-msgstr "将重启该位置的 T3 Code，约离线 {0} 分钟。"
-
 #. 0: status.reclaimFailure
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "The last attempt failed: {0}"
@@ -20330,11 +20322,6 @@ msgstr "回收"
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "Reclaim {0} on {1}?"
 msgstr "回收 {1} 上的 {0}？"
-
-#. 0: label; 1: minutes
-#: src/components/settings/DatabaseStorageNotice.tsx
-msgid "T3 Code on {0} stops, rebuilds its database, and starts again. It is offline for about {1} min. Running agents stop when it restarts."
-msgstr "{0} 上的 T3 Code 将停止、重建数据库后重新启动，约离线 {1} 分钟。重启时，运行中的 Agent 会停止。"
 
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "Restart and reclaim"
@@ -20952,3 +20939,13 @@ msgstr "固定主侧边栏"
 #: src/components/ui/sidebar.tsx
 msgid "Pin Sidebar"
 msgstr "固定侧边栏"
+
+#. 0: minutes
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Restarts T3 Code there. It will be offline for about {0} min."
+msgstr "将重启该位置的 T3 Code，约离线 {0} 分钟。"
+
+#. 0: label; 1: minutes
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "T3 Code on {0} stops, rebuilds its database, and starts again. It will be offline for about {1} min. Running agents stop when it restarts."
+msgstr "{0} 上的 T3 Code 将停止、重建数据库后重新启动，约离线 {1} 分钟。重启时，运行中的 Agent 会停止。"

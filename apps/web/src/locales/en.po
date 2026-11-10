@@ -5569,13 +5569,10 @@ msgstr "Parent agent"
 msgid "Fork"
 msgstr "Fork"
 
-#. 0: remoteChild.label; 1: threadRelationshipStatusLabel(status)
-#: src/components/chat/ThreadRelationshipsControl.tsx
-msgid "on {0} · {1}"
-msgstr "on {0} · {1}"
-
+#. 0: remoteChild.label
 #. 0: label
 #. 0: remote.label
+#: src/components/chat/ThreadRelationshipsControl.tsx
 #: src/components/chat/ThreadRelationshipsControl.tsx
 #: src/components/chat/V2LifecycleRow.tsx
 msgid "on {0}"
@@ -20306,11 +20303,6 @@ msgstr "T3 Code there restarts and is back in about {0} min."
 msgid "Could not reclaim space on {0}"
 msgstr "Could not reclaim space on {0}"
 
-#. 0: minutes
-#: src/components/settings/DatabaseStorageNotice.tsx
-msgid "Restarts T3 Code there. It is offline for about {0} min."
-msgstr "Restarts T3 Code there. It is offline for about {0} min."
-
 #. 0: status.reclaimFailure
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "The last attempt failed: {0}"
@@ -20324,11 +20316,6 @@ msgstr "Reclaim"
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "Reclaim {0} on {1}?"
 msgstr "Reclaim {0} on {1}?"
-
-#. 0: label; 1: minutes
-#: src/components/settings/DatabaseStorageNotice.tsx
-msgid "T3 Code on {0} stops, rebuilds its database, and starts again. It is offline for about {1} min. Running agents stop when it restarts."
-msgstr "T3 Code on {0} stops, rebuilds its database, and starts again. It is offline for about {1} min. Running agents stop when it restarts."
 
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "Restart and reclaim"
@@ -20946,3 +20933,13 @@ msgstr "Pin main sidebar"
 #: src/components/ui/sidebar.tsx
 msgid "Pin Sidebar"
 msgstr "Pin Sidebar"
+
+#. 0: minutes
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Restarts T3 Code there. It will be offline for about {0} min."
+msgstr "Restarts T3 Code there. It will be offline for about {0} min."
+
+#. 0: label; 1: minutes
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "T3 Code on {0} stops, rebuilds its database, and starts again. It will be offline for about {1} min. Running agents stop when it restarts."
+msgstr "T3 Code on {0} stops, rebuilds its database, and starts again. It will be offline for about {1} min. Running agents stop when it restarts."
