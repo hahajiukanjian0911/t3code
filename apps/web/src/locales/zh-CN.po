@@ -7,6 +7,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1\n"
 "X-Plurals-Order: other\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
 
 #: src/browser/BrowserDeviceToolbar.tsx
 msgid "Dimensions"
@@ -173,6 +179,7 @@ msgstr "仅显示前 {0} 个文件。"
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/CaptureShortcutConfig.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
 #: src/components/settings/CodexSetupSection.tsx
 #: src/components/settings/CodexSetupSection.tsx
 #: src/components/settings/CodexSetupSection.tsx
@@ -182,6 +189,7 @@ msgstr "仅显示前 {0} 个文件。"
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/CustomModelEditor.tsx
+#: src/components/settings/DatabaseStorageNotice.tsx
 #: src/components/settings/DeviceHostEditor.tsx
 #: src/components/settings/EasDeviceHostEditor.tsx
 #: src/components/settings/IntegrationsSettings.tsx
@@ -198,6 +206,8 @@ msgstr "仅显示前 {0} 个文件。"
 #: src/components/settings/SimlockDeviceHostEditor.tsx
 #: src/components/settings/SnapShotSettings.tsx
 #: src/components/settings/SourceControlAppSignInSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/settings/ThemeEditorPanel.tsx
 #: src/components/settings/ThemeEditorPanel.tsx
 #: src/components/settings/ThemeImportDialog.tsx
@@ -278,6 +288,7 @@ msgstr "浏览器对话框"
 
 #: src/browser/ServerBrowserSurface.tsx
 #: src/components/auth/PairingRouteSurface.tsx
+#: src/components/chat/VoiceInputSetup.tsx
 #: src/components/clerk/MobileClientsUserProfilePage.tsx
 #: src/components/cloud/CloudEnvironmentConnectList.tsx
 #: src/components/files/fileSurfaceChrome.tsx
@@ -322,7 +333,7 @@ msgstr "使用基础分支所跟踪的远程分支的最新提交，即使两者
 #: src/components/RightPanelTabs.tsx
 #: src/components/chat/HtmlRenderDialog.tsx
 #: src/components/files/AttachmentFilePreview.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/SnapShotSetupDialog.tsx
 #: src/components/ui/dialog.tsx
@@ -440,9 +451,7 @@ msgstr "工作区"
 #: src/components/promptLinks/NewThreadLinkView.tsx
 #: src/components/pullRequest/PullRequestsPage.tsx
 #: src/components/settings/ArchivedThreadsPanel.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
+#: src/components/settings/DatabaseStorageNotice.tsx
 #: src/components/settings/ProjectFaviconPickerDialog.tsx
 #: src/components/settings/ProjectSettingsPanel.tsx
 msgid "An error occurred."
@@ -512,6 +521,10 @@ msgstr "运行上下文：{0}"
 #: src/components/CommandPalette.tsx
 #: src/components/CommandPalette.tsx
 #: src/components/CommandPalette.tsx
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Projects"
 msgstr "项目"
@@ -838,6 +851,7 @@ msgstr "创建并添加"
 #: src/components/settings/ProviderAccentColorPicker.tsx
 #: src/components/settings/ProviderModelsSection.tsx
 #: src/components/settings/ProviderModelsSection.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Add"
 msgstr "添加"
 
@@ -951,11 +965,13 @@ msgstr "正在加载文件夹…"
 #: src/components/chat/LinkRequestCard.tsx
 #: src/components/device/DeviceControlsRail.tsx
 #: src/components/device/DeviceSetup.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/preview/PreviewChromeRow.tsx
 #: src/components/preview/PreviewChromeRow.tsx
 #: src/components/settings/AddProviderInstanceDialog.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/settings/SnapShotSetupDialog.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/settings/ThemeImportDialog.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 msgid "Back"
@@ -1081,6 +1097,7 @@ msgstr "请重试。"
 msgid "For {0} mode"
 msgstr "用于{0}模式"
 
+#: src/components/CommandPaletteProjectItems.tsx
 #: src/components/CommandPaletteThemeItems.tsx
 #: src/components/CommandPaletteThemeItems.tsx
 #: src/components/settings/DiagnosticsSettings.tsx
@@ -1509,19 +1526,24 @@ msgstr "<0/> 高级"
 #: src/components/chat/ThreadRelationshipIcon.tsx
 #: src/components/cloud/ConnectOnboardingDialog.tsx
 #: src/components/device/DeviceSetup.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/BackgroundActivitySettings.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/CaptureShortcutConfig.tsx
+#: src/components/settings/MicrophoneTest.tsx
 #: src/components/settings/ProviderWizardAuthenticationStep.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/settings/SnapShotSetupDialog.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Done"
 msgstr "完成"
 
 #: src/components/GitActionsControl.tsx
 #: src/components/chat/ComposerPrimaryActions.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/settings/AddProviderInstanceDialog.tsx
 msgid "Next"
 msgstr "下一步"
@@ -1594,9 +1616,8 @@ msgid "<0/> Signed in"
 msgstr "<0/> 已登录"
 
 #: src/components/HostedEmptyState.tsx
+#: src/components/auth/ApproveAgentSurface.tsx
 #: src/components/cloud/ConnectCliAuthSurface.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/LabsSettingsPanel.tsx
 #: src/components/settings/ProviderAuthenticationSection.tsx
 #: src/components/settings/ProviderWizardAuthenticationStep.tsx
@@ -1700,12 +1721,14 @@ msgstr "来自 t3.json"
 #. 0: script.name
 #. 0: model.slug
 #. 0: existing.config.label
+#. 0: textGeneratorDisplayName(existing)
 #. 0: theme.label
 #: src/components/ProjectScriptsControl.tsx
 #: src/components/chat/ThreadAutomationsPanel.tsx
 #: src/components/settings/ProjectActionsList.tsx
 #: src/components/settings/ProviderModelsSection.tsx
 #: src/components/settings/SecretProviderDialog.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/settings/ThemeSettings.tsx
 msgid "Edit {0}"
 msgstr "编辑{0}"
@@ -2215,7 +2238,6 @@ msgid "Failed to archive thread"
 msgstr "归档任务失败"
 
 #: src/components/Sidebar.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
 msgid "Failed to delete thread"
 msgstr "删除任务失败"
 
@@ -2308,6 +2330,9 @@ msgstr "{0} #{1}，状态待定"
 
 #: src/components/ThreadTerminalDrawer.tsx
 #: src/components/files/FileBrowserPanel.tsx
+#: src/components/pullRequest/PullRequestSummaryTab.tsx
+#: src/components/pullRequest/PullRequestTimelineTab.tsx
+#: src/components/pullRequest/PullRequestTimelineTab.tsx
 msgid "Add to chat"
 msgstr "添加到对话"
 
@@ -2324,7 +2349,7 @@ msgid "Paste"
 msgstr "粘贴"
 
 #: src/components/ThreadTerminalDrawer.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Select all"
 msgstr "全选"
 
@@ -2458,6 +2483,7 @@ msgstr "添加密钥提供方"
 msgid "Agent browser access"
 msgstr "Agent 浏览器访问权限"
 
+#: src/components/onboarding/WelcomePage.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Agents"
 msgstr "Agent"
@@ -2558,7 +2584,6 @@ msgstr "截图快捷键"
 msgid "Capture sound"
 msgstr "截图声音"
 
-#: src/components/chat/CompactComposerControlsMenu.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Chat"
 msgstr "对话"
@@ -2568,7 +2593,7 @@ msgstr "对话"
 msgid "Chat width"
 msgstr "对话宽度"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/ui/standalone-page.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Code"
@@ -2599,7 +2624,6 @@ msgstr "输入框上下文"
 msgid "Connections"
 msgstr "连接"
 
-#: src/components/settings/SettingsPanels.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Context window indicator (legacy)"
 msgstr "上下文窗口指示器（旧版）"
@@ -2614,8 +2638,6 @@ msgstr "重新启动后继续对话"
 msgid "Contrast"
 msgstr "界面对比度"
 
-#: src/components/settings/UsageProviderSettings.tsx
-#: src/components/settings/UsageProviderSettings.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Cursor account usage"
 msgstr "Cursor 账号用量"
@@ -2713,7 +2735,6 @@ msgstr "环境标识"
 msgid "Fallback model"
 msgstr "后备模型"
 
-#: src/components/settings/SourceControlWritingSettings.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Follow change request templates"
 msgstr "遵循变更请求模板"
@@ -2884,7 +2905,6 @@ msgstr "面板动效"
 msgid "Permissions"
 msgstr "权限"
 
-#: src/components/settings/SettingsPanels.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Plan mode (legacy)"
 msgstr "方案模式（旧版）"
@@ -3049,7 +3069,6 @@ msgstr "源代码管理"
 msgid "Source control writer model"
 msgstr "源代码管理写作模型"
 
-#: src/components/settings/SourceControlWritingSettings.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Source control writing style"
 msgstr "源代码管理写作风格"
@@ -3064,7 +3083,6 @@ msgid "Submodules"
 msgstr "子模块"
 
 #: src/components/clerk/T3ConnectUserProfilePage.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/EnvironmentRow.tsx
 #: src/components/settings/LinkMachineSelect.tsx
 #: src/components/settings/SavedEnvironmentRows.tsx
@@ -3247,6 +3265,7 @@ msgstr "选择图标"
 
 #: src/components/projectScriptEditor.tsx
 #: src/components/settings/TelemetryExportSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "Test"
 msgstr "测试"
 
@@ -3308,7 +3327,6 @@ msgid "Open preview automatically when this action runs"
 msgstr "运行此操作时自动打开预览"
 
 #: src/components/settings/AcpSessionManagementSection.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
 msgid "Delete"
 msgstr "删除"
 
@@ -3357,6 +3375,7 @@ msgid "The project is still available. Try opening the draft again."
 msgstr "项目仍然可用，请重新打开草稿。"
 
 #: src/components/desktop/DesktopWebLinkCoordinator.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/promptLinks/HostedPromptLinkLanding.tsx
 #: src/components/promptLinks/NewThreadLinkView.tsx
 #: src/routes/_chat.new.tsx
@@ -3390,6 +3409,7 @@ msgstr "请稍候，此环境正在验证智能体的请求。"
 msgid "This sign-in cannot continue"
 msgstr "无法继续此次登录"
 
+#: src/components/auth/ApproveAgentSurface.tsx
 #: src/components/auth/ConnectAgentSurface.tsx
 msgid "Close this page and start the sign-in again from your agent."
 msgstr "请关闭此页面，然后从你的智能体重新发起登录。"
@@ -3399,21 +3419,6 @@ msgstr "请关闭此页面，然后从你的智能体重新发起登录。"
 msgid "Connect {0}"
 msgstr "连接 {0}"
 
-#. 0: " "
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "This agent wants to use the threads in every project on{0} <0/>."
-msgstr "此 Agent 希望使用{0} <0/> 上所有项目的对话。"
-
-#. 0: details.redirectHost
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "The name is chosen by the agent. Approval returns to {0} on the computer that opened this page. Only approve a sign-in you just started."
-msgstr "此名称由智能体自行指定。批准后将返回打开此页面的计算机上的 {0}。请仅批准你刚刚发起的登录。"
-
-#. 0: " "
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "The name is chosen by the agent. Approval gives access to whoever runs{0} <0/>. Only approve a sign-in you just started there."
-msgstr "此名称由 Agent 选择。批准后，运行{0} <0/> 的人将获得访问权限。仅批准你刚在那里发起的登录。"
-
 #: src/components/auth/ConnectAgentSurface.tsx
 msgid "What it may do"
 msgstr "允许执行的操作"
@@ -3422,22 +3427,12 @@ msgstr "允许执行的操作"
 msgid "Beyond read only, it can start, message and stop threads, and none of them can run with more than the mode you pick."
 msgstr "选择只读之外的模式后，它可以启动对话、发送消息和停止对话，但任何对话的权限都不会超过你选择的模式。"
 
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "Paste a one-time pairing code"
-msgstr "粘贴一次性配对码"
-
-#: src/components/auth/ConnectAgentSurface.tsx
 #: src/components/chat/LinkRequestCard.tsx
 #: src/components/settings/AddEnvironmentDialog.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/LinkedEnvironmentsSettings.tsx
 msgid "Pairing code"
 msgstr "配对码"
-
-#. 0: " "
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "Create one in Settings → Sharing & access, or run <0/>{0} on this machine."
-msgstr "在“设置 → 共享与访问”中创建，或在此机器上运行 <0/>{0}。"
 
 #: src/components/auth/PairingRouteSurface.tsx
 msgid "Pairing with this environment"
@@ -3489,7 +3484,6 @@ msgstr "请确认浏览器能够访问后端、后端允许托管客户端跨域
 
 #: src/components/auth/PairingRouteSurface.tsx
 #: src/components/auth/PairingRouteSurface.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
 msgid "Pairing..."
 msgstr "正在配对..."
 
@@ -3626,6 +3620,8 @@ msgid "Upgrade on T3 Chat"
 msgstr "在 T3 Chat 升级"
 
 #: src/components/cloud/TunnelUsage.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/settings/SavedEnvironmentRows.tsx
 msgid "Manage tunnels"
 msgstr "管理隧道"
 
@@ -3635,6 +3631,7 @@ msgstr "隧道名额已用完（运行隧道需要成本）。"
 
 #: src/components/clerk/ClerkUserProfilePage.tsx
 #: src/components/pullRequest/PullRequestActionsMenu.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "<0/> Refresh"
 msgstr "<0/> 刷新"
 
@@ -3737,6 +3734,9 @@ msgid "Link a paid T3 Chat account for more T3 Connect tunnels: up to {0} with P
 msgstr "关联付费 T3 Chat 账号以增加 T3 Connect 隧道：Pro 最多 {0} 条，Premier 最多 {1} 条。"
 
 #: src/components/clerk/T3ConnectSidebarSignIn.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Sign in to T3 Connect"
 msgstr "登录 T3 Connect"
 
@@ -4022,10 +4022,6 @@ msgid "Type your own answer, or leave this blank to use the selected option"
 msgstr "输入自定义回答，留空则使用已选选项"
 
 #: src/components/chat/ChatComposer.tsx
-msgid "Add feedback to refine the plan, or leave this blank to implement it"
-msgstr "补充反馈以完善方案，留空则直接实施"
-
-#: src/components/chat/ChatComposer.tsx
 msgid "Choose a project above to start a thread"
 msgstr "请先在上方选择项目"
 
@@ -4138,16 +4134,10 @@ msgstr "更早的输出未显示"
 msgid "More composer controls"
 msgstr "更多输入控制"
 
-#: src/components/chat/CompactComposerControlsMenu.tsx
-#: src/components/chat/ComposerFooterControls.tsx
 #: src/components/chat/ProposedPlanCard.tsx
 #: src/components/usage/UsageLimitsPooled.tsx
 msgid "Plan"
 msgstr "计划"
-
-#: src/components/chat/CompactComposerControlsMenu.tsx
-msgid "Mode"
-msgstr "模式"
 
 #: src/components/chat/ComposerBannerStack.tsx
 msgid "Notice details"
@@ -4178,6 +4168,8 @@ msgstr "代码语言：{0}"
 
 #: src/components/chat/ComposerCodeBlockLanguagePicker.tsx
 #: src/components/chat/ComposerCodeBlockLanguagePicker.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Search languages"
 msgstr "搜索语言"
 
@@ -4209,6 +4201,7 @@ msgstr "重新上传 {0}"
 #. 0: staged.file.name
 #. 0: model.slug
 #. 0: theme.label
+#. 0: term
 #: src/components/chat/ComposerAttachmentStrip.tsx
 #: src/components/chat/ComposerAttachmentStrip.tsx
 #: src/components/chat/ComposerAttachmentStrip.tsx
@@ -4216,6 +4209,7 @@ msgstr "重新上传 {0}"
 #: src/components/guest/GuestPage.tsx
 #: src/components/settings/ProviderModelsSection.tsx
 #: src/components/settings/ThemeSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Remove {0}"
 msgstr "移除 {0}"
 
@@ -4277,7 +4271,6 @@ msgstr "开"
 #: src/components/chat/ComposerModelEffort.tsx
 #: src/components/chat/TraitsPicker.tsx
 #: src/components/clerk/MobileClientsUserProfilePage.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ProviderInstanceCard.tsx
@@ -4288,16 +4281,13 @@ msgstr "开"
 #: src/components/settings/StorageSettings.tsx
 #: src/components/settings/StorageSettings.tsx
 #: src/components/settings/TelemetryExportSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Off"
 msgstr "关闭"
 
 #: src/components/chat/ComposerModelEffort.tsx
 msgid "No effort levels"
 msgstr "没有推理强度选项"
-
-#: src/components/chat/ComposerPlanFollowUpBanner.tsx
-msgid "Plan ready"
-msgstr "计划已就绪"
 
 #: src/components/chat/ComposerPendingUserInputPanel.tsx
 #: src/components/chat/ComposerPendingUserInputPanel.tsx
@@ -4348,14 +4338,6 @@ msgstr "上一题"
 #: src/components/chat/ComposerPrimaryActions.tsx
 msgid "Previous"
 msgstr "上一步"
-
-#: src/components/chat/ComposerPrimaryActions.tsx
-msgid "Implementation actions"
-msgstr "实施选项"
-
-#: src/components/chat/ComposerPrimaryActions.tsx
-msgid "Implement in a new thread"
-msgstr "在新任务中实施"
 
 #: src/components/chat/ComposerPrimaryActions.tsx
 msgid "Update queued message"
@@ -4441,7 +4423,9 @@ msgid "{0} is out of usage{1}"
 msgstr "{0} 的额度已用完{1}"
 
 #. 0: defaultModelName
+#. 0: name
 #: src/components/chat/ComposerUsageLimits.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
 msgid "Use {0}"
 msgstr "使用{0}"
 
@@ -4454,37 +4438,10 @@ msgstr "管理用量"
 msgid "{0} additions, {1} deletions"
 msgstr "新增 {0} 行，删除 {1} 行"
 
-#. 0: usedPercentage
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "Context window {0} used"
-msgstr "上下文窗口已使用 {0}"
-
-#. 0: formatContextWindowTokens(usage.usedTokens)
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "Context window {0} tokens used"
-msgstr "上下文窗口已使用 {0} 个令牌"
-
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "Context Window"
-msgstr "上下文窗口"
-
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "Context window usage"
-msgstr "上下文窗口用量"
-
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "Total processed"
-msgstr "累计处理"
-
-#: src/components/chat/ContextWindowMeter.tsx
 #: src/components/usage/UsageModelDialog.tsx
 #: src/components/usage/UsagePage.tsx
 msgid "Cost"
 msgstr "费用"
-
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "<0/> Compact context"
-msgstr "<0/> 压缩上下文"
 
 #: src/components/Sidebar.tsx
 #: src/components/chat/DraftHeroHeadline.tsx
@@ -4814,10 +4771,11 @@ msgstr "展开图表"
 #: src/components/chat/useSystemComposerBanners.tsx
 #: src/components/device/DeviceHostUpdates.tsx
 #: src/components/device/DevicePanel.tsx
+#: src/components/device/DevicePanel.tsx
 #: src/components/files/AudioPreview.tsx
 #: src/components/onboarding/FirstRunGate.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/pullRequest/PullRequestCodeTab.tsx
 #: src/components/pullRequest/PullRequestCodeTab.tsx
 #: src/components/pullRequest/PullRequestsPage.tsx
@@ -4972,6 +4930,7 @@ msgstr "在 {0} 中打开"
 #: src/components/device/DevicePanel.tsx
 #: src/components/device/DevicePanel.tsx
 #: src/components/pullRequest/PullRequestReviewAnnotation.tsx
+#: src/components/settings/SettingsPanels.tsx
 msgid "Open"
 msgstr "打开"
 
@@ -5203,8 +5162,10 @@ msgstr "由 T3 Code 发送"
 
 #: src/components/ThreadContextChip.tsx
 #: src/components/ThreadNotificationCoordinator.tsx
+#: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/QueuedRunsControl.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
+#: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Open thread"
 msgstr "打开对话"
 
@@ -5288,12 +5249,14 @@ msgstr "正在停止"
 msgid "It may be short on memory. Force stop kills its processes."
 msgstr "可能是内存不足。强制停止会终止其进程。"
 
+#: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/ThreadActivityBanners.tsx
 #: src/components/chat/ThreadRelationshipIcon.tsx
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Waiting"
 msgstr "等待中"
 
+#: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/ThreadActivityBanners.tsx
 #: src/components/chat/ThreadRelationshipIcon.tsx
 #: src/components/device/DevicePanel.tsx
@@ -5699,7 +5662,6 @@ msgid "Jump to message: {0}"
 msgstr "跳转到消息：{0}"
 
 #: src/components/chat/TimelineAssistantRows.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/sidebar/UpdateEverythingDialog.tsx
 #: src/components/ui/standalone-page.tsx
 msgid "T3 Code"
@@ -5767,12 +5729,14 @@ msgstr "工具调用失败"
 #. 0: item.title ?? "created thread"
 #. 0: props.title
 #. 0: member.title
+#. 0: app.name
 #. 0: store
 #: src/components/chat/TimelineWorkEntryRow.tsx
 #: src/components/chat/V2LifecycleRow.tsx
 #: src/components/chat/V2LifecycleRow.tsx
 #: src/components/chat/V2LifecycleRow.tsx
 #: src/components/chat/WorkflowOpeningBlock.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/settings/MobileAppSettingsRow.tsx
 msgid "Open {0}"
 msgstr "打开 {0}"
@@ -5804,6 +5768,7 @@ msgid "What went wrong?"
 msgstr "发生了什么问题？"
 
 #: src/components/chat/TimelineWorkGroupRows.tsx
+#: src/components/settings/SettingsPanels.tsx
 msgid "Activity"
 msgstr "动态"
 
@@ -5864,11 +5829,6 @@ msgstr "退出码 {0}"
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Usage limit reached"
 msgstr "已达到用量限制"
-
-#. 0: formatUpcomingTimestamp(resetAt, timestampFormat)
-#: src/components/chat/UsageLimitRecoveryBanner.tsx
-msgid "Resets {0}"
-msgstr "重置时间：{0}"
 
 #: src/components/chat/UsageLimitRecoveryBanner.tsx
 msgid "Reset time unavailable; retry manually"
@@ -5974,10 +5934,6 @@ msgstr "工作树设置"
 #: src/components/chat/ZoomableImage.tsx
 msgid "{0}, zoomable image"
 msgstr "{0}，可缩放图片"
-
-#: src/components/chat/ZoomableImage.tsx
-msgid "Click to zoom in or return to fit. Scroll to zoom, drag to pan. Use Enter to toggle zoom, plus or minus to zoom, and 0 to fit."
-msgstr "点击放大或恢复适应大小。滚动缩放，拖动平移。Enter 切换缩放，加减号调整缩放，0 适应窗口。"
 
 #. 0: Math.round(zoom * 100)
 #: src/components/chat/ZoomableImage.tsx
@@ -6826,6 +6782,7 @@ msgstr "设备主机"
 
 #: src/components/device/DevicePanel.tsx
 #: src/components/device/DevicePanel.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Start"
 msgstr "启动"
 
@@ -6838,17 +6795,8 @@ msgid "Refresh devices"
 msgstr "刷新设备"
 
 #: src/components/device/DevicePanel.tsx
-msgid "Dismiss device warning"
-msgstr "关闭设备警告"
-
-#: src/components/device/DevicePanel.tsx
 msgid "Dismiss device error"
 msgstr "关闭设备错误"
-
-#. 0: props.label
-#: src/components/device/DevicePanel.tsx
-msgid "Device discovery warning · {0}"
-msgstr "设备发现警告 · {0}"
 
 #. 0: label; 1: version ? `version ${version}` \\: selected ? "not installed" \\: "version unknown"
 #: src/components/device/DeviceToolVersions.tsx
@@ -6917,6 +6865,7 @@ msgstr "要启动的 Bundle ID"
 msgid "Package name to launch"
 msgstr "要启动的包名"
 
+#: src/components/auth/ConnectAgentSurface.tsx
 #: src/components/device/DeviceToolsPanel.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "App"
@@ -7064,6 +7013,7 @@ msgstr "已附加的文件"
 #: src/components/chat/ChatComposer.tsx
 #: src/components/guest/GuestPage.tsx
 #: src/components/guest/GuestPage.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/settings/DiagnosticsSettings.tsx
 msgid "Message"
 msgstr "消息"
@@ -7076,155 +7026,68 @@ msgstr "待附加的文件"
 msgid "The owner approves each message"
 msgstr "每条消息均需所有者批准"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Some history was not imported"
 msgstr "部分历史记录未导入"
 
 #. 0: importedThreadCount; 1: importedThreadCount === 1 ? "thread" \\: "threads"
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Imported {0} {1}"
 msgstr "已导入 {0} {1}"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Could not finish setup"
 msgstr "无法完成设置"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Your settings could not be saved. Try again."
 msgstr "无法保存设置，请重试。"
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Set up T3 Code"
-msgstr "设置 T3 Code"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Connect your computers"
-msgstr "连接你的设备"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Choose one or more computers. We’ll set up agents and projects on each."
-msgstr "选择一台或多台设备，我们会在每台设备上设置 Agent 和项目。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Computers to set up"
-msgstr "要设置的设备"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Add a computer"
-msgstr "添加设备"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Run this on each computer you want to connect."
-msgstr "请在每台要连接的设备上运行此命令。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Keep T3 Code running. Select the computers you want to set up above."
-msgstr "请保持 T3 Code 运行，并在上方选择要设置的设备。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 msgid "Pairing link"
 msgstr "配对链接"
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "<0/> Need a pairing link?"
-msgstr "<0/> 需要配对链接？"
-
-#. 0: " "
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "On the computer with your code, start T3 Code or run{0} <0/>, then run:"
-msgstr "在存放代码的电脑上启动 T3 Code 或运行{0} <0/>，然后运行："
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "On a tailnet, run <0/> instead."
-msgstr "在 tailnet 中请改用 <0/>。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Continue <0/>"
-msgstr "继续 <0/>"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Connect your agents"
-msgstr "连接智能体"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Choose an agent to start coding. You can add more later."
-msgstr "选择一个智能体开始编程。之后可以添加更多。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "This connection cannot control terminals."
 msgstr "此连接无权控制终端。"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/CodexSetupSection.tsx
 #: src/components/settings/CodexSetupSection.tsx
 msgid "<0/> Ready"
 msgstr "<0/> 已就绪"
 
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/pullRequest/PullRequestListEmptyState.tsx
 #: src/components/pullRequest/PullRequestListEmptyState.tsx
 #: src/components/settings/CodexSetupSection.tsx
 msgid "Checking..."
 msgstr "正在检查..."
 
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/AcpSessionManagementSection.tsx
 #: src/components/settings/TelemetryExportSettings.tsx
 msgid "Disabled"
 msgstr "已禁用"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Run <0/> in this terminal."
 msgstr "在此终端中运行 <0/>。"
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Looking for projects from Claude Code and Codex…"
-msgstr "正在查找 Claude Code 和 Codex 项目…"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Do not import projects"
-msgstr "不导入项目"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Your projects"
-msgstr "你的项目"
-
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Select none"
 msgstr "取消全选"
 
 #. 0: selected.length; 1: candidates.length
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "{0} of {1} selected"
 msgstr "已选择 {0}/{1}"
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "<0/> Looking for projects…"
-msgstr "<0/> 正在查找项目…"
-
 #. 0: scan.error
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Could not check projects. {0}"
 msgstr "无法检查项目。{0}"
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "No existing Claude Code or Codex projects found."
-msgstr "未找到已有的 Claude Code 或 Codex 项目。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Import your projects"
-msgstr "导入项目"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Import projects and conversations from Claude Code and Codex on your selected computers."
-msgstr "从所选设备上的 Claude Code 和 Codex 导入项目及对话。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Other folders"
 msgstr "其他文件夹"
 
@@ -7348,6 +7211,7 @@ msgstr "批注预览内容"
 
 #: src/components/preview/PreviewChromeRow.tsx
 #: src/components/preview/PreviewChromeRow.tsx
+#: src/components/settings/MicrophoneTest.tsx
 msgid "Stop recording"
 msgstr "停止录制"
 
@@ -7639,6 +7503,7 @@ msgstr "新建对话 ({0})"
 msgid "Search"
 msgstr "搜索"
 
+#: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/sidebar/SidebarThreadHeader.tsx
 msgid "Search threads"
 msgstr "搜索任务"
@@ -7691,6 +7556,7 @@ msgstr "目标"
 msgid "Approval"
 msgstr "待批准"
 
+#: src/components/settings/VoiceSettingsPanel.tsx
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Input"
 msgstr "输入"
@@ -7919,6 +7785,7 @@ msgstr "来源"
 msgid "Left"
 msgstr "剩余"
 
+#: src/components/chat/UsageLimitRecoveryBanner.tsx
 #: src/components/usage/UsageLimitsPooled.tsx
 msgid "Resets"
 msgstr "重置时间"
@@ -8074,6 +7941,7 @@ msgstr "缓存节省"
 msgid "Totals"
 msgstr "总计"
 
+#: src/components/settings/CloudVoiceConfiguration.tsx
 #: src/components/settings/ProjectDefaultsSettings.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/usage/UsagePage.tsx
@@ -8116,22 +7984,6 @@ msgstr "未定价"
 #: src/components/usage/UsagePage.tsx
 msgid "Usage breakdown by time"
 msgstr "按时间查看用量明细"
-
-#. 0: label
-#. 0: label
-#: src/components/usage/UsagePage.tsx
-#: src/components/usage/UsagePage.tsx
-msgid "Enable Cursor usage from {0}"
-msgstr "启用来自 {0} 的 Cursor 用量"
-
-#. 0: showEnvironment ? ` · ${label}` \\: ""
-#: src/components/usage/UsagePage.tsx
-msgid "Cursor{0}"
-msgstr "Cursor{0}"
-
-#: src/components/usage/UsagePage.tsx
-msgid "<0/> Cursor"
-msgstr "<0/> Cursor"
 
 #. 0: " "; 1: duplicateSources.join(", ")
 #: src/components/usage/UsagePage.tsx
@@ -8476,8 +8328,11 @@ msgstr "第 {0} 行"
 msgid "No checks reported"
 msgstr "未报告检查结果"
 
+#: src/components/chat/BackgroundWorkDetails.tsx
+#: src/components/device/DevicePanel.tsx
 #: src/components/preview/PreviewUnreachable.tsx
 #: src/components/pullRequest/PullRequestChecksPopover.tsx
+#: src/components/settings/DeviceSourcesSettings.tsx
 msgid "Details"
 msgstr "详情"
 
@@ -8696,6 +8551,7 @@ msgstr "已创建回退{0}"
 msgid "Branch deleted"
 msgstr "分支已删除"
 
+#: src/components/pullRequest/PullRequestDetailPanel.tsx
 #: src/components/pullRequest/PullRequestDetailPanel.tsx
 #: src/components/pullRequest/PullRequestDetailPanel.tsx
 msgid "Added to the composer"
@@ -10029,6 +9885,8 @@ msgstr "客户端权限"
 msgid "Could not create pairing URL"
 msgstr "无法创建配对 URL"
 
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/ThemeColorPicker.tsx
 #: src/components/settings/ThemeColorPicker.tsx
@@ -10125,7 +9983,7 @@ msgstr "读取 {0} 的 Cookie 以完成此次导入。"
 msgid "New profile"
 msgstr "新建配置文件"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 msgid "Importing…"
 msgstr "正在导入…"
@@ -10160,16 +10018,9 @@ msgstr "名称（可选）"
 msgid "Add hub"
 msgstr "添加 Hub"
 
-#: src/components/settings/ArchivedThreadsPanel.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
 #: src/components/settings/ProjectSettingsPanel.tsx
 msgid "Unarchive"
 msgstr "取消归档"
-
-#: src/components/settings/ArchivedThreadsPanel.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
-msgid "Failed to unarchive thread"
-msgstr "取消归档任务失败"
 
 #: src/components/settings/ArchivedThreadsPanel.tsx
 msgid "Loading archived threads"
@@ -10190,10 +10041,6 @@ msgstr "正在检查已连接的环境。"
 #: src/components/settings/ArchivedThreadsPanel.tsx
 msgid "Archived threads will appear here."
 msgstr "已归档任务会显示在这里。"
-
-#: src/components/settings/ArchivedThreadsPanel.tsx
-msgid "Archived thread action failed"
-msgstr "已归档任务操作失败"
 
 #. 0: hasMultipleEnvironments ? `${thread.environmentLabel} · ` \\: null; 1: " \\\\u00b7 Created "
 #: src/components/settings/ArchivedThreadsPanel.tsx
@@ -10289,14 +10136,6 @@ msgstr "要连接的 ChatGPT 账号"
 msgid "Manage usage <0/>"
 msgstr "管理用量 <0/>"
 
-#: src/components/settings/CliCommandSettingsRow.tsx
-msgid "Could not install t3"
-msgstr "无法安装 t3"
-
-#: src/components/settings/CliCommandSettingsRow.tsx
-msgid "Could not remove t3"
-msgstr "无法移除 t3"
-
 #: src/components/settings/ChatGptWelcomeCoordinator.tsx
 msgid "Your ChatGPT plan is connected"
 msgstr "已连接你的 ChatGPT 套餐"
@@ -10306,7 +10145,11 @@ msgid "Eligible usage in T3 Code uses your ChatGPT plan. Manage your shared usag
 msgstr "T3 Code 中符合条件的用量将使用你的 ChatGPT 套餐。请在 ChatGPT 中管理共享用量和额度设置。"
 
 #. 0: next?.providerName; 1: next?.environmentLabel
+#. 0: formatGiB(status.reclaimableBytes); 1: label
+#. 0: amount; 1: label
 #: src/components/settings/ChatGptWelcomeCoordinator.tsx
+#: src/components/settings/DatabaseStorageNotice.tsx
+#: src/components/settings/DatabaseStorageNotice.tsx
 msgid "{0} on {1}"
 msgstr "{1}上的{0}"
 
@@ -10407,6 +10250,7 @@ msgstr "粘贴登录标签页中的 URL"
 #: src/components/settings/CodexSetupSection.tsx
 #: src/components/settings/ProviderAuthenticationSection.tsx
 #: src/components/settings/ProviderAuthenticationSection.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "Connect"
 msgstr "连接"
 
@@ -10508,15 +10352,6 @@ msgstr "更多信息"
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "Reclaim freed database space"
 msgstr "回收数据库释放的空间"
-
-#: src/components/settings/DatabaseStorageNotice.tsx
-msgid "Old history is cleaned up automatically, but these databases still hold the freed space. Run the command on each machine to return it to disk; it pauses and restarts the background service. Quit the desktop app first if it hosts the environment."
-msgstr "旧历史记录会自动清理，但数据库仍占用已释放的空间。在每台机器上运行命令可将空间归还磁盘；这会暂停并重新启动后台服务。如果桌面应用托管该环境，请先退出它。"
-
-#. 0: (status.reclaimableBytes / 1024 ** 3).toFixed(1); 1: environments.find((environment) => environment.environmentId === environmentId) ?.label ?? environmentId
-#: src/components/settings/DatabaseStorageNotice.tsx
-msgid "{0} GiB on {1}"
-msgstr "{1} 上的 {0} GiB"
 
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "Database"
@@ -10755,6 +10590,7 @@ msgstr "没有自定义选项，输入区将使用服务提供方的默认选项
 #: src/components/pullRequest/PullRequestMarkdownEditor.tsx
 #: src/components/pullRequest/PullRequestTitleEditor.tsx
 #: src/components/settings/AcpSessionManagementSection.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
 #: src/components/settings/CustomModelEditor.tsx
 #: src/components/settings/KeybindingsSettings.tsx
 #: src/components/settings/KeybindingsSettings.tsx
@@ -10849,6 +10685,7 @@ msgstr "复制跟踪 ID"
 
 #: src/components/settings/DiagnosticsSettings.tsx
 #: src/components/settings/ResourceTelemetryDiagnostics.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "CPU"
 msgstr "CPU"
 
@@ -11169,10 +11006,6 @@ msgstr "正在加载 Span 名称..."
 msgid "Top Span Names"
 msgstr "高频 Span 名称"
 
-#: src/components/settings/DeviceSourcesSettings.tsx
-msgid "Android list may be incomplete"
-msgstr "Android 列表可能不完整"
-
 #. 0: unwritable.map((patch) => name(patch.environmentId)).join(", ")
 #: src/components/settings/DeviceSourcesSettings.tsx
 msgid "This connection cannot change settings on {0}."
@@ -11204,6 +11037,8 @@ msgstr "已连接，或已在每个所选环境的本地可用。"
 #: src/components/settings/SecretsSettings.tsx
 #: src/components/settings/SourceControlHostSettings.tsx
 #: src/components/settings/SourceControlTokenSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/settings/UsageProviderSettings.tsx
 msgid "Remove"
 msgstr "移除"
@@ -11211,6 +11046,7 @@ msgstr "移除"
 #: src/components/GitActionsControl.tsx
 #: src/components/settings/DeviceSourcesSettings.tsx
 #: src/components/settings/SecretsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "Edit"
 msgstr "编辑"
 
@@ -11638,24 +11474,6 @@ msgstr "测试功能"
 #: src/components/settings/LabsSettingsPanel.tsx
 msgid "Group sidebar threads into project folders. Pinned threads stay on top, and Snoozed and Settled stay below the folders."
 msgstr "在侧栏按项目文件夹分组对话。置顶对话保留在顶部，稍后提醒和已归档处理的对话保留在文件夹下方。"
-
-#: src/components/settings/LabsSettingsPanel.tsx
-msgid "In the boring sidebar, show folder threads on two lines: the title, then the branch, pull request, and agent."
-msgstr "在简洁侧栏中，文件夹内的对话分两行显示：第一行为标题，第二行为分支、拉取请求和 Agent。"
-
-#: src/components/settings/LabsSettingsPanel.tsx
-msgid "Share a thread with a guest who watches it live in their browser and sends messages you approve. Sign in to T3 Connect to use guest links."
-msgstr "与访客共享对话，让其在浏览器中实时查看，并发送由你批准的消息。登录 T3 Connect 后即可使用访客链接。"
-
-#. 0: " "
-#: src/components/settings/LabsSettingsPanel.tsx
-msgid "Share a thread with a guest who watches it live in their browser and sends messages you approve. Needs T3 Connect: sign in and link this machine in{0} <0>Sharing & access</0> . While it is off, every guest link stops working."
-msgstr "与访客共享对话，访客可在浏览器中实时查看，并发送需你批准的消息。需要 T3 Connect：请在{0} <0>共享与访问</0>中登录并关联此机器。关闭后，所有访客链接将失效。"
-
-#. 0: " "
-#: src/components/settings/LabsSettingsPanel.tsx
-msgid "Let agents here work on your other machines, and theirs here. Turn it on for each machine, then link them in{0} <0>Connections</0> . While it is off, nothing new starts over a link; tasks already running finish."
-msgstr "允许此处的 Agent 在你的其他机器上工作，也允许其他机器的 Agent 在此工作。请在每台机器启用，再在{0} <0>连接</0>中关联。关闭后，不再通过链接启动新任务；正在运行的任务会继续完成。"
 
 #. 0: " "; 1: " "; 2: " "
 #: src/components/settings/LabsSettingsPanel.tsx
@@ -12241,8 +12059,10 @@ msgstr "重置为设备设置"
 
 #. 0: displayName
 #. 0: task.title
+#. 0: name
 #: src/components/settings/ProviderInstanceCard.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "Enable {0}"
 msgstr "启用 {0}"
 
@@ -12282,10 +12102,12 @@ msgid "Model preferences and custom models are saved on the selected environment
 msgstr "模型偏好和自定义模型保存在所选环境，并在已连接设备间共享。"
 
 #: src/components/settings/ProviderInstanceCard.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "Models"
 msgstr "模型"
 
 #: src/components/cloud/CloudEnvironmentConnectList.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/settings/ProviderAuthenticationSection.tsx
 msgid "Connecting…"
 msgstr "正在连接…"
@@ -13196,6 +13018,7 @@ msgstr "添加到 Agent，例如 claude mcp add --transport http t3 {0}"
 msgid "Could not copy MCP URL"
 msgstr "无法复制 MCP URL"
 
+#: src/components/settings/IntegrationsSettings.tsx
 #: src/components/settings/SavedEnvironmentRows.tsx
 #: src/components/settings/SavedEnvironmentRows.tsx
 msgid "Update"
@@ -13212,7 +13035,9 @@ msgid "Switch on"
 msgstr "开启"
 
 #. 0: environment.label
+#. 0: name
 #: src/components/settings/SavedEnvironmentRows.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "More actions for {0}"
 msgstr "{0} 的更多操作"
 
@@ -13343,27 +13168,23 @@ msgid "Unsupported provider ({0})"
 msgstr "不支持的服务提供方 ({0})"
 
 #. 0: label
+#. 0: removingConfig ? textGeneratorDisplayName(removingConfig) \\: ""
 #. 0: label
 #: src/components/settings/SecretsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/settings/UsageProviderSettings.tsx
 msgid "Remove {0}?"
 msgstr "移除 {0}？"
-
-#. 0: label
-#: src/components/settings/SecretsSettings.tsx
-msgid "Provider variables that read from {0} stop resolving until a provider with the same name is added again. The secrets themselves are untouched."
-msgstr "读取 {0} 的服务提供方变量将停止解析，直到再次添加同名提供方。密钥本身不会更改。"
 
 #: src/components/settings/SecretsSettings.tsx
 msgid "Remove provider"
 msgstr "移除提供方"
 
-#. 0: label
+#. 0: props.label
 #: src/components/settings/SecretSourceInput.tsx
 msgid "{0} source"
 msgstr "{0} 来源"
 
-#: src/components/settings/SecretSourceInput.tsx
 #: src/components/settings/SecretSourceInput.tsx
 msgid "Value"
 msgstr "值"
@@ -13424,7 +13245,6 @@ msgstr "无法安装更新"
 msgid "Install failed."
 msgstr "安装失败。"
 
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/CliCommandSettingsRow.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "Install"
@@ -13432,6 +13252,7 @@ msgstr "安装"
 
 #: src/components/cloud/CloudEnvironmentConnectList.tsx
 #: src/components/device/DeviceSetup.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/IntegrationsSettings.tsx
 #: src/components/settings/SettingsPanels.tsx
@@ -13442,6 +13263,7 @@ msgstr "安装"
 msgid "Checking…"
 msgstr "正在检查…"
 
+#: src/components/chat/VoiceInputSetup.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "Downloading…"
 msgstr "正在下载…"
@@ -13475,18 +13297,6 @@ msgstr "切换托管应用的发布通道。"
 #: src/components/settings/SettingsPanels.tsx
 msgid "Couldn’t restore theme settings"
 msgstr "无法恢复主题设置"
-
-#: src/components/settings/SettingsPanels.tsx
-msgid "Restore Build/Plan, /plan, /default, and Shift+Tab. Off uses build mode."
-msgstr "恢复构建/规划、/plan、/default 和 Shift+Tab。关闭后使用构建模式。"
-
-#: src/components/settings/SettingsPanels.tsx
-msgid "Shows context window usage as a circular indicator in the composer."
-msgstr "在输入区中以圆形指示器显示上下文窗口用量。"
-
-#: src/components/settings/SettingsPanels.tsx
-msgid "Legacy"
-msgstr "旧版"
 
 #: src/components/settings/SettingsPanels.tsx
 msgid "Show a toast when another thread finishes, fails, or needs input or approval while this app has focus."
@@ -13678,10 +13488,6 @@ msgid "Auto-settle"
 msgstr "自动归档处理"
 
 #: src/components/settings/SettingsPanels.tsx
-msgid "Used for thread titles and other generated text on connected devices with this provider. Source control can override it."
-msgstr "用于已连接设备上此服务提供方的对话标题等生成文本。源代码管理可覆盖此项。"
-
-#: src/components/settings/SettingsPanels.tsx
 msgid "Text generation model not saved"
 msgstr "文本生成模型未保存"
 
@@ -13808,6 +13614,7 @@ msgstr "网关 URL"
 msgid "Agent token · {0}"
 msgstr "Agent 令牌 · {0}"
 
+#: src/components/settings/SimlockDeviceHostEditor.tsx
 #: src/components/settings/SimlockDeviceHostEditor.tsx
 msgid "Agent token"
 msgstr "Agent 令牌"
@@ -14240,10 +14047,6 @@ msgid "Source control providers{0}"
 msgstr "源代码管理提供方{0}"
 
 #: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Custom source control instructions for all selected environments"
-msgstr "所有所选环境的自定义源代码管理指令"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
 msgid "Write the instructions each selected environment should use."
 msgstr "编写每个所选环境应使用的指令。"
 
@@ -14256,24 +14059,12 @@ msgid "Write custom instructions for all"
 msgstr "为全部编写自定义指令"
 
 #: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Keep titles concise. Use short bullet points in descriptions."
-msgstr "标题保持简洁，说明使用简短的项目符号。"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Custom source control writing instructions"
-msgstr "源代码管理自定义编写指令"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
 msgid "Add a Guide tab to pull requests. An agent explains the changes and points out decisions that need review."
 msgstr "为拉取请求添加导读标签页。Agent 会解释更改，并指出需要审阅决策的地方。"
 
 #: src/components/settings/SourceControlWritingSettings.tsx
 msgid "Review guides"
 msgstr "审阅导读"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Model that reads a pull request to write its review guide. It reads the change itself over many steps, so a stronger model helps. Off uses the source control writer model."
-msgstr "读取拉取请求并编写审阅导读的模型。它会分多步阅读实际更改，较强的模型更适合。关闭后使用源代码管理文本生成模型。"
 
 #: src/components/settings/SourceControlWritingSettings.tsx
 #: src/components/settings/SourceControlWritingSettings.tsx
@@ -14293,24 +14084,12 @@ msgid "Your preferences for review guides: what to show first, dwell on, or skip
 msgstr "审阅导读偏好：优先展示、重点讲解或跳过什么。导读格式和覆盖范围不变。"
 
 #: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Use the repository's template for change request descriptions when available."
-msgstr "仓库提供模板时，使用该模板编写变更请求说明。"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Model for source control text and branch or bookmark names. When disabled, use the text generation model configured for this environment."
-msgstr "用于源代码管理文本以及分支或书签名称的模型。关闭后使用此环境配置的文本生成模型。"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
 msgid "Source control writer model not saved"
 msgstr "源代码管理文本生成模型未保存"
 
 #: src/components/settings/SourceControlWritingSettings.tsx
 msgid "Use a separate source control writer model"
 msgstr "使用独立的源代码管理文本生成模型"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Writing & review"
-msgstr "撰写与审查"
 
 #: src/components/settings/StorageSettings.tsx
 msgid "Folder where new worktrees are created, on any drive, such as D:\\worktrees or ~/worktrees. Existing worktrees stay where they are. Leave empty to use the T3 home folder."
@@ -14383,6 +14162,7 @@ msgstr "上次运行"
 #: src/components/settings/StorageSettings.tsx
 #: src/components/settings/StorageSettings.tsx
 #: src/components/settings/StorageSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Cleanup"
 msgstr "清理"
 
@@ -14977,10 +14757,6 @@ msgid "{0} px"
 msgstr "{0} px"
 
 #: src/components/settings/UsageProviderSettings.tsx
-msgid "Read your existing Cursor CLI login from macOS Keychain to show account history and monthly limits. macOS may ask you to allow access."
-msgstr "从 macOS 钥匙串读取已有 Cursor CLI 登录，以显示账号历史和月度上限。macOS 可能请求你允许访问。"
-
-#: src/components/settings/UsageProviderSettings.tsx
 msgid "No hubs configured."
 msgstr "未配置中心。"
 
@@ -15349,6 +15125,7 @@ msgstr "正在查找被忽略的文件…"
 
 #: src/components/AddProjectToMachineDialog.tsx
 #: src/components/device/DeviceSetup.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Starting…"
 msgstr "正在启动…"
 
@@ -15541,10 +15318,6 @@ msgstr "还没有任务"
 msgid "On another machine, so this machine's agent can't read it. Remove it or switch back to send."
 msgstr "内容位于另一台机器，此机器的 Agent 无法读取。请移除，或切回原机器后发送。"
 
-#: src/components/ThreadContextChip.tsx
-msgid "Thread no longer available"
-msgstr "对话已不可用"
-
 #: src/components/ThreadSearchMatch.tsx
 msgid "You:"
 msgstr "你："
@@ -15575,10 +15348,6 @@ msgstr "保存操作"
 #: src/components/auth/ConnectAgentSurface.tsx
 msgid "Approving…"
 msgstr "正在批准…"
-
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "Approve"
-msgstr "批准"
 
 #: src/components/auth/ConnectAgentSurface.tsx
 msgid "Denying…"
@@ -15725,6 +15494,7 @@ msgid "Starting device tools…"
 msgstr "正在启动设备工具…"
 
 #: src/components/device/DeviceHostUpdates.tsx
+#: src/components/device/DevicePanel.tsx
 #: src/components/media/MediaVideoPlayer.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 msgid "Retrying…"
@@ -15761,6 +15531,7 @@ msgid "Device hub is ready."
 msgstr "设备中心已就绪。"
 
 #: src/components/device/DeviceSetup.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/pullRequest/PullRequestListEmptyState.tsx
 #: src/components/pullRequest/PullRequestListEmptyState.tsx
 #: src/components/settings/SnapShotSetupDialog.tsx
@@ -15839,46 +15610,17 @@ msgstr "在应用中打开"
 msgid "Open in desktop app"
 msgstr "在桌面应用中打开"
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "T3 Code collects anonymous usage data to help us improve it."
-msgstr "T3 Code 收集匿名用量数据，以帮助我们改进产品。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Loading sign-in…"
-msgstr "正在加载登录状态…"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Loading computers…"
-msgstr "正在加载设备…"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "No computers linked yet."
-msgstr "尚未关联设备。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Pair"
-msgstr "配对"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Ready to code."
-msgstr "可以开始编程了。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Review the command, then press Enter to run it."
 msgstr "请检查命令，然后按 Enter 运行。"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Could not open the setup terminal."
 msgstr "无法打开设置终端。"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Preparing command..."
 msgstr "正在准备命令..."
-
-#. 0: selected.length; 1: selected.length === 1 ? "project" \\: "projects"
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Import {0} {1}"
-msgstr "导入 {0} {1}"
 
 #: src/components/files/AttachmentFilePreview.tsx
 msgid "Attachment"
@@ -16343,6 +16085,7 @@ msgid "Link to thread"
 msgstr "关联到任务"
 
 #: src/components/pullRequest/PullRequestThreadLinks.tsx
+#: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Untitled thread"
 msgstr "未命名对话"
 
@@ -16465,10 +16208,6 @@ msgstr "没有匹配的文件或文件夹。"
 msgid "No matching command."
 msgstr "没有匹配的命令。"
 
-#: src/components/chat/ComposerFooterControls.tsx
-msgid "Build"
-msgstr "构建"
-
 #: src/components/chat/ComposerControlsBar.tsx
 msgid "Open provider settings"
 msgstr "打开提供商设置"
@@ -16480,19 +16219,6 @@ msgstr "没有可用的服务提供方"
 #: src/components/chat/ComposerModelEffort.tsx
 msgid "Effort"
 msgstr "推理强度"
-
-#: src/components/chat/ComposerPrimaryActions.tsx
-#: src/components/chat/ComposerPrimaryActions.tsx
-msgid "Sending..."
-msgstr "正在发送..."
-
-#: src/components/chat/ComposerPrimaryActions.tsx
-msgid "Refine"
-msgstr "完善方案"
-
-#: src/components/chat/ComposerPrimaryActions.tsx
-msgid "Implement"
-msgstr "开始实施"
 
 #: src/components/chat/ComposerPrimaryActions.tsx
 msgid "Keep"
@@ -17262,6 +16988,8 @@ msgid "Disable all"
 msgstr "全部停用"
 
 #: src/components/settings/ProviderModelsSection.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "No models match."
 msgstr "没有符合筛选条件的模型。"
 
@@ -17457,6 +17185,7 @@ msgstr "连接环境以选择其文本生成模型。"
 
 #: src/components/settings/SettingsPanels.tsx
 #: src/components/settings/SourceControlWritingSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "No text generation providers available."
 msgstr "没有可用的文本生成服务提供方。"
 
@@ -17591,6 +17320,9 @@ msgstr "继承"
 
 #: src/components/settings/StorageSettings.tsx
 #: src/components/settings/StorageSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Custom"
 msgstr "自定义"
 
@@ -17774,6 +17506,9 @@ msgstr "无需提示即可执行命令和编辑。"
 msgid "Ask before commands and file changes."
 msgstr "执行命令和更改文件前先询问。"
 
+#: src/components/settings/SpeechLanguageSelect.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Auto"
 msgstr "自动"
@@ -18041,20 +17776,6 @@ msgstr "事件日志 <0/>"
 #: src/components/device/DeviceToolsPanel.tsx
 msgid "No events yet."
 msgstr "暂无事件。"
-
-#. 0: skippedLabels.join(", "); 1: " "; 2: skippedLabels.length === 1 ? "it" \\: "them"
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Not connected, so setup skips {0}. You can set{1} {2} up later from Settings."
-msgstr "未连接，设置将跳过 {0}。你可以稍后在设置中配置{1} {2}。"
-
-#. 0: telemetryOff ?? "T3 Code collects anonymous usage data to help us improve it."; 1: telemetryOff === undefined ? " and how to opt out" \\: ""; 2: " "
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "{0} To read more about how your data is used{1}, see our{2} <0>privacy policy</0> ."
-msgstr "{0}要进一步了解数据的使用方式{1}，请阅读{2} <0>隐私政策</0>。"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Connect another ChatGPT account"
-msgstr "连接另一个 ChatGPT 账户"
 
 #: src/components/files/FileBreadcrumbs.tsx
 msgid "<0/> Refresh failed. Retry"
@@ -18440,6 +18161,7 @@ msgstr "需要设置"
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/ConnectionsSettings.tsx
+#: src/components/settings/DatabaseStorageNotice.tsx
 msgid "Restarting…"
 msgstr "正在重启…"
 
@@ -18938,11 +18660,6 @@ msgstr "旋转"
 msgid "{0} fps"
 msgstr "{0} fps"
 
-#. 0: version.requiredVersion
-#: src/components/settings/IntegrationsSettings.tsx
-msgid "Update to v{0}"
-msgstr "更新至 v{0}"
-
 #: src/components/settings/IntegrationsSettings.tsx
 msgid "Check versions"
 msgstr "检查版本"
@@ -19191,18 +18908,10 @@ msgstr "实时转发；此环境离线时请求会失败。"
 msgid "Change in Sharing & access"
 msgstr "在“共享与访问”中修改"
 
-#: src/components/settings/ScheduledTasksSettings.tsx
-msgid "Each run starts a new thread with the workspace and model below."
-msgstr "每次运行都会使用下方工作区和模型新建对话。"
-
 #. 0: ref.threadId
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Thread {0}"
 msgstr "对话 {0}"
-
-#: src/components/settings/ScheduledTasksSettings.tsx
-msgid "Each run continues this conversation, in its workspace and with its current model."
-msgstr "每次运行都会在其工作区内继续此对话，并使用其模型。"
 
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Edit task"
@@ -19636,3 +19345,1605 @@ msgstr "克隆的仓库会按 github.com/owner/repo 存放在上述文件夹下�
 #: src/components/settings/SettingsPanels.tsx
 msgid "Clone into host folders"
 msgstr "按主机分目录克隆"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Clean up transcripts"
+msgstr "整理转写文本"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Cleanup model"
+msgstr "文本整理模型"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Commit and pull request writing"
+msgstr "提交与拉取请求文案"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Correction cue"
+msgstr "纠正提示词"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Dictation shortcut"
+msgstr "听写快捷键"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Dictionary"
+msgstr "词典"
+
+#: src/components/settings/LabsSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Fast worktree checkout"
+msgstr "快速检出工作树"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Follow pull request templates"
+msgstr "遵循拉取请求模板"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Microphone"
+msgstr "麦克风"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Project dictionary"
+msgstr "项目词典"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Remove filler words"
+msgstr "移除语气词"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Silence filtering"
+msgstr "静音过滤"
+
+#: src/components/settings/LabsSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Suggest next prompt"
+msgstr "建议下一条提示词"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Test microphone"
+msgstr "测试麦克风"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Test model"
+msgstr "测试模型"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Text generators"
+msgstr "文本生成器"
+
+#: src/components/settings/SettingsPanels.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Tool calls in chat"
+msgstr "对话中的工具调用"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Transcribe with"
+msgstr "转写方式"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Transcription hardware and model unloading"
+msgstr "转写硬件与模型卸载"
+
+#: src/components/settings/SpeechLanguageSelect.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Transcription language"
+msgstr "转写语言"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Transcription models"
+msgstr "转写模型"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Welcome page"
+msgstr "欢迎页"
+
+#: src/components/CommandPalette.tsx
+msgid "Use T3 Code in another app (MCP)"
+msgstr "在其他应用中使用 T3 Code（MCP）"
+
+#: src/components/InstallT3Commands.tsx
+msgid "macOS, Linux"
+msgstr "macOS、Linux"
+
+#: src/components/InstallT3Commands.tsx
+msgid "Windows (PowerShell)"
+msgstr "Windows（PowerShell）"
+
+#: src/components/InstallT3Commands.tsx
+msgid "Then"
+msgstr "然后"
+
+#. 0: " "
+#: src/components/InstallT3Commands.tsx
+msgid "Skip the install if you already have <0/>. If{0} <1/> is not found after installing, add the folder the installer names to your PATH."
+msgstr "已安装 <0/> 时可跳过。如果安装后找不到{0} <1/>，请将安装程序显示的目录加入 PATH。"
+
+#: src/components/ProviderUpdatesAction.tsx
+msgid "Could not check provider updates"
+msgstr "无法检查服务商更新"
+
+#: src/components/projectScriptEditor.tsx
+msgid "Stop this action when the thread settles"
+msgstr "对话结束时停止此操作"
+
+#. 0: " "; 1: environmentLabel ? ` (${details.environmentHost})` \\: null
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "This agent wants to use the threads in every project on{0} <0/> {1}."
+msgstr "此 Agent 希望使用{0} <0/> {1} 上所有项目的对话。"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "· name set by the app"
+msgstr "· 名称由应用设置"
+
+#. 0: " "
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "{0} on the computer that opened this page"
+msgstr "打开此页面的电脑上的 {0}"
+
+#. 0: " "
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "{0} · whoever runs it gets this access"
+msgstr "{0} · 运行它的人将获得此权限"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Access goes to"
+msgstr "权限授予对象"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Paste a code"
+msgstr "粘贴登录码"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Sign-in code"
+msgstr "登录码"
+
+#. 0: " "
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Get one from Use T3 Code in another app (MCP), Settings → Sharing & access, or{0} <0/> on this machine."
+msgstr "从「在其他应用中使用 T3 Code（MCP）」、「设置 → 共享与访问」或本机的{0} <0/> 获取。"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Access"
+msgstr "访问权限"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Choose what it may do"
+msgstr "选择它可执行的操作"
+
+#. 0: accessConfig[approveLevel].label
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Approve {0}"
+msgstr "批准 {0}"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Only approve a sign-in you just started."
+msgstr "只批准你刚刚发起的登录。"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "This sign-in link is incomplete"
+msgstr "此登录链接不完整"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Open this page in its own window"
+msgstr "在独立窗口中打开此页面"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "For your safety, agent sign-ins cannot be approved inside another site."
+msgstr "为保障安全，不能在其他网站内批准 Agent 登录。"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Connecting to T3 Connect"
+msgstr "正在连接 T3 Connect"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "One moment while your account loads."
+msgstr "正在加载账号，请稍候。"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Sign in to approve"
+msgstr "登录以批准"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Sign in to T3 Connect with the account this environment is linked to."
+msgstr "使用此环境关联的账号登录 T3 Connect。"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Use a sign-in code instead"
+msgstr "改用登录码"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Use another account"
+msgstr "使用其他账号"
+
+#. 0: platforms.join(" and "); 1: platforms.length > 1 ? "lists" \\: "list"; 2: props.label
+#: src/components/device/DevicePanel.tsx
+msgid "{0} {1} on {2} may be incomplete."
+msgstr "{2} 上的 {0} {1} 可能不完整。"
+
+#. 0: props.label
+#: src/components/device/DevicePanel.tsx
+msgid "Device discovery on {0} reported a warning."
+msgstr "{0} 上的设备发现报告了警告。"
+
+#. 0: props.label
+#: src/components/device/DevicePanel.tsx
+msgid "Retry device discovery on {0}"
+msgstr "重试 {0} 上的设备发现"
+
+#. 0: props.label
+#: src/components/device/DevicePanel.tsx
+msgid "Details for {0}"
+msgstr "{0} 的详情"
+
+#. 0: props.label
+#: src/components/device/DevicePanel.tsx
+msgid "Dismiss device warning for {0}"
+msgstr "忽略 {0} 的设备警告"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Finishing setup"
+msgstr "正在完成设置"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "One moment."
+msgstr "请稍候。"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Start without an agent"
+msgstr "暂不设置 Agent，直接开始"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Set up one agent to start."
+msgstr "先设置一个 Agent。"
+
+#. 0: newCount; 1: newCount === 1 ? "project" \\: "projects"
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Import {0} {1} and start"
+msgstr "导入 {0} {1} 并开始"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Import threads and start"
+msgstr "导入对话并开始"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Welcome to T3 Code"
+msgstr "欢迎使用 T3 Code"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Setting up <0/>."
+msgstr "正在设置 <0/>。"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "T3 Code collects anonymous usage data to improve the app."
+msgstr "T3 Code 会收集匿名使用数据以改进应用。"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "To opt out, see the"
+msgstr "如需退出，请查看"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "See the"
+msgstr "查看"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "privacy policy"
+msgstr "隐私政策"
+
+#. 0: agentName(provider)
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Could not turn on {0}"
+msgstr "无法启用 {0}"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Turn on"
+msgstr "启用"
+
+#. 0: name
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Turn on: {0}"
+msgstr "启用：{0}"
+
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Set up"
+msgstr "设置"
+
+#. 0: name
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Set up: {0}"
+msgstr "设置：{0}"
+
+#. 0: label
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Checking {0}…"
+msgstr "正在检查 {0}…"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Add more agents"
+msgstr "添加更多 Agent"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Set up an agent"
+msgstr "设置 Agent"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "More agents in the ACP Registry"
+msgstr "ACP 注册表中的更多 Agent"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Browse"
+msgstr "浏览"
+
+#. 0: IMPORT_SOURCES_LABEL
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Looking for projects in your {0} history…"
+msgstr "正在从你的 {0} 历史中查找项目…"
+
+#. 0: selected.length; 1: selected.length === 1 ? "project" \\: "projects"
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Import {0} {1} and their threads"
+msgstr "导入 {0} {1} 及其对话"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Import projects and their threads"
+msgstr "导入项目及其对话"
+
+#. 0: IMPORT_SOURCES_LABEL
+#: src/components/onboarding/WelcomePage.tsx
+msgid "From your {0} history"
+msgstr "来自你的 {0} 历史"
+
+#. 0: candidates.length
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Review all {0}"
+msgstr "查看全部 {0}"
+
+#. 0: scan.error
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Could not check projects again. {0}"
+msgstr "无法重新检查项目。{0}"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Use T3 Code on your phone"
+msgstr "在手机上使用 T3 Code"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Scan with your phone to get the app."
+msgstr "用手机扫码获取应用。"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "T3 Code app for iPhone and Android"
+msgstr "适用于 iPhone 和 Android 的 T3 Code 应用"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Phone"
+msgstr "手机"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Checking T3 Connect…"
+msgstr "正在检查 T3 Connect…"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Could not check T3 Connect."
+msgstr "无法检查 T3 Connect。"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "<0/> Your phone can reach this computer. Sign in to the app with the same account."
+msgstr "<0/> 手机可以访问此电脑。请使用同一账号登录应用。"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "T3 Connect is on for this computer. Sign in to the app with the same account."
+msgstr "此电脑已启用 T3 Connect。请使用同一账号登录应用。"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "T3 Connect is on, but the app cannot reach this computer."
+msgstr "T3 Connect 已启用，但应用无法访问此电脑。"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Signed in. Share this computer so the app can reach it."
+msgstr "已登录。共享此电脑，以便应用访问。"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Sign in to T3 Connect here, then in the app with the same account."
+msgstr "在此处登录 T3 Connect，再使用同一账号登录应用。"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Could not save Codex setup"
+msgstr "无法保存 Codex 设置"
+
+#. 0: setup.file
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Added to {0}. Open a new terminal to use <0/>."
+msgstr "已添加到 {0}。打开新终端即可使用 <0/>。"
+
+#. 0: " "; 1: setup.file
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Use <0/> from any terminal. Adds one line to{0} {1}."
+msgstr "在任意终端使用 <0/>。向{0} {1} 添加一行配置。"
+
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/settings/CliCommandSettingsRow.tsx
+msgid "Add to PATH"
+msgstr "添加到 PATH"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Connect to an environment first."
+msgstr "请先连接环境。"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "T3 Connect is not available in this build."
+msgstr "此构建不支持 T3 Connect。"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Runs commands and edits files without asking"
+msgstr "运行命令和编辑文件时无需询问"
+
+#. 0: appName
+#. 0: appName
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "What can {0} do?"
+msgstr "{0} 可以执行哪些操作？"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "<0/> Checking T3 Connect…"
+msgstr "<0/> 正在检查 T3 Connect…"
+
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Connect to {0} first."
+msgstr "请先连接 {0}。"
+
+#. 0: name
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "{0}'s T3 Connect is offline"
+msgstr "{0} 的 T3 Connect 已离线"
+
+#. 0: name
+#. 0: name
+#. 0: name
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Can't check T3 Connect on {0}"
+msgstr "无法检查 {0} 上的 T3 Connect"
+
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Update T3 Code on {0}"
+msgstr "更新 {0} 上的 T3 Code"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Your T3 Connect account is out of tunnels."
+msgstr "你的 T3 Connect 账号已无可用隧道。"
+
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Restart T3 Code on {0}."
+msgstr "重启 {0} 上的 T3 Code。"
+
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Turn on T3 Connect for {0}"
+msgstr "为 {0} 启用 T3 Connect"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Which app?"
+msgstr "选择应用"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Something else…"
+msgstr "其他应用…"
+
+#. 0: app?.name ?? "the app"
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "When {0} opens the sign-in page, choose what it may do and approve with your T3 Connect account."
+msgstr "{0} 打开登录页后，选择它可执行的操作，并使用 T3 Connect 账号批准。"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Apps that require their own client ID cannot connect."
+msgstr "要求独立客户端 ID 的应用无法连接。"
+
+#. 0: app.name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "{0} help"
+msgstr "{0} 帮助"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Back to commands"
+msgstr "返回命令方式"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Back to one click"
+msgstr "返回一键方式"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Set up another way"
+msgstr "使用其他设置方式"
+
+#. 0: app.name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Run these where {0} runs."
+msgstr "在运行 {0} 的机器上执行。"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Could not copy"
+msgstr "无法复制"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Use Set up another way."
+msgstr "请选择「使用其他设置方式」。"
+
+#. 0: app.name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Open {0} on the web"
+msgstr "打开 {0} 网页版"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Getting code…"
+msgstr "正在获取登录码…"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Get code"
+msgstr "获取登录码"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "New code"
+msgstr "新登录码"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Code to approve <0/>"
+msgstr "用于批准 <0/> 的登录码"
+
+#. 0: Math.floor(left / 60); 1: String(left % 60).padStart(2, "0")
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Expires {0}:{1} · one use"
+msgstr "{0}:{1} 后过期 · 仅限一次"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "The code expired."
+msgstr "登录码已过期。"
+
+#. 0: label
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Copy {0}"
+msgstr "复制 {0}"
+
+#. 0: named.join(", ")
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Linked: {0}"
+msgstr "已关联：{0}"
+
+#: src/components/preview/PreviewAnnotationSpeech.tsx
+msgid "Could not update annotation voice input"
+msgstr "无法更新批注语音输入设置"
+
+#: src/components/chat/ChatComposer.tsx
+msgid "⇥ Tab"
+msgstr "⇥ Tab"
+
+#: src/components/chat/ChatComposer.tsx
+msgid "Live transcription"
+msgstr "实时转写"
+
+#: src/components/chat/BackgroundWorkDetails.tsx
+msgid "Background work"
+msgstr "后台工作"
+
+#. 0: version !== null || providerCount > 0 ? " · " \\: ""
+#: src/components/sidebar/UpdateEverythingDialog.tsx
+msgid "{0}Checking for more…"
+msgstr "{0}正在检查更多内容…"
+
+#: src/components/chat/ComposerFreshSession.tsx
+msgid "Your next message starts a fresh session"
+msgstr "下一条消息将开启全新会话"
+
+#: src/components/chat/ComposerFreshSession.tsx
+msgid "The agent won't see earlier messages in this thread."
+msgstr "Agent 将无法看到此对话中的早期消息。"
+
+#: src/components/chat/ComposerSpeechButton.tsx
+msgid "Skip"
+msgstr "跳过"
+
+#. 0: link.host
+#: src/components/chat/SecretRequestCard.tsx
+msgid "Open {0} <0/>"
+msgstr "打开 {0} <0/>"
+
+#. 0: statuses.map((status) => status.text).join(" · ")
+#: src/components/chat/ThreadActivityBanners.tsx
+msgid "Pi · {0}"
+msgstr "Pi · {0}"
+
+#: src/components/chat/V2LifecycleRow.tsx
+msgid "New session"
+msgstr "新会话"
+
+#: src/components/chat/VoiceInputErrorPill.tsx
+#: src/components/chat/VoiceInputErrorPill.tsx
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Voice input failed"
+msgstr "语音输入失败"
+
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Open voice settings"
+msgstr "打开语音设置"
+
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Retry transcription"
+msgstr "重试转写"
+
+#: src/components/chat/VoiceInputErrorPill.tsx
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Record again"
+msgstr "重新录音"
+
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Dismiss voice input error"
+msgstr "关闭语音输入错误提示"
+
+#. 0: props.cancelShortcutLabel ? ` (${props.cancelShortcutLabel})` \\: ""
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Dismiss voice input error {0}"
+msgstr "关闭语音输入错误提示 {0}"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Selected microphone (Unavailable)"
+msgstr "所选麦克风（不可用）"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "System default"
+msgstr "系统默认"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Set up voice input"
+msgstr "设置语音输入"
+
+#. 0: environment?.label ?? "your transcription environment"
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Transcribe speech on {0} and use voice input across environments."
+msgstr "在 {0} 上转写语音，并跨环境使用语音输入。"
+
+#. 0: languageLabel(props.language)
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Recommended for {0}"
+msgstr "适用于 {0} 的推荐项"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Speech model download progress"
+msgstr "语音模型下载进度"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Verifying download…"
+msgstr "正在验证下载…"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Starting download…"
+msgstr "正在开始下载…"
+
+#. 0: progress
+#. 0: Math.round(progress)
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0}% downloaded"
+msgstr "已下载 {0}%"
+
+#. 0: Math.round(model.size / 1024 / 1024); 1: " "; 2: environment?.label ?? "your transcription environment"
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Download the {0} MB model to{1} {2}. Microphone audio is sent there for transcription, as chosen in Voice settings."
+msgstr "将 {0} MB 的模型下载到{1} {2}。按照语音设置中的选择，麦克风音频将发送到该位置转写。"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Silero (1.2 MB), used for silence filtering and pause detection, downloads alongside the speech model. An installed copy is reused."
+msgstr "用于静音过滤和停顿检测的 Silero（1.2 MB）会随语音模型一起下载；已安装时会复用。"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Loading transcription models…"
+msgstr "正在加载转写模型…"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Refresh microphones"
+msgstr "刷新麦克风"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "The selected microphone is unavailable. Choose another or use the system default."
+msgstr "所选麦克风不可用。请选择其他麦克风或使用系统默认设备。"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Speak and transcribe in multiple languages or translate into English, and get names and technical terms right with the dictionary in Voice settings."
+msgstr "支持多语言听写或翻译为英文；可通过语音设置中的词典提高名称和技术术语的准确性。"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Choose another model or language"
+msgstr "选择其他模型或语言"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Choose a model or language"
+msgstr "选择模型或语言"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Retry loading models"
+msgstr "重试加载模型"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Cancel download"
+msgstr "取消下载"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Download model"
+msgstr "下载模型"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Ask an environment admin to download"
+msgstr "请环境管理员下载"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Customize in Voice settings"
+msgstr "在语音设置中自定义"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Start dictating"
+msgstr "开始听写"
+
+#: src/components/chat/ZoomableImage.tsx
+msgid "Click to zoom in or return to fit. Pinch or Ctrl+scroll to zoom, scroll or drag to pan. Use Enter to toggle zoom, plus or minus to zoom, and 0 to fit."
+msgstr "单击放大或恢复适应大小；双指缩放或按住 Ctrl 滚动可缩放，滚动或拖动可平移。按 Enter 切换缩放，加减键调整缩放，0 恢复适应大小。"
+
+#: src/components/pullRequest/PullRequestMarkdownTextarea.tsx
+msgid "Open issue"
+msgstr "未关闭的议题"
+
+#: src/components/pullRequest/PullRequestMarkdownTextarea.tsx
+msgid "Closed issue"
+msgstr "已关闭的议题"
+
+#: src/components/chat/UsageLimitRecoveryBanner.tsx
+msgid "Resumes"
+msgstr "恢复时间"
+
+#: src/components/pullRequest/PullRequestReviewAnnotation.tsx
+msgid "<0/> Add to chat"
+msgstr "<0/> 添加到对话"
+
+#: src/components/settings/AuthorizedClientsSettings.tsx
+msgid "<0/> Use in another app (MCP)"
+msgstr "<0/> 在其他应用中使用（MCP）"
+
+#: src/components/settings/ChatGptAccountPicker.tsx
+msgid "Remove connection"
+msgstr "移除连接"
+
+#. 0: list
+#: src/components/settings/DeviceSourcesSettings.tsx
+msgid "{0} list may be incomplete"
+msgstr "{0} 列表可能不完整"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "OpenRouter model"
+msgstr "OpenRouter 模型"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Search transcription models"
+msgstr "搜索转写模型"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "No transcription model matches."
+msgstr "没有匹配的转写模型。"
+
+#. 0: current
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "OpenRouter no longer lists {0}. Dictation stays off until you choose another model."
+msgstr "OpenRouter 已不再列出 {0}。选择其他模型前，听写将保持关闭。"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Replace API key"
+msgstr "替换 API 密钥"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "API key"
+msgstr "API 密钥"
+
+#. 0: company
+#. 0: company
+#: src/components/settings/CloudVoiceConfiguration.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "{0} API key"
+msgstr "{0} API 密钥"
+
+#. 0: company
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "{0} API key reference"
+msgstr "{0} API 密钥引用"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Enter API key"
+msgstr "输入 API 密钥"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Enter an API key, not a URL or secret reference."
+msgstr "请输入 API 密钥，不要输入网址或密钥引用。"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Updating the key keeps dictation enabled."
+msgstr "更新密钥后，听写会保持启用。"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Leave blank to keep the saved key."
+msgstr "留空以保留已保存的密钥。"
+
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Anyone with dictation access to {0} can bill this key."
+msgstr "拥有 {0} 听写权限的人均可使用此密钥产生费用。"
+
+#. 0: company
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Remove the {0} key?"
+msgstr "移除 {0} 密钥？"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Manage OpenRouter dictation"
+msgstr "管理 OpenRouter 听写"
+
+#. 0: company
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Manage {0} key"
+msgstr "管理 {0} 密钥"
+
+#. 0: name
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Use {0} for dictation?"
+msgstr "使用 {0} 听写？"
+
+#. 0: name; 1: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Everyone using {0} for dictation on {1} will lose access."
+msgstr "在 {1} 上使用 {0} 听写的所有人都将失去访问权限。"
+
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Anyone with dictation access to {0} can use this API key."
+msgstr "拥有 {0} 听写权限的人均可使用此 API 密钥。"
+
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Connect to {0} with dictation access to continue."
+msgstr "请以听写权限连接 {0} 后继续。"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Retry loading API key"
+msgstr "重试加载 API 密钥"
+
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Update {0} to use OpenRouter dictation."
+msgstr "更新 {0} 以使用 OpenRouter 听写。"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Checking for an API key…"
+msgstr "正在检查 API 密钥…"
+
+#. 0: environment.label
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Ask an administrator on {0} to add an API key."
+msgstr "请 {0} 的管理员添加 API 密钥。"
+
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Uses the API key saved on {0}. This choice applies only to this device."
+msgstr "使用保存在 {0} 上的 API 密钥。此选择仅应用于当前设备。"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "This choice applies only to this device. Choose Off to stop sharing."
+msgstr "此选择仅应用于当前设备。选择关闭即可停止共享。"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Remove key…"
+msgstr "移除密钥…"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Remove key"
+msgstr "移除密钥"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Save and enable"
+msgstr "保存并启用"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Save key"
+msgstr "保存密钥"
+
+#. 0: visible.every((recommendation) => recommendation.reclaimable) ? "" \\: " Run the command on each machine to reclaim it. It restarts the background service. Quit the desktop app first if it hosts the environment."
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "These databases still hold space freed by history cleanup.{0}"
+msgstr "这些数据库仍占用历史清理已释放的空间。{0}"
+
+#. 0: amount; 1: label
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Reclaiming {0} on {1}"
+msgstr "正在回收 {1} 上的 {0}"
+
+#. 0: minutes
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "T3 Code there restarts and is back in about {0} min."
+msgstr "该位置的 T3 Code 将重启，约 {0} 分钟后恢复。"
+
+#. 0: label
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Could not reclaim space on {0}"
+msgstr "无法回收 {0} 上的空间"
+
+#. 0: minutes
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Restarts T3 Code there. It is offline for about {0} min."
+msgstr "将重启该位置的 T3 Code，约离线 {0} 分钟。"
+
+#. 0: status.reclaimFailure
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "The last attempt failed: {0}"
+msgstr "上次尝试失败：{0}"
+
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Reclaim"
+msgstr "回收"
+
+#. 0: amount; 1: label
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Reclaim {0} on {1}?"
+msgstr "回收 {1} 上的 {0}？"
+
+#. 0: label; 1: minutes
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "T3 Code on {0} stops, rebuilds its database, and starts again. It is offline for about {1} min. Running agents stop when it restarts."
+msgstr "{0} 上的 T3 Code 将停止、重建数据库后重新启动，约离线 {1} 分钟。重启时，运行中的 Agent 会停止。"
+
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Restart and reclaim"
+msgstr "重启并回收"
+
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "Show folder threads on two lines: the title, then the branch, pull request, and agent."
+msgstr "分两行显示文件夹中的对话：第一行显示标题，第二行显示分支、拉取请求和 Agent。"
+
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "Share a thread with a guest who watches it live in a browser and sends messages you approve. Sign in to T3 Connect to use guest links."
+msgstr "与访客共享对话，让其在浏览器中实时查看，并发送由你批准的消息。登录 T3 Connect 即可使用访客链接。"
+
+#. 0: " "
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "Share a thread with a guest who watches it live in a browser and sends messages you approve. Needs T3 Connect: sign in and link this machine in{0} <0>Sharing & access</0> . Turning it off stops every guest link."
+msgstr "与访客共享对话，让其在浏览器中实时查看，并发送由你批准的消息。需要 T3 Connect：在{0} <0>共享与访问</0>中登录并关联本机。关闭后将停用所有访客链接。"
+
+#. 0: " "
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "Let agents here work on your other machines, and theirs here. Turn it on for each machine, then link them in{0} <0>Connections</0> . While off, nothing new starts over a link; running tasks finish."
+msgstr "允许此处的 Agent 在其他机器上工作，也允许其他机器的 Agent 在此工作。在每台机器上启用后，到{0} <0>连接</0>中关联。关闭后不再通过关联启动新任务，运行中的任务会完成。"
+
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "Show a predicted next message in the empty composer after a Claude or Codex turn. Tab uses it. Each is an extra cached request on your plan. Needs Codex 0.165+. Claude threads update on restart."
+msgstr "Claude 或 Codex 回合结束后，在空输入框中显示预测的下一条消息，按 Tab 采用。每次建议会在当前套餐中额外发起一次带缓存的请求。需要 Codex 0.165 或更新版本；Claude 对话重启后更新。"
+
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "On a Mac, clone new worktrees from a checkout cached in the T3 home folder instead of writing every file. Uses Git’s normal checkout when it can’t. Turning it off deletes the cache."
+msgstr "在 Mac 上，使用 T3 home 中缓存的检出副本克隆新工作树，避免逐个写入文件。无法使用时回退到 Git 常规检出。关闭后会删除缓存。"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "<0/> Test microphone"
+msgstr "<0/> 测试麦克风"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Cancel microphone test"
+msgstr "取消麦克风测试"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Recording time"
+msgstr "录音时长"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Microphone input level"
+msgstr "麦克风输入电平"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Opening microphone…"
+msgstr "正在打开麦克风…"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Pause recording"
+msgstr "暂停录音"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Play recording"
+msgstr "播放录音"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Recording playback position"
+msgstr "录音播放位置"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Could not play this recording. Try recording again."
+msgstr "无法播放此录音，请重新录制。"
+
+#: src/components/settings/SavedEnvironmentRows.tsx
+msgid "Run `t3 connect link` on the host, then restart T3 Code there."
+msgstr "在主机上运行 `t3 connect link`，然后重启该主机上的 T3 Code。"
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "New thread each run"
+msgstr "每次运行创建新对话"
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "Started by the first run"
+msgstr "首次运行时创建"
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "Destination thread"
+msgstr "目标对话"
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "Search all threads..."
+msgstr "搜索所有对话…"
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "No threads found."
+msgstr "未找到对话。"
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "Deleting the thread also deletes this task."
+msgstr "删除此对话也会删除此任务。"
+
+#. 0: label
+#: src/components/settings/SecretsSettings.tsx
+msgid "Nothing reads from {0}. The secrets themselves are untouched."
+msgstr "没有设置从 {0} 读取数据，密钥本身不会改变。"
+
+#. 0: label
+#: src/components/settings/SecretsSettings.tsx
+msgid "These read from {0} and will be unset. The secrets themselves are untouched."
+msgstr "以下设置从 {0} 读取数据，将被清空；密钥本身不会改变。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Hide the commands, edits, and searches agents run. Hide successful keeps failures. Zen shows only final answers. Approvals, questions, and errors always show."
+msgstr "隐藏 Agent 运行的命令、编辑和搜索。「隐藏成功项」保留失败项；「禅模式」只显示最终答复。审批、问题和错误始终显示。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "For thread titles and other generated text. Source control has its own setting. Text generators from Providers also appear here."
+msgstr "用于对话标题及其他生成文本；源码管理使用独立设置。服务商中的文本生成器也会显示在此处。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "See your agents, import projects, and set up your phone."
+msgstr "查看 Agent、导入项目并设置手机。"
+
+#. 0: score.errorPercent
+#: src/components/settings/SpeechModelComparison.tsx
+msgid "<0/> ( {0}% error)"
+msgstr "<0/>（错误率 {0}%）"
+
+#. 0.0: seconds
+#: src/components/settings/SpeechModelComparison.tsx
+msgid "<0>{0} s</0> / 30 s"
+msgstr "<0>{0} 秒</0> / 30 秒"
+
+#. 0: " "; 1: tier === "cpu" && data && data.secondsPer30s.cpu === undefined ? ( "update server" ) \\: seconds == null ? ( "not benchmarked" ) \\: ( <> <strong className="font-medium text-foreground">{seconds} s</strong> / 30 s </> )
+#: src/components/settings/SpeechModelComparison.tsx
+msgid "Speed:{0} {1}"
+msgstr "速度：{0} {1}"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Custom commit and pull request instructions for all selected environments"
+msgstr "所有所选环境的自定义提交与拉取请求指令"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Keep commit subjects under 60 characters. Keep pull request descriptions short and plain."
+msgstr "提交标题少于 60 个字符；拉取请求说明简短、直白。"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Custom commit and pull request instructions"
+msgstr "自定义提交与拉取请求指令"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Must be a coding agent: it reads the pull request over many steps. Off uses the writer model, or Codex or Claude if that model is a text generator."
+msgstr "必须选择编程 Agent，因为它需要分步读取拉取请求。关闭时使用文案模型；若该模型是文本生成器，则使用 Codex 或 Claude。"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Use the repository's pull request template when it has one."
+msgstr "仓库有拉取请求模板时，使用该模板。"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Model for commit messages, pull request text, and branch or bookmark names. When disabled, use the text generation model configured for this environment."
+msgstr "用于提交消息、拉取请求文本以及分支或书签名称的模型。关闭时，使用此环境配置的文本生成模型。"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Commits & pull requests"
+msgstr "提交与拉取请求"
+
+#: src/components/settings/SpeechLanguageSelect.tsx
+msgid "Auto-detect"
+msgstr "自动检测"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "No text generators yet"
+msgstr "尚无文本生成器"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Add a model API to write thread titles, commit messages, and other short text without starting a coding agent."
+msgstr "添加模型 API，无需启动编程 Agent 即可生成对话标题、提交消息及其他短文本。"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Off · "
+msgstr "关闭 · "
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Show models"
+msgstr "显示模型"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "<0/> Add generator"
+msgstr "<0/> 添加生成器"
+
+#. 0: environmentLabel
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "This deletes the API key stored on {0}. Anything set to use this generator falls back to the text generation model."
+msgstr "这会删除保存在 {0} 上的 API 密钥。所有使用此生成器的设置都会回退到文本生成模型。"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Add a text generator"
+msgstr "添加文本生成器"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Writes thread titles, commit messages, and other short text without starting a coding agent. Your API key is stored on this environment."
+msgstr "无需启动编程 Agent 即可生成对话标题、提交消息及其他短文本。API 密钥保存在此环境中。"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Service"
+msgstr "服务"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Base URL"
+msgstr "基础 URL"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "API key (optional)"
+msgstr "API 密钥（可选）"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Name (optional)"
+msgstr "名称（可选）"
+
+#. 0: name; 1: modelCount; 2: modelCount === 1 ? "model" \\: "models"
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "{0} is connected and lists {1} {2}. Switch any of these to it, or keep what they use now."
+msgstr "{0} 已连接，提供 {1} {2}。可将以下任一用途切换到它，也可保留当前设置。"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Connecting"
+msgstr "正在连接"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Save and continue"
+msgstr "保存并继续"
+
+#. 0: selection.model
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "{0} answered. It works."
+msgstr "{0} 已响应，可以使用。"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Follows the text generation model"
+msgstr "跟随文本生成模型"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Search models"
+msgstr "搜索模型"
+
+#. 0: name
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Couldn't load {0} models"
+msgstr "无法加载 {0} 模型"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "The model list couldn't load."
+msgstr "无法加载模型列表。"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Loading the model list."
+msgstr "正在加载模型列表。"
+
+#. 0: models.length; 1: models.length === 1 ? "model" \\: "models"
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "{0} {1} available. Pick one in a text generation model picker."
+msgstr "有 {0} {1} 可用，请在文本生成模型选择器中选择。"
+
+#. 0: name
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "{0} models"
+msgstr "{0} 模型"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Recommended"
+msgstr "推荐"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "A good default pick for the languages it covers."
+msgstr "适合作为其支持语言的默认选择。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Live preview"
+msgstr "实时预览"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Shows words in your draft as you speak, before the recording finishes."
+msgstr "录音结束前，即可在草稿中看到你说出的文字。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Translate"
+msgstr "翻译"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Can write English text from speech in another language. Turn on Translate to English to use it."
+msgstr "可将其他语言的语音转为英文文本。启用「翻译为英文」即可使用。"
+
+#. 0: model.name
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} download progress"
+msgstr "{0} 下载进度"
+
+#. 0: model.name
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Cancel {0} download"
+msgstr "取消下载 {0}"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "<0/> Download"
+msgstr "<0/> 下载"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "<0/> Selected"
+msgstr "<0/> 已选择"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Use model"
+msgstr "使用模型"
+
+#. 0: model.name
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Delete {0}"
+msgstr "删除 {0}"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Add words or phrases, separated by commas or line breaks"
+msgstr "添加词语或短语，用逗号或换行分隔"
+
+#. 0: label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Add a word or phrase to the {0}"
+msgstr "向{0}添加词语或短语"
+
+#. 0: term
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Alias for {0}"
+msgstr "{0} 的别名"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Misspelling"
+msgstr "错误拼写"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Alias"
+msgstr "别名"
+
+#. 0: term
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Add an alias for {0}"
+msgstr "为 {0} 添加别名"
+
+#. 0: label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} entries"
+msgstr "{0} 个条目"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Shared dictionary"
+msgstr "共享词典"
+
+#. 0: scope.scope.label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Saved with {0} on its environment. Everyone who dictates in this project gets these spellings, along with their own dictionary. Project spellings win when the two overlap."
+msgstr "与 {0} 一起保存在其环境中。所有在此项目中听写的人都会使用这些拼写，同时保留个人词典。两者重合时优先使用项目拼写。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Saved on the environment and used in every project there, along with each person’s own dictionary. Pick a project above to limit these words to one project."
+msgstr "保存在环境中，供该环境的所有项目使用，同时保留个人词典。在上方选择项目可将这些词限定为仅在该项目使用。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Cleanup model not saved"
+msgstr "文本整理模型未保存"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Model for transcript cleanup, such as a cheaper or faster one. When disabled, use the text generation model configured for this environment."
+msgstr "用于整理转写文本的模型，例如更便宜或更快的模型。关闭时使用此环境配置的文本生成模型。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Connect an environment first."
+msgstr "请先连接环境。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Use a separate cleanup model"
+msgstr "使用独立的文本整理模型"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Could not load transcription models"
+msgstr "无法加载转写模型"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Hardware"
+msgstr "硬件"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Auto uses the environment’s GPU when it has one."
+msgstr "自动模式会在环境有 GPU 时使用 GPU。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Selected GPU"
+msgstr "所选 GPU"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Transcription hardware"
+msgstr "转写硬件"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Unload model"
+msgstr "卸载模型"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Release the model’s memory on the environment after it sits idle."
+msgstr "模型闲置一段时间后，释放其在环境中占用的内存。"
+
+#. 0: status.reason
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "This environment can’t transcribe audio: {0}."
+msgstr "此环境无法转写音频：{0}。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Languages"
+msgstr "语言"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "All languages"
+msgstr "所有语言"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "No languages match."
+msgstr "没有匹配的语言。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Browse models by language"
+msgstr "按语言浏览模型"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Models for "
+msgstr "适用于以下语言的模型："
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "All models"
+msgstr "所有模型"
+
+#. 0: sortLabels[sort]; 1: downloadedOnly ? ", downloaded only" \\: ""
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Sort and filter models: {0}{1}"
+msgstr "模型排序与筛选：{0}{1}"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Sort by"
+msgstr "排序依据"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Downloaded only"
+msgstr "仅已下载"
+
+#. 0: status.benchmarkTier === "cpu" ? "CPU" \\: "GPU"
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Pick languages to see models that support all of them. Accuracy is word or character error rate: lower is better. Speed is the time to transcribe 30 seconds of audio on Handy’s benchmark {0}."
+msgstr "选择语言以查看同时支持这些语言的模型。准确度以词或字符错误率衡量，越低越好；速度为在 Handy 基准测试硬件 {0} 上转写 30 秒音频所需的时间。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Close model test"
+msgstr "关闭模型测试"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Say a sentence in the language above. Cleanup is skipped, so you see exactly what the model heard. The transcript stays on this page."
+msgstr "用上方语言说一句话。测试会跳过文本整理，直接显示模型识别的原文；转写文本仅保留在此页面。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "No speech recognized. Try again."
+msgstr "未识别到语音，请重试。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Test transcript"
+msgstr "测试转写文本"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "<0/> Test model"
+msgstr "<0/> 测试模型"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Waiting for the environment to connect"
+msgstr "正在等待环境连接"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Selected microphone (unavailable)"
+msgstr "所选麦克风（不可用）"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Manage OpenRouter"
+msgstr "管理 OpenRouter"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Manage key"
+msgstr "管理密钥"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "System default follows your operating system. Record a ten-second test and play it back here. Test audio stays on this device and is never transcribed."
+msgstr "系统默认跟随操作系统设置。可录制十秒测试并在此回放；测试音频仅保留在此设备，不会转写。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "How the dictation shortcut starts and stops recording."
+msgstr "设置听写快捷键如何开始和停止录音。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Dictation shortcut mode"
+msgstr "听写快捷键模式"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Use"
+msgstr "使用"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Chosen environment (unavailable)"
+msgstr "所选环境（不可用）"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "<0/> Off"
+msgstr "<0/> 关闭"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "On an environment"
+msgstr "在环境中"
+
+#. 0: CLOUD_SPEECH_LABELS[provider]; 1: environment.label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} via {1}"
+msgstr "{0}，通过 {1}"
+
+#. 0: environment.label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Cloud via {0}"
+msgstr "通过 {0} 使用云端服务"
+
+#. 0: chosenEnvironment.label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} can’t transcribe audio locally. Choose a different destination."
+msgstr "{0} 无法在本地转写音频，请选择其他目标位置。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Language"
+msgstr "语言"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "The cloud provider can detect your language automatically."
+msgstr "云端服务商可以自动检测你的语言。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Choose an environment above to see the languages its transcription model supports."
+msgstr "在上方选择环境，以查看其转写模型支持的语言。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Translate to English"
+msgstr "翻译为英文"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Speak any language and get English text."
+msgstr "使用任意语言说话，获取英文文本。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Transcription"
+msgstr "转写"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "OpenAI handles silence automatically."
+msgstr "OpenAI 会自动处理静音。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Skip silence and other non-speech audio before transcription, keeping a short buffer so words aren’t cut off."
+msgstr "转写前跳过静音和其他非语音音频，并保留少量缓冲以免截断词语。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Remove filler words like “um” and “uh” from transcripts."
+msgstr "从转写文本中移除「嗯」「呃」等语气词。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Names and terms transcription should spell your way, saved on this device. Add an alias when it keeps hearing a term wrong. The name of the project you dictate in is also sent as a hint."
+msgstr "将希望采用的名称和术语拼写保存在此设备。某个术语经常被识别错误时，可添加别名。听写所在项目的名称也会作为提示发送。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Transcription options"
+msgstr "转写选项"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Fixes punctuation, numbers, and spoken corrections with the cleanup model on the draft’s environment. Sends the transcript and nearby draft text, never audio."
+msgstr "在草稿所在环境中使用文本整理模型，修正标点、数字和口头纠正。只发送转写文本及附近草稿，不发送音频。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Custom cleanup instructions"
+msgstr "自定义文本整理指令"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Cleanup instructions"
+msgstr "文本整理指令"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Use the built-in instructions or write your own."
+msgstr "使用内置指令或编写自己的指令。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Built-in"
+msgstr "内置"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "The word or phrase you say to flag a correction, like “sorry” or “scratch that”. Cleanup applies the correction only where one is meant, and hears the cue as a hint."
+msgstr "用于标记纠正的词语或短语，例如「抱歉」「刚才那句作废」。文本整理只在有纠正意图的位置修改，并将提示词作为线索。"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Voice"
+msgstr "语音"

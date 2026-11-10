@@ -173,6 +173,7 @@ msgstr "Showing the first {0} files."
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/CaptureShortcutConfig.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
 #: src/components/settings/CodexSetupSection.tsx
 #: src/components/settings/CodexSetupSection.tsx
 #: src/components/settings/CodexSetupSection.tsx
@@ -182,6 +183,7 @@ msgstr "Showing the first {0} files."
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/CustomModelEditor.tsx
+#: src/components/settings/DatabaseStorageNotice.tsx
 #: src/components/settings/DeviceHostEditor.tsx
 #: src/components/settings/EasDeviceHostEditor.tsx
 #: src/components/settings/IntegrationsSettings.tsx
@@ -198,6 +200,8 @@ msgstr "Showing the first {0} files."
 #: src/components/settings/SimlockDeviceHostEditor.tsx
 #: src/components/settings/SnapShotSettings.tsx
 #: src/components/settings/SourceControlAppSignInSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/settings/ThemeEditorPanel.tsx
 #: src/components/settings/ThemeEditorPanel.tsx
 #: src/components/settings/ThemeImportDialog.tsx
@@ -278,6 +282,7 @@ msgstr "Browser dialog"
 
 #: src/browser/ServerBrowserSurface.tsx
 #: src/components/auth/PairingRouteSurface.tsx
+#: src/components/chat/VoiceInputSetup.tsx
 #: src/components/clerk/MobileClientsUserProfilePage.tsx
 #: src/components/cloud/CloudEnvironmentConnectList.tsx
 #: src/components/files/fileSurfaceChrome.tsx
@@ -322,7 +327,7 @@ msgstr "Uses the latest commit of the base branch’s tracked remote branch, eve
 #: src/components/RightPanelTabs.tsx
 #: src/components/chat/HtmlRenderDialog.tsx
 #: src/components/files/AttachmentFilePreview.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/SnapShotSetupDialog.tsx
 #: src/components/ui/dialog.tsx
@@ -440,9 +445,7 @@ msgstr "Workspace"
 #: src/components/promptLinks/NewThreadLinkView.tsx
 #: src/components/pullRequest/PullRequestsPage.tsx
 #: src/components/settings/ArchivedThreadsPanel.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
+#: src/components/settings/DatabaseStorageNotice.tsx
 #: src/components/settings/ProjectFaviconPickerDialog.tsx
 #: src/components/settings/ProjectSettingsPanel.tsx
 msgid "An error occurred."
@@ -512,6 +515,10 @@ msgstr "Run context: {0}"
 #: src/components/CommandPalette.tsx
 #: src/components/CommandPalette.tsx
 #: src/components/CommandPalette.tsx
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Projects"
 msgstr "Projects"
@@ -838,6 +845,7 @@ msgstr "Create & Add"
 #: src/components/settings/ProviderAccentColorPicker.tsx
 #: src/components/settings/ProviderModelsSection.tsx
 #: src/components/settings/ProviderModelsSection.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Add"
 msgstr "Add"
 
@@ -951,11 +959,13 @@ msgstr "Loading folders..."
 #: src/components/chat/LinkRequestCard.tsx
 #: src/components/device/DeviceControlsRail.tsx
 #: src/components/device/DeviceSetup.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/preview/PreviewChromeRow.tsx
 #: src/components/preview/PreviewChromeRow.tsx
 #: src/components/settings/AddProviderInstanceDialog.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/settings/SnapShotSetupDialog.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/settings/ThemeImportDialog.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 msgid "Back"
@@ -1081,6 +1091,7 @@ msgstr "Try again."
 msgid "For {0} mode"
 msgstr "For {0} mode"
 
+#: src/components/CommandPaletteProjectItems.tsx
 #: src/components/CommandPaletteThemeItems.tsx
 #: src/components/CommandPaletteThemeItems.tsx
 #: src/components/settings/DiagnosticsSettings.tsx
@@ -1509,19 +1520,24 @@ msgstr "<0/> Advanced"
 #: src/components/chat/ThreadRelationshipIcon.tsx
 #: src/components/cloud/ConnectOnboardingDialog.tsx
 #: src/components/device/DeviceSetup.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/BackgroundActivitySettings.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/CaptureShortcutConfig.tsx
+#: src/components/settings/MicrophoneTest.tsx
 #: src/components/settings/ProviderWizardAuthenticationStep.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/settings/SnapShotSetupDialog.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Done"
 msgstr "Done"
 
 #: src/components/GitActionsControl.tsx
 #: src/components/chat/ComposerPrimaryActions.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/settings/AddProviderInstanceDialog.tsx
 msgid "Next"
 msgstr "Next"
@@ -1594,9 +1610,8 @@ msgid "<0/> Signed in"
 msgstr "<0/> Signed in"
 
 #: src/components/HostedEmptyState.tsx
+#: src/components/auth/ApproveAgentSurface.tsx
 #: src/components/cloud/ConnectCliAuthSurface.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/LabsSettingsPanel.tsx
 #: src/components/settings/ProviderAuthenticationSection.tsx
 #: src/components/settings/ProviderWizardAuthenticationStep.tsx
@@ -1700,12 +1715,14 @@ msgstr "From t3.json"
 #. 0: script.name
 #. 0: model.slug
 #. 0: existing.config.label
+#. 0: textGeneratorDisplayName(existing)
 #. 0: theme.label
 #: src/components/ProjectScriptsControl.tsx
 #: src/components/chat/ThreadAutomationsPanel.tsx
 #: src/components/settings/ProjectActionsList.tsx
 #: src/components/settings/ProviderModelsSection.tsx
 #: src/components/settings/SecretProviderDialog.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/settings/ThemeSettings.tsx
 msgid "Edit {0}"
 msgstr "Edit {0}"
@@ -2215,7 +2232,6 @@ msgid "Failed to archive thread"
 msgstr "Failed to archive thread"
 
 #: src/components/Sidebar.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
 msgid "Failed to delete thread"
 msgstr "Failed to delete thread"
 
@@ -2308,6 +2324,9 @@ msgstr "{0} #{1}, status pending"
 
 #: src/components/ThreadTerminalDrawer.tsx
 #: src/components/files/FileBrowserPanel.tsx
+#: src/components/pullRequest/PullRequestSummaryTab.tsx
+#: src/components/pullRequest/PullRequestTimelineTab.tsx
+#: src/components/pullRequest/PullRequestTimelineTab.tsx
 msgid "Add to chat"
 msgstr "Add to chat"
 
@@ -2324,7 +2343,7 @@ msgid "Paste"
 msgstr "Paste"
 
 #: src/components/ThreadTerminalDrawer.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Select all"
 msgstr "Select all"
 
@@ -2458,6 +2477,7 @@ msgstr "Add secret provider"
 msgid "Agent browser access"
 msgstr "Agent browser access"
 
+#: src/components/onboarding/WelcomePage.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Agents"
 msgstr "Agents"
@@ -2558,7 +2578,6 @@ msgstr "Capture shortcut"
 msgid "Capture sound"
 msgstr "Capture sound"
 
-#: src/components/chat/CompactComposerControlsMenu.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Chat"
 msgstr "Chat"
@@ -2568,7 +2587,7 @@ msgstr "Chat"
 msgid "Chat width"
 msgstr "Chat width"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/ui/standalone-page.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Code"
@@ -2599,7 +2618,6 @@ msgstr "Composer context"
 msgid "Connections"
 msgstr "Connections"
 
-#: src/components/settings/SettingsPanels.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Context window indicator (legacy)"
 msgstr "Context window indicator (legacy)"
@@ -2614,8 +2632,6 @@ msgstr "Continue threads after restarts"
 msgid "Contrast"
 msgstr "Contrast"
 
-#: src/components/settings/UsageProviderSettings.tsx
-#: src/components/settings/UsageProviderSettings.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Cursor account usage"
 msgstr "Cursor account usage"
@@ -2713,7 +2729,6 @@ msgstr "Environment identification"
 msgid "Fallback model"
 msgstr "Fallback model"
 
-#: src/components/settings/SourceControlWritingSettings.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Follow change request templates"
 msgstr "Follow change request templates"
@@ -2884,7 +2899,6 @@ msgstr "Panel animations"
 msgid "Permissions"
 msgstr "Permissions"
 
-#: src/components/settings/SettingsPanels.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Plan mode (legacy)"
 msgstr "Plan mode (legacy)"
@@ -3049,7 +3063,6 @@ msgstr "Source control"
 msgid "Source control writer model"
 msgstr "Source control writer model"
 
-#: src/components/settings/SourceControlWritingSettings.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Source control writing style"
 msgstr "Source control writing style"
@@ -3064,7 +3077,6 @@ msgid "Submodules"
 msgstr "Submodules"
 
 #: src/components/clerk/T3ConnectUserProfilePage.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/EnvironmentRow.tsx
 #: src/components/settings/LinkMachineSelect.tsx
 #: src/components/settings/SavedEnvironmentRows.tsx
@@ -3247,6 +3259,7 @@ msgstr "Choose icon"
 
 #: src/components/projectScriptEditor.tsx
 #: src/components/settings/TelemetryExportSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "Test"
 msgstr "Test"
 
@@ -3308,7 +3321,6 @@ msgid "Open preview automatically when this action runs"
 msgstr "Open preview automatically when this action runs"
 
 #: src/components/settings/AcpSessionManagementSection.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
 msgid "Delete"
 msgstr "Delete"
 
@@ -3357,6 +3369,7 @@ msgid "The project is still available. Try opening the draft again."
 msgstr "The project is still available. Try opening the draft again."
 
 #: src/components/desktop/DesktopWebLinkCoordinator.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/promptLinks/HostedPromptLinkLanding.tsx
 #: src/components/promptLinks/NewThreadLinkView.tsx
 #: src/routes/_chat.new.tsx
@@ -3390,6 +3403,7 @@ msgstr "One moment while this environment verifies the agent's request."
 msgid "This sign-in cannot continue"
 msgstr "This sign-in cannot continue"
 
+#: src/components/auth/ApproveAgentSurface.tsx
 #: src/components/auth/ConnectAgentSurface.tsx
 msgid "Close this page and start the sign-in again from your agent."
 msgstr "Close this page and start the sign-in again from your agent."
@@ -3399,21 +3413,6 @@ msgstr "Close this page and start the sign-in again from your agent."
 msgid "Connect {0}"
 msgstr "Connect {0}"
 
-#. 0: " "
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "This agent wants to use the threads in every project on{0} <0/>."
-msgstr "This agent wants to use the threads in every project on{0} <0/>."
-
-#. 0: details.redirectHost
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "The name is chosen by the agent. Approval returns to {0} on the computer that opened this page. Only approve a sign-in you just started."
-msgstr "The name is chosen by the agent. Approval returns to {0} on the computer that opened this page. Only approve a sign-in you just started."
-
-#. 0: " "
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "The name is chosen by the agent. Approval gives access to whoever runs{0} <0/>. Only approve a sign-in you just started there."
-msgstr "The name is chosen by the agent. Approval gives access to whoever runs{0} <0/>. Only approve a sign-in you just started there."
-
 #: src/components/auth/ConnectAgentSurface.tsx
 msgid "What it may do"
 msgstr "What it may do"
@@ -3422,22 +3421,12 @@ msgstr "What it may do"
 msgid "Beyond read only, it can start, message and stop threads, and none of them can run with more than the mode you pick."
 msgstr "Beyond read only, it can start, message and stop threads, and none of them can run with more than the mode you pick."
 
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "Paste a one-time pairing code"
-msgstr "Paste a one-time pairing code"
-
-#: src/components/auth/ConnectAgentSurface.tsx
 #: src/components/chat/LinkRequestCard.tsx
 #: src/components/settings/AddEnvironmentDialog.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/LinkedEnvironmentsSettings.tsx
 msgid "Pairing code"
 msgstr "Pairing code"
-
-#. 0: " "
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "Create one in Settings → Sharing & access, or run <0/>{0} on this machine."
-msgstr "Create one in Settings → Sharing & access, or run <0/>{0} on this machine."
 
 #: src/components/auth/PairingRouteSurface.tsx
 msgid "Pairing with this environment"
@@ -3489,7 +3478,6 @@ msgstr "Verify the backend is reachable from this browser, supports CORS for hos
 
 #: src/components/auth/PairingRouteSurface.tsx
 #: src/components/auth/PairingRouteSurface.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
 msgid "Pairing..."
 msgstr "Pairing..."
 
@@ -3626,6 +3614,8 @@ msgid "Upgrade on T3 Chat"
 msgstr "Upgrade on T3 Chat"
 
 #: src/components/cloud/TunnelUsage.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/settings/SavedEnvironmentRows.tsx
 msgid "Manage tunnels"
 msgstr "Manage tunnels"
 
@@ -3635,6 +3625,7 @@ msgstr "You're out of tunnels (they cost us money)."
 
 #: src/components/clerk/ClerkUserProfilePage.tsx
 #: src/components/pullRequest/PullRequestActionsMenu.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "<0/> Refresh"
 msgstr "<0/> Refresh"
 
@@ -3737,6 +3728,9 @@ msgid "Link a paid T3 Chat account for more T3 Connect tunnels: up to {0} with P
 msgstr "Link a paid T3 Chat account for more T3 Connect tunnels: up to {0} with Pro, {1} with Premier."
 
 #: src/components/clerk/T3ConnectSidebarSignIn.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Sign in to T3 Connect"
 msgstr "Sign in to T3 Connect"
 
@@ -4022,10 +4016,6 @@ msgid "Type your own answer, or leave this blank to use the selected option"
 msgstr "Type your own answer, or leave this blank to use the selected option"
 
 #: src/components/chat/ChatComposer.tsx
-msgid "Add feedback to refine the plan, or leave this blank to implement it"
-msgstr "Add feedback to refine the plan, or leave this blank to implement it"
-
-#: src/components/chat/ChatComposer.tsx
 msgid "Choose a project above to start a thread"
 msgstr "Choose a project above to start a thread"
 
@@ -4138,16 +4128,10 @@ msgstr "Earlier output not shown"
 msgid "More composer controls"
 msgstr "More composer controls"
 
-#: src/components/chat/CompactComposerControlsMenu.tsx
-#: src/components/chat/ComposerFooterControls.tsx
 #: src/components/chat/ProposedPlanCard.tsx
 #: src/components/usage/UsageLimitsPooled.tsx
 msgid "Plan"
 msgstr "Plan"
-
-#: src/components/chat/CompactComposerControlsMenu.tsx
-msgid "Mode"
-msgstr "Mode"
 
 #: src/components/chat/ComposerBannerStack.tsx
 msgid "Notice details"
@@ -4178,6 +4162,8 @@ msgstr "Code language: {0}"
 
 #: src/components/chat/ComposerCodeBlockLanguagePicker.tsx
 #: src/components/chat/ComposerCodeBlockLanguagePicker.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Search languages"
 msgstr "Search languages"
 
@@ -4209,6 +4195,7 @@ msgstr "Retry upload for {0}"
 #. 0: staged.file.name
 #. 0: model.slug
 #. 0: theme.label
+#. 0: term
 #: src/components/chat/ComposerAttachmentStrip.tsx
 #: src/components/chat/ComposerAttachmentStrip.tsx
 #: src/components/chat/ComposerAttachmentStrip.tsx
@@ -4216,6 +4203,7 @@ msgstr "Retry upload for {0}"
 #: src/components/guest/GuestPage.tsx
 #: src/components/settings/ProviderModelsSection.tsx
 #: src/components/settings/ThemeSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Remove {0}"
 msgstr "Remove {0}"
 
@@ -4277,7 +4265,6 @@ msgstr "On"
 #: src/components/chat/ComposerModelEffort.tsx
 #: src/components/chat/TraitsPicker.tsx
 #: src/components/clerk/MobileClientsUserProfilePage.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ProviderInstanceCard.tsx
@@ -4288,16 +4275,13 @@ msgstr "On"
 #: src/components/settings/StorageSettings.tsx
 #: src/components/settings/StorageSettings.tsx
 #: src/components/settings/TelemetryExportSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Off"
 msgstr "Off"
 
 #: src/components/chat/ComposerModelEffort.tsx
 msgid "No effort levels"
 msgstr "No effort levels"
-
-#: src/components/chat/ComposerPlanFollowUpBanner.tsx
-msgid "Plan ready"
-msgstr "Plan ready"
 
 #: src/components/chat/ComposerPendingUserInputPanel.tsx
 #: src/components/chat/ComposerPendingUserInputPanel.tsx
@@ -4348,14 +4332,6 @@ msgstr "Previous question"
 #: src/components/chat/ComposerPrimaryActions.tsx
 msgid "Previous"
 msgstr "Previous"
-
-#: src/components/chat/ComposerPrimaryActions.tsx
-msgid "Implementation actions"
-msgstr "Implementation actions"
-
-#: src/components/chat/ComposerPrimaryActions.tsx
-msgid "Implement in a new thread"
-msgstr "Implement in a new thread"
 
 #: src/components/chat/ComposerPrimaryActions.tsx
 msgid "Update queued message"
@@ -4441,7 +4417,9 @@ msgid "{0} is out of usage{1}"
 msgstr "{0} is out of usage{1}"
 
 #. 0: defaultModelName
+#. 0: name
 #: src/components/chat/ComposerUsageLimits.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
 msgid "Use {0}"
 msgstr "Use {0}"
 
@@ -4454,37 +4432,10 @@ msgstr "Manage usage"
 msgid "{0} additions, {1} deletions"
 msgstr "{0} additions, {1} deletions"
 
-#. 0: usedPercentage
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "Context window {0} used"
-msgstr "Context window {0} used"
-
-#. 0: formatContextWindowTokens(usage.usedTokens)
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "Context window {0} tokens used"
-msgstr "Context window {0} tokens used"
-
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "Context Window"
-msgstr "Context Window"
-
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "Context window usage"
-msgstr "Context window usage"
-
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "Total processed"
-msgstr "Total processed"
-
-#: src/components/chat/ContextWindowMeter.tsx
 #: src/components/usage/UsageModelDialog.tsx
 #: src/components/usage/UsagePage.tsx
 msgid "Cost"
 msgstr "Cost"
-
-#: src/components/chat/ContextWindowMeter.tsx
-msgid "<0/> Compact context"
-msgstr "<0/> Compact context"
 
 #: src/components/Sidebar.tsx
 #: src/components/chat/DraftHeroHeadline.tsx
@@ -4814,10 +4765,11 @@ msgstr "Expand diagram"
 #: src/components/chat/useSystemComposerBanners.tsx
 #: src/components/device/DeviceHostUpdates.tsx
 #: src/components/device/DevicePanel.tsx
+#: src/components/device/DevicePanel.tsx
 #: src/components/files/AudioPreview.tsx
 #: src/components/onboarding/FirstRunGate.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/pullRequest/PullRequestCodeTab.tsx
 #: src/components/pullRequest/PullRequestCodeTab.tsx
 #: src/components/pullRequest/PullRequestsPage.tsx
@@ -4972,6 +4924,7 @@ msgstr "Open in {0}"
 #: src/components/device/DevicePanel.tsx
 #: src/components/device/DevicePanel.tsx
 #: src/components/pullRequest/PullRequestReviewAnnotation.tsx
+#: src/components/settings/SettingsPanels.tsx
 msgid "Open"
 msgstr "Open"
 
@@ -5203,8 +5156,10 @@ msgstr "Sent by T3 Code"
 
 #: src/components/ThreadContextChip.tsx
 #: src/components/ThreadNotificationCoordinator.tsx
+#: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/QueuedRunsControl.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
+#: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Open thread"
 msgstr "Open thread"
 
@@ -5288,12 +5243,14 @@ msgstr "Stopping"
 msgid "It may be short on memory. Force stop kills its processes."
 msgstr "It may be short on memory. Force stop kills its processes."
 
+#: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/ThreadActivityBanners.tsx
 #: src/components/chat/ThreadRelationshipIcon.tsx
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Waiting"
 msgstr "Waiting"
 
+#: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/ThreadActivityBanners.tsx
 #: src/components/chat/ThreadRelationshipIcon.tsx
 #: src/components/device/DevicePanel.tsx
@@ -5699,7 +5656,6 @@ msgid "Jump to message: {0}"
 msgstr "Jump to message: {0}"
 
 #: src/components/chat/TimelineAssistantRows.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/sidebar/UpdateEverythingDialog.tsx
 #: src/components/ui/standalone-page.tsx
 msgid "T3 Code"
@@ -5767,12 +5723,14 @@ msgstr "Tool call failed"
 #. 0: item.title ?? "created thread"
 #. 0: props.title
 #. 0: member.title
+#. 0: app.name
 #. 0: store
 #: src/components/chat/TimelineWorkEntryRow.tsx
 #: src/components/chat/V2LifecycleRow.tsx
 #: src/components/chat/V2LifecycleRow.tsx
 #: src/components/chat/V2LifecycleRow.tsx
 #: src/components/chat/WorkflowOpeningBlock.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/settings/MobileAppSettingsRow.tsx
 msgid "Open {0}"
 msgstr "Open {0}"
@@ -5804,6 +5762,7 @@ msgid "What went wrong?"
 msgstr "What went wrong?"
 
 #: src/components/chat/TimelineWorkGroupRows.tsx
+#: src/components/settings/SettingsPanels.tsx
 msgid "Activity"
 msgstr "Activity"
 
@@ -5864,11 +5823,6 @@ msgstr "exit {0}"
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Usage limit reached"
 msgstr "Usage limit reached"
-
-#. 0: formatUpcomingTimestamp(resetAt, timestampFormat)
-#: src/components/chat/UsageLimitRecoveryBanner.tsx
-msgid "Resets {0}"
-msgstr "Resets {0}"
 
 #: src/components/chat/UsageLimitRecoveryBanner.tsx
 msgid "Reset time unavailable; retry manually"
@@ -5974,10 +5928,6 @@ msgstr "Worktree setup"
 #: src/components/chat/ZoomableImage.tsx
 msgid "{0}, zoomable image"
 msgstr "{0}, zoomable image"
-
-#: src/components/chat/ZoomableImage.tsx
-msgid "Click to zoom in or return to fit. Scroll to zoom, drag to pan. Use Enter to toggle zoom, plus or minus to zoom, and 0 to fit."
-msgstr "Click to zoom in or return to fit. Scroll to zoom, drag to pan. Use Enter to toggle zoom, plus or minus to zoom, and 0 to fit."
 
 #. 0: Math.round(zoom * 100)
 #: src/components/chat/ZoomableImage.tsx
@@ -6826,6 +6776,7 @@ msgstr "Device host"
 
 #: src/components/device/DevicePanel.tsx
 #: src/components/device/DevicePanel.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Start"
 msgstr "Start"
 
@@ -6838,17 +6789,8 @@ msgid "Refresh devices"
 msgstr "Refresh devices"
 
 #: src/components/device/DevicePanel.tsx
-msgid "Dismiss device warning"
-msgstr "Dismiss device warning"
-
-#: src/components/device/DevicePanel.tsx
 msgid "Dismiss device error"
 msgstr "Dismiss device error"
-
-#. 0: props.label
-#: src/components/device/DevicePanel.tsx
-msgid "Device discovery warning · {0}"
-msgstr "Device discovery warning · {0}"
 
 #. 0: label; 1: version ? `version ${version}` \\: selected ? "not installed" \\: "version unknown"
 #: src/components/device/DeviceToolVersions.tsx
@@ -6917,6 +6859,7 @@ msgstr "Bundle ID to launch"
 msgid "Package name to launch"
 msgstr "Package name to launch"
 
+#: src/components/auth/ConnectAgentSurface.tsx
 #: src/components/device/DeviceToolsPanel.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "App"
@@ -7064,6 +7007,7 @@ msgstr "Attached files"
 #: src/components/chat/ChatComposer.tsx
 #: src/components/guest/GuestPage.tsx
 #: src/components/guest/GuestPage.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/settings/DiagnosticsSettings.tsx
 msgid "Message"
 msgstr "Message"
@@ -7076,155 +7020,68 @@ msgstr "Files to attach"
 msgid "The owner approves each message"
 msgstr "The owner approves each message"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Some history was not imported"
 msgstr "Some history was not imported"
 
 #. 0: importedThreadCount; 1: importedThreadCount === 1 ? "thread" \\: "threads"
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Imported {0} {1}"
 msgstr "Imported {0} {1}"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Could not finish setup"
 msgstr "Could not finish setup"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Your settings could not be saved. Try again."
 msgstr "Your settings could not be saved. Try again."
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Set up T3 Code"
-msgstr "Set up T3 Code"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Connect your computers"
-msgstr "Connect your computers"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Choose one or more computers. We’ll set up agents and projects on each."
-msgstr "Choose one or more computers. We’ll set up agents and projects on each."
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Computers to set up"
-msgstr "Computers to set up"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Add a computer"
-msgstr "Add a computer"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Run this on each computer you want to connect."
-msgstr "Run this on each computer you want to connect."
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Keep T3 Code running. Select the computers you want to set up above."
-msgstr "Keep T3 Code running. Select the computers you want to set up above."
-
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 msgid "Pairing link"
 msgstr "Pairing link"
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "<0/> Need a pairing link?"
-msgstr "<0/> Need a pairing link?"
-
-#. 0: " "
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "On the computer with your code, start T3 Code or run{0} <0/>, then run:"
-msgstr "On the computer with your code, start T3 Code or run{0} <0/>, then run:"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "On a tailnet, run <0/> instead."
-msgstr "On a tailnet, run <0/> instead."
-
-#: src/components/onboarding/WelcomeWizard.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Continue <0/>"
-msgstr "Continue <0/>"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Connect your agents"
-msgstr "Connect your agents"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Choose an agent to start coding. You can add more later."
-msgstr "Choose an agent to start coding. You can add more later."
-
-#: src/components/onboarding/WelcomeWizard.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "This connection cannot control terminals."
 msgstr "This connection cannot control terminals."
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/CodexSetupSection.tsx
 #: src/components/settings/CodexSetupSection.tsx
 msgid "<0/> Ready"
 msgstr "<0/> Ready"
 
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/pullRequest/PullRequestListEmptyState.tsx
 #: src/components/pullRequest/PullRequestListEmptyState.tsx
 #: src/components/settings/CodexSetupSection.tsx
 msgid "Checking..."
 msgstr "Checking..."
 
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/AcpSessionManagementSection.tsx
 #: src/components/settings/TelemetryExportSettings.tsx
 msgid "Disabled"
 msgstr "Disabled"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Run <0/> in this terminal."
 msgstr "Run <0/> in this terminal."
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Looking for projects from Claude Code and Codex…"
-msgstr "Looking for projects from Claude Code and Codex…"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Do not import projects"
-msgstr "Do not import projects"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Your projects"
-msgstr "Your projects"
-
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Select none"
 msgstr "Select none"
 
 #. 0: selected.length; 1: candidates.length
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "{0} of {1} selected"
 msgstr "{0} of {1} selected"
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "<0/> Looking for projects…"
-msgstr "<0/> Looking for projects…"
-
 #. 0: scan.error
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Could not check projects. {0}"
 msgstr "Could not check projects. {0}"
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "No existing Claude Code or Codex projects found."
-msgstr "No existing Claude Code or Codex projects found."
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Import your projects"
-msgstr "Import your projects"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Import projects and conversations from Claude Code and Codex on your selected computers."
-msgstr "Import projects and conversations from Claude Code and Codex on your selected computers."
-
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Other folders"
 msgstr "Other folders"
 
@@ -7348,6 +7205,7 @@ msgstr "Annotate preview"
 
 #: src/components/preview/PreviewChromeRow.tsx
 #: src/components/preview/PreviewChromeRow.tsx
+#: src/components/settings/MicrophoneTest.tsx
 msgid "Stop recording"
 msgstr "Stop recording"
 
@@ -7639,6 +7497,7 @@ msgstr "New thread ({0})"
 msgid "Search"
 msgstr "Search"
 
+#: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/sidebar/SidebarThreadHeader.tsx
 msgid "Search threads"
 msgstr "Search threads"
@@ -7691,6 +7550,7 @@ msgstr "Goal"
 msgid "Approval"
 msgstr "Approval"
 
+#: src/components/settings/VoiceSettingsPanel.tsx
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Input"
 msgstr "Input"
@@ -7919,6 +7779,7 @@ msgstr "Via"
 msgid "Left"
 msgstr "Left"
 
+#: src/components/chat/UsageLimitRecoveryBanner.tsx
 #: src/components/usage/UsageLimitsPooled.tsx
 msgid "Resets"
 msgstr "Resets"
@@ -8074,6 +7935,7 @@ msgstr "Cache savings"
 msgid "Totals"
 msgstr "Totals"
 
+#: src/components/settings/CloudVoiceConfiguration.tsx
 #: src/components/settings/ProjectDefaultsSettings.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/usage/UsagePage.tsx
@@ -8116,22 +7978,6 @@ msgstr "Unpriced"
 #: src/components/usage/UsagePage.tsx
 msgid "Usage breakdown by time"
 msgstr "Usage breakdown by time"
-
-#. 0: label
-#. 0: label
-#: src/components/usage/UsagePage.tsx
-#: src/components/usage/UsagePage.tsx
-msgid "Enable Cursor usage from {0}"
-msgstr "Enable Cursor usage from {0}"
-
-#. 0: showEnvironment ? ` · ${label}` \\: ""
-#: src/components/usage/UsagePage.tsx
-msgid "Cursor{0}"
-msgstr "Cursor{0}"
-
-#: src/components/usage/UsagePage.tsx
-msgid "<0/> Cursor"
-msgstr "<0/> Cursor"
 
 #. 0: " "; 1: duplicateSources.join(", ")
 #: src/components/usage/UsagePage.tsx
@@ -8476,8 +8322,11 @@ msgstr "Line {0}"
 msgid "No checks reported"
 msgstr "No checks reported"
 
+#: src/components/chat/BackgroundWorkDetails.tsx
+#: src/components/device/DevicePanel.tsx
 #: src/components/preview/PreviewUnreachable.tsx
 #: src/components/pullRequest/PullRequestChecksPopover.tsx
+#: src/components/settings/DeviceSourcesSettings.tsx
 msgid "Details"
 msgstr "Details"
 
@@ -8696,6 +8545,7 @@ msgstr "Revert {0} opened"
 msgid "Branch deleted"
 msgstr "Branch deleted"
 
+#: src/components/pullRequest/PullRequestDetailPanel.tsx
 #: src/components/pullRequest/PullRequestDetailPanel.tsx
 #: src/components/pullRequest/PullRequestDetailPanel.tsx
 msgid "Added to the composer"
@@ -10029,6 +9879,8 @@ msgstr "Client scopes"
 msgid "Could not create pairing URL"
 msgstr "Could not create pairing URL"
 
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/ThemeColorPicker.tsx
 #: src/components/settings/ThemeColorPicker.tsx
@@ -10125,7 +9977,7 @@ msgstr "Read {0}'s cookies for this import."
 msgid "New profile"
 msgstr "New profile"
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 msgid "Importing…"
 msgstr "Importing…"
@@ -10160,16 +10012,9 @@ msgstr "Label (optional)"
 msgid "Add hub"
 msgstr "Add hub"
 
-#: src/components/settings/ArchivedThreadsPanel.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
 #: src/components/settings/ProjectSettingsPanel.tsx
 msgid "Unarchive"
 msgstr "Unarchive"
-
-#: src/components/settings/ArchivedThreadsPanel.tsx
-#: src/components/settings/ArchivedThreadsPanel.tsx
-msgid "Failed to unarchive thread"
-msgstr "Failed to unarchive thread"
 
 #: src/components/settings/ArchivedThreadsPanel.tsx
 msgid "Loading archived threads"
@@ -10190,10 +10035,6 @@ msgstr "Checking connected environments."
 #: src/components/settings/ArchivedThreadsPanel.tsx
 msgid "Archived threads will appear here."
 msgstr "Archived threads will appear here."
-
-#: src/components/settings/ArchivedThreadsPanel.tsx
-msgid "Archived thread action failed"
-msgstr "Archived thread action failed"
 
 #. 0: hasMultipleEnvironments ? `${thread.environmentLabel} · ` \\: null; 1: " \\\\u00b7 Created "
 #: src/components/settings/ArchivedThreadsPanel.tsx
@@ -10289,14 +10130,6 @@ msgstr "ChatGPT account to connect"
 msgid "Manage usage <0/>"
 msgstr "Manage usage <0/>"
 
-#: src/components/settings/CliCommandSettingsRow.tsx
-msgid "Could not install t3"
-msgstr "Could not install t3"
-
-#: src/components/settings/CliCommandSettingsRow.tsx
-msgid "Could not remove t3"
-msgstr "Could not remove t3"
-
 #: src/components/settings/ChatGptWelcomeCoordinator.tsx
 msgid "Your ChatGPT plan is connected"
 msgstr "Your ChatGPT plan is connected"
@@ -10306,7 +10139,11 @@ msgid "Eligible usage in T3 Code uses your ChatGPT plan. Manage your shared usag
 msgstr "Eligible usage in T3 Code uses your ChatGPT plan. Manage your shared usage and any credit settings in ChatGPT."
 
 #. 0: next?.providerName; 1: next?.environmentLabel
+#. 0: formatGiB(status.reclaimableBytes); 1: label
+#. 0: amount; 1: label
 #: src/components/settings/ChatGptWelcomeCoordinator.tsx
+#: src/components/settings/DatabaseStorageNotice.tsx
+#: src/components/settings/DatabaseStorageNotice.tsx
 msgid "{0} on {1}"
 msgstr "{0} on {1}"
 
@@ -10407,6 +10244,7 @@ msgstr "Paste the URL from the sign-in tab"
 #: src/components/settings/CodexSetupSection.tsx
 #: src/components/settings/ProviderAuthenticationSection.tsx
 #: src/components/settings/ProviderAuthenticationSection.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "Connect"
 msgstr "Connect"
 
@@ -10508,15 +10346,6 @@ msgstr "More info"
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "Reclaim freed database space"
 msgstr "Reclaim freed database space"
-
-#: src/components/settings/DatabaseStorageNotice.tsx
-msgid "Old history is cleaned up automatically, but these databases still hold the freed space. Run the command on each machine to return it to disk; it pauses and restarts the background service. Quit the desktop app first if it hosts the environment."
-msgstr "Old history is cleaned up automatically, but these databases still hold the freed space. Run the command on each machine to return it to disk; it pauses and restarts the background service. Quit the desktop app first if it hosts the environment."
-
-#. 0: (status.reclaimableBytes / 1024 ** 3).toFixed(1); 1: environments.find((environment) => environment.environmentId === environmentId) ?.label ?? environmentId
-#: src/components/settings/DatabaseStorageNotice.tsx
-msgid "{0} GiB on {1}"
-msgstr "{0} GiB on {1}"
 
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "Database"
@@ -10755,6 +10584,7 @@ msgstr "No custom options. The composer uses the provider's default options."
 #: src/components/pullRequest/PullRequestMarkdownEditor.tsx
 #: src/components/pullRequest/PullRequestTitleEditor.tsx
 #: src/components/settings/AcpSessionManagementSection.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
 #: src/components/settings/CustomModelEditor.tsx
 #: src/components/settings/KeybindingsSettings.tsx
 #: src/components/settings/KeybindingsSettings.tsx
@@ -10849,6 +10679,7 @@ msgstr "Copy trace ID"
 
 #: src/components/settings/DiagnosticsSettings.tsx
 #: src/components/settings/ResourceTelemetryDiagnostics.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "CPU"
 msgstr "CPU"
 
@@ -11169,10 +11000,6 @@ msgstr "Loading span names..."
 msgid "Top Span Names"
 msgstr "Top Span Names"
 
-#: src/components/settings/DeviceSourcesSettings.tsx
-msgid "Android list may be incomplete"
-msgstr "Android list may be incomplete"
-
 #. 0: unwritable.map((patch) => name(patch.environmentId)).join(", ")
 #: src/components/settings/DeviceSourcesSettings.tsx
 msgid "This connection cannot change settings on {0}."
@@ -11204,6 +11031,8 @@ msgstr "Connected or already available locally on each selected environment."
 #: src/components/settings/SecretsSettings.tsx
 #: src/components/settings/SourceControlHostSettings.tsx
 #: src/components/settings/SourceControlTokenSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/settings/UsageProviderSettings.tsx
 msgid "Remove"
 msgstr "Remove"
@@ -11211,6 +11040,7 @@ msgstr "Remove"
 #: src/components/GitActionsControl.tsx
 #: src/components/settings/DeviceSourcesSettings.tsx
 #: src/components/settings/SecretsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "Edit"
 msgstr "Edit"
 
@@ -11638,24 +11468,6 @@ msgstr "Beta"
 #: src/components/settings/LabsSettingsPanel.tsx
 msgid "Group sidebar threads into project folders. Pinned threads stay on top, and Snoozed and Settled stay below the folders."
 msgstr "Group sidebar threads into project folders. Pinned threads stay on top, and Snoozed and Settled stay below the folders."
-
-#: src/components/settings/LabsSettingsPanel.tsx
-msgid "In the boring sidebar, show folder threads on two lines: the title, then the branch, pull request, and agent."
-msgstr "In the boring sidebar, show folder threads on two lines: the title, then the branch, pull request, and agent."
-
-#: src/components/settings/LabsSettingsPanel.tsx
-msgid "Share a thread with a guest who watches it live in their browser and sends messages you approve. Sign in to T3 Connect to use guest links."
-msgstr "Share a thread with a guest who watches it live in their browser and sends messages you approve. Sign in to T3 Connect to use guest links."
-
-#. 0: " "
-#: src/components/settings/LabsSettingsPanel.tsx
-msgid "Share a thread with a guest who watches it live in their browser and sends messages you approve. Needs T3 Connect: sign in and link this machine in{0} <0>Sharing & access</0> . While it is off, every guest link stops working."
-msgstr "Share a thread with a guest who watches it live in their browser and sends messages you approve. Needs T3 Connect: sign in and link this machine in{0} <0>Sharing & access</0> . While it is off, every guest link stops working."
-
-#. 0: " "
-#: src/components/settings/LabsSettingsPanel.tsx
-msgid "Let agents here work on your other machines, and theirs here. Turn it on for each machine, then link them in{0} <0>Connections</0> . While it is off, nothing new starts over a link; tasks already running finish."
-msgstr "Let agents here work on your other machines, and theirs here. Turn it on for each machine, then link them in{0} <0>Connections</0> . While it is off, nothing new starts over a link; tasks already running finish."
 
 #. 0: " "; 1: " "; 2: " "
 #: src/components/settings/LabsSettingsPanel.tsx
@@ -12241,8 +12053,10 @@ msgstr "Reset to the device setting"
 
 #. 0: displayName
 #. 0: task.title
+#. 0: name
 #: src/components/settings/ProviderInstanceCard.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "Enable {0}"
 msgstr "Enable {0}"
 
@@ -12282,10 +12096,12 @@ msgid "Model preferences and custom models are saved on the selected environment
 msgstr "Model preferences and custom models are saved on the selected environment and shared across connected devices."
 
 #: src/components/settings/ProviderInstanceCard.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "Models"
 msgstr "Models"
 
 #: src/components/cloud/CloudEnvironmentConnectList.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/settings/ProviderAuthenticationSection.tsx
 msgid "Connecting…"
 msgstr "Connecting…"
@@ -13196,6 +13012,7 @@ msgstr "Add it to an agent, e.g. claude mcp add --transport http t3 {0}"
 msgid "Could not copy MCP URL"
 msgstr "Could not copy MCP URL"
 
+#: src/components/settings/IntegrationsSettings.tsx
 #: src/components/settings/SavedEnvironmentRows.tsx
 #: src/components/settings/SavedEnvironmentRows.tsx
 msgid "Update"
@@ -13212,7 +13029,9 @@ msgid "Switch on"
 msgstr "Switch on"
 
 #. 0: environment.label
+#. 0: name
 #: src/components/settings/SavedEnvironmentRows.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 msgid "More actions for {0}"
 msgstr "More actions for {0}"
 
@@ -13343,27 +13162,23 @@ msgid "Unsupported provider ({0})"
 msgstr "Unsupported provider ({0})"
 
 #. 0: label
+#. 0: removingConfig ? textGeneratorDisplayName(removingConfig) \\: ""
 #. 0: label
 #: src/components/settings/SecretsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
 #: src/components/settings/UsageProviderSettings.tsx
 msgid "Remove {0}?"
 msgstr "Remove {0}?"
-
-#. 0: label
-#: src/components/settings/SecretsSettings.tsx
-msgid "Provider variables that read from {0} stop resolving until a provider with the same name is added again. The secrets themselves are untouched."
-msgstr "Provider variables that read from {0} stop resolving until a provider with the same name is added again. The secrets themselves are untouched."
 
 #: src/components/settings/SecretsSettings.tsx
 msgid "Remove provider"
 msgstr "Remove provider"
 
-#. 0: label
+#. 0: props.label
 #: src/components/settings/SecretSourceInput.tsx
 msgid "{0} source"
 msgstr "{0} source"
 
-#: src/components/settings/SecretSourceInput.tsx
 #: src/components/settings/SecretSourceInput.tsx
 msgid "Value"
 msgstr "Value"
@@ -13424,7 +13239,6 @@ msgstr "Could not install update"
 msgid "Install failed."
 msgstr "Install failed."
 
-#: src/components/onboarding/WelcomeWizard.tsx
 #: src/components/settings/CliCommandSettingsRow.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "Install"
@@ -13432,6 +13246,7 @@ msgstr "Install"
 
 #: src/components/cloud/CloudEnvironmentConnectList.tsx
 #: src/components/device/DeviceSetup.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/IntegrationsSettings.tsx
 #: src/components/settings/SettingsPanels.tsx
@@ -13442,6 +13257,7 @@ msgstr "Install"
 msgid "Checking…"
 msgstr "Checking…"
 
+#: src/components/chat/VoiceInputSetup.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "Downloading…"
 msgstr "Downloading…"
@@ -13475,18 +13291,6 @@ msgstr "Switches the hosted app release channel."
 #: src/components/settings/SettingsPanels.tsx
 msgid "Couldn’t restore theme settings"
 msgstr "Couldn’t restore theme settings"
-
-#: src/components/settings/SettingsPanels.tsx
-msgid "Restore Build/Plan, /plan, /default, and Shift+Tab. Off uses build mode."
-msgstr "Restore Build/Plan, /plan, /default, and Shift+Tab. Off uses build mode."
-
-#: src/components/settings/SettingsPanels.tsx
-msgid "Shows context window usage as a circular indicator in the composer."
-msgstr "Shows context window usage as a circular indicator in the composer."
-
-#: src/components/settings/SettingsPanels.tsx
-msgid "Legacy"
-msgstr "Legacy"
 
 #: src/components/settings/SettingsPanels.tsx
 msgid "Show a toast when another thread finishes, fails, or needs input or approval while this app has focus."
@@ -13678,10 +13482,6 @@ msgid "Auto-settle"
 msgstr "Auto-settle"
 
 #: src/components/settings/SettingsPanels.tsx
-msgid "Used for thread titles and other generated text on connected devices with this provider. Source control can override it."
-msgstr "Used for thread titles and other generated text on connected devices with this provider. Source control can override it."
-
-#: src/components/settings/SettingsPanels.tsx
 msgid "Text generation model not saved"
 msgstr "Text generation model not saved"
 
@@ -13808,6 +13608,7 @@ msgstr "Gateway URL"
 msgid "Agent token · {0}"
 msgstr "Agent token · {0}"
 
+#: src/components/settings/SimlockDeviceHostEditor.tsx
 #: src/components/settings/SimlockDeviceHostEditor.tsx
 msgid "Agent token"
 msgstr "Agent token"
@@ -14240,10 +14041,6 @@ msgid "Source control providers{0}"
 msgstr "Source control providers{0}"
 
 #: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Custom source control instructions for all selected environments"
-msgstr "Custom source control instructions for all selected environments"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
 msgid "Write the instructions each selected environment should use."
 msgstr "Write the instructions each selected environment should use."
 
@@ -14256,24 +14053,12 @@ msgid "Write custom instructions for all"
 msgstr "Write custom instructions for all"
 
 #: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Keep titles concise. Use short bullet points in descriptions."
-msgstr "Keep titles concise. Use short bullet points in descriptions."
-
-#: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Custom source control writing instructions"
-msgstr "Custom source control writing instructions"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
 msgid "Add a Guide tab to pull requests. An agent explains the changes and points out decisions that need review."
 msgstr "Add a Guide tab to pull requests. An agent explains the changes and points out decisions that need review."
 
 #: src/components/settings/SourceControlWritingSettings.tsx
 msgid "Review guides"
 msgstr "Review guides"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Model that reads a pull request to write its review guide. It reads the change itself over many steps, so a stronger model helps. Off uses the source control writer model."
-msgstr "Model that reads a pull request to write its review guide. It reads the change itself over many steps, so a stronger model helps. Off uses the source control writer model."
 
 #: src/components/settings/SourceControlWritingSettings.tsx
 #: src/components/settings/SourceControlWritingSettings.tsx
@@ -14293,24 +14078,12 @@ msgid "Your preferences for review guides: what to show first, dwell on, or skip
 msgstr "Your preferences for review guides: what to show first, dwell on, or skip. The guide's format and coverage stay the same."
 
 #: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Use the repository's template for change request descriptions when available."
-msgstr "Use the repository's template for change request descriptions when available."
-
-#: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Model for source control text and branch or bookmark names. When disabled, use the text generation model configured for this environment."
-msgstr "Model for source control text and branch or bookmark names. When disabled, use the text generation model configured for this environment."
-
-#: src/components/settings/SourceControlWritingSettings.tsx
 msgid "Source control writer model not saved"
 msgstr "Source control writer model not saved"
 
 #: src/components/settings/SourceControlWritingSettings.tsx
 msgid "Use a separate source control writer model"
 msgstr "Use a separate source control writer model"
-
-#: src/components/settings/SourceControlWritingSettings.tsx
-msgid "Writing & review"
-msgstr "Writing & review"
 
 #: src/components/settings/StorageSettings.tsx
 msgid "Folder where new worktrees are created, on any drive, such as D:\\worktrees or ~/worktrees. Existing worktrees stay where they are. Leave empty to use the T3 home folder."
@@ -14383,6 +14156,7 @@ msgstr "Last run"
 #: src/components/settings/StorageSettings.tsx
 #: src/components/settings/StorageSettings.tsx
 #: src/components/settings/StorageSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Cleanup"
 msgstr "Cleanup"
 
@@ -14977,10 +14751,6 @@ msgid "{0} px"
 msgstr "{0} px"
 
 #: src/components/settings/UsageProviderSettings.tsx
-msgid "Read your existing Cursor CLI login from macOS Keychain to show account history and monthly limits. macOS may ask you to allow access."
-msgstr "Read your existing Cursor CLI login from macOS Keychain to show account history and monthly limits. macOS may ask you to allow access."
-
-#: src/components/settings/UsageProviderSettings.tsx
 msgid "No hubs configured."
 msgstr "No hubs configured."
 
@@ -15349,6 +15119,7 @@ msgstr "Finding ignored files…"
 
 #: src/components/AddProjectToMachineDialog.tsx
 #: src/components/device/DeviceSetup.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -15541,10 +15312,6 @@ msgstr "No threads yet"
 msgid "On another machine, so this machine's agent can't read it. Remove it or switch back to send."
 msgstr "On another machine, so this machine's agent can't read it. Remove it or switch back to send."
 
-#: src/components/ThreadContextChip.tsx
-msgid "Thread no longer available"
-msgstr "Thread no longer available"
-
 #: src/components/ThreadSearchMatch.tsx
 msgid "You:"
 msgstr "You:"
@@ -15575,10 +15342,6 @@ msgstr "Save action"
 #: src/components/auth/ConnectAgentSurface.tsx
 msgid "Approving…"
 msgstr "Approving…"
-
-#: src/components/auth/ConnectAgentSurface.tsx
-msgid "Approve"
-msgstr "Approve"
 
 #: src/components/auth/ConnectAgentSurface.tsx
 msgid "Denying…"
@@ -15725,6 +15488,7 @@ msgid "Starting device tools…"
 msgstr "Starting device tools…"
 
 #: src/components/device/DeviceHostUpdates.tsx
+#: src/components/device/DevicePanel.tsx
 #: src/components/media/MediaVideoPlayer.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 msgid "Retrying…"
@@ -15761,6 +15525,7 @@ msgid "Device hub is ready."
 msgstr "Device hub is ready."
 
 #: src/components/device/DeviceSetup.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
 #: src/components/pullRequest/PullRequestListEmptyState.tsx
 #: src/components/pullRequest/PullRequestListEmptyState.tsx
 #: src/components/settings/SnapShotSetupDialog.tsx
@@ -15839,46 +15604,17 @@ msgstr "Open in app"
 msgid "Open in desktop app"
 msgstr "Open in desktop app"
 
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "T3 Code collects anonymous usage data to help us improve it."
-msgstr "T3 Code collects anonymous usage data to help us improve it."
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Loading sign-in…"
-msgstr "Loading sign-in…"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Loading computers…"
-msgstr "Loading computers…"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "No computers linked yet."
-msgstr "No computers linked yet."
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Pair"
-msgstr "Pair"
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Ready to code."
-msgstr "Ready to code."
-
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Review the command, then press Enter to run it."
 msgstr "Review the command, then press Enter to run it."
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Could not open the setup terminal."
 msgstr "Could not open the setup terminal."
 
-#: src/components/onboarding/WelcomeWizard.tsx
+#: src/components/onboarding/WelcomePage.tsx
 msgid "Preparing command..."
 msgstr "Preparing command..."
-
-#. 0: selected.length; 1: selected.length === 1 ? "project" \\: "projects"
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Import {0} {1}"
-msgstr "Import {0} {1}"
 
 #: src/components/files/AttachmentFilePreview.tsx
 msgid "Attachment"
@@ -16343,6 +16079,7 @@ msgid "Link to thread"
 msgstr "Link to thread"
 
 #: src/components/pullRequest/PullRequestThreadLinks.tsx
+#: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Untitled thread"
 msgstr "Untitled thread"
 
@@ -16465,10 +16202,6 @@ msgstr "No matching files or folders."
 msgid "No matching command."
 msgstr "No matching command."
 
-#: src/components/chat/ComposerFooterControls.tsx
-msgid "Build"
-msgstr "Build"
-
 #: src/components/chat/ComposerControlsBar.tsx
 msgid "Open provider settings"
 msgstr "Open provider settings"
@@ -16480,19 +16213,6 @@ msgstr "No provider available"
 #: src/components/chat/ComposerModelEffort.tsx
 msgid "Effort"
 msgstr "Effort"
-
-#: src/components/chat/ComposerPrimaryActions.tsx
-#: src/components/chat/ComposerPrimaryActions.tsx
-msgid "Sending..."
-msgstr "Sending..."
-
-#: src/components/chat/ComposerPrimaryActions.tsx
-msgid "Refine"
-msgstr "Refine"
-
-#: src/components/chat/ComposerPrimaryActions.tsx
-msgid "Implement"
-msgstr "Implement"
 
 #: src/components/chat/ComposerPrimaryActions.tsx
 msgid "Keep"
@@ -17262,6 +16982,8 @@ msgid "Disable all"
 msgstr "Disable all"
 
 #: src/components/settings/ProviderModelsSection.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "No models match."
 msgstr "No models match."
 
@@ -17457,6 +17179,7 @@ msgstr "Connect an environment to choose its text generation model."
 
 #: src/components/settings/SettingsPanels.tsx
 #: src/components/settings/SourceControlWritingSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "No text generation providers available."
 msgstr "No text generation providers available."
 
@@ -17591,6 +17314,9 @@ msgstr "Inherit"
 
 #: src/components/settings/StorageSettings.tsx
 #: src/components/settings/StorageSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Custom"
 msgstr "Custom"
 
@@ -17774,6 +17500,9 @@ msgstr "Allow commands and edits without prompts."
 msgid "Ask before commands and file changes."
 msgstr "Ask before commands and file changes."
 
+#: src/components/settings/SpeechLanguageSelect.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Auto"
 msgstr "Auto"
@@ -18041,20 +17770,6 @@ msgstr "Event log <0/>"
 #: src/components/device/DeviceToolsPanel.tsx
 msgid "No events yet."
 msgstr "No events yet."
-
-#. 0: skippedLabels.join(", "); 1: " "; 2: skippedLabels.length === 1 ? "it" \\: "them"
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Not connected, so setup skips {0}. You can set{1} {2} up later from Settings."
-msgstr "Not connected, so setup skips {0}. You can set{1} {2} up later from Settings."
-
-#. 0: telemetryOff ?? "T3 Code collects anonymous usage data to help us improve it."; 1: telemetryOff === undefined ? " and how to opt out" \\: ""; 2: " "
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "{0} To read more about how your data is used{1}, see our{2} <0>privacy policy</0> ."
-msgstr "{0} To read more about how your data is used{1}, see our{2} <0>privacy policy</0> ."
-
-#: src/components/onboarding/WelcomeWizard.tsx
-msgid "Connect another ChatGPT account"
-msgstr "Connect another ChatGPT account"
 
 #: src/components/files/FileBreadcrumbs.tsx
 msgid "<0/> Refresh failed. Retry"
@@ -18440,6 +18155,7 @@ msgstr "Setup required"
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/ConnectionsSettings.tsx
+#: src/components/settings/DatabaseStorageNotice.tsx
 msgid "Restarting…"
 msgstr "Restarting…"
 
@@ -18938,11 +18654,6 @@ msgstr "Rotate"
 msgid "{0} fps"
 msgstr "{0} fps"
 
-#. 0: version.requiredVersion
-#: src/components/settings/IntegrationsSettings.tsx
-msgid "Update to v{0}"
-msgstr "Update to v{0}"
-
 #: src/components/settings/IntegrationsSettings.tsx
 msgid "Check versions"
 msgstr "Check versions"
@@ -19191,18 +18902,10 @@ msgstr "Forwarded live. Requests fail while this environment is offline. "
 msgid "Change in Sharing & access"
 msgstr "Change in Sharing & access"
 
-#: src/components/settings/ScheduledTasksSettings.tsx
-msgid "Each run starts a new thread with the workspace and model below."
-msgstr "Each run starts a new thread with the workspace and model below."
-
 #. 0: ref.threadId
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Thread {0}"
 msgstr "Thread {0}"
-
-#: src/components/settings/ScheduledTasksSettings.tsx
-msgid "Each run continues this conversation, in its workspace and with its current model."
-msgstr "Each run continues this conversation, in its workspace and with its current model."
 
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Edit task"
@@ -19636,3 +19339,1605 @@ msgstr "Clones go to github.com/owner/repo under the folder above, like ghq."
 #: src/components/settings/SettingsPanels.tsx
 msgid "Clone into host folders"
 msgstr "Clone into host folders"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Clean up transcripts"
+msgstr "Clean up transcripts"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Cleanup model"
+msgstr "Cleanup model"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Commit and pull request writing"
+msgstr "Commit and pull request writing"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Correction cue"
+msgstr "Correction cue"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Dictation shortcut"
+msgstr "Dictation shortcut"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Dictionary"
+msgstr "Dictionary"
+
+#: src/components/settings/LabsSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Fast worktree checkout"
+msgstr "Fast worktree checkout"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Follow pull request templates"
+msgstr "Follow pull request templates"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Microphone"
+msgstr "Microphone"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Project dictionary"
+msgstr "Project dictionary"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Remove filler words"
+msgstr "Remove filler words"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Silence filtering"
+msgstr "Silence filtering"
+
+#: src/components/settings/LabsSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Suggest next prompt"
+msgstr "Suggest next prompt"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Test microphone"
+msgstr "Test microphone"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Test model"
+msgstr "Test model"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Text generators"
+msgstr "Text generators"
+
+#: src/components/settings/SettingsPanels.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Tool calls in chat"
+msgstr "Tool calls in chat"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Transcribe with"
+msgstr "Transcribe with"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Transcription hardware and model unloading"
+msgstr "Transcription hardware and model unloading"
+
+#: src/components/settings/SpeechLanguageSelect.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Transcription language"
+msgstr "Transcription language"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Transcription models"
+msgstr "Transcription models"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Welcome page"
+msgstr "Welcome page"
+
+#: src/components/CommandPalette.tsx
+msgid "Use T3 Code in another app (MCP)"
+msgstr "Use T3 Code in another app (MCP)"
+
+#: src/components/InstallT3Commands.tsx
+msgid "macOS, Linux"
+msgstr "macOS, Linux"
+
+#: src/components/InstallT3Commands.tsx
+msgid "Windows (PowerShell)"
+msgstr "Windows (PowerShell)"
+
+#: src/components/InstallT3Commands.tsx
+msgid "Then"
+msgstr "Then"
+
+#. 0: " "
+#: src/components/InstallT3Commands.tsx
+msgid "Skip the install if you already have <0/>. If{0} <1/> is not found after installing, add the folder the installer names to your PATH."
+msgstr "Skip the install if you already have <0/>. If{0} <1/> is not found after installing, add the folder the installer names to your PATH."
+
+#: src/components/ProviderUpdatesAction.tsx
+msgid "Could not check provider updates"
+msgstr "Could not check provider updates"
+
+#: src/components/projectScriptEditor.tsx
+msgid "Stop this action when the thread settles"
+msgstr "Stop this action when the thread settles"
+
+#. 0: " "; 1: environmentLabel ? ` (${details.environmentHost})` \\: null
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "This agent wants to use the threads in every project on{0} <0/> {1}."
+msgstr "This agent wants to use the threads in every project on{0} <0/> {1}."
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "· name set by the app"
+msgstr "· name set by the app"
+
+#. 0: " "
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "{0} on the computer that opened this page"
+msgstr "{0} on the computer that opened this page"
+
+#. 0: " "
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "{0} · whoever runs it gets this access"
+msgstr "{0} · whoever runs it gets this access"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Access goes to"
+msgstr "Access goes to"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Paste a code"
+msgstr "Paste a code"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Sign-in code"
+msgstr "Sign-in code"
+
+#. 0: " "
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Get one from Use T3 Code in another app (MCP), Settings → Sharing & access, or{0} <0/> on this machine."
+msgstr "Get one from Use T3 Code in another app (MCP), Settings → Sharing & access, or{0} <0/> on this machine."
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Access"
+msgstr "Access"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Choose what it may do"
+msgstr "Choose what it may do"
+
+#. 0: accessConfig[approveLevel].label
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Approve {0}"
+msgstr "Approve {0}"
+
+#: src/components/auth/ConnectAgentSurface.tsx
+msgid "Only approve a sign-in you just started."
+msgstr "Only approve a sign-in you just started."
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "This sign-in link is incomplete"
+msgstr "This sign-in link is incomplete"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Open this page in its own window"
+msgstr "Open this page in its own window"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "For your safety, agent sign-ins cannot be approved inside another site."
+msgstr "For your safety, agent sign-ins cannot be approved inside another site."
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Connecting to T3 Connect"
+msgstr "Connecting to T3 Connect"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "One moment while your account loads."
+msgstr "One moment while your account loads."
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Sign in to approve"
+msgstr "Sign in to approve"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Sign in to T3 Connect with the account this environment is linked to."
+msgstr "Sign in to T3 Connect with the account this environment is linked to."
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Use a sign-in code instead"
+msgstr "Use a sign-in code instead"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Use another account"
+msgstr "Use another account"
+
+#. 0: platforms.join(" and "); 1: platforms.length > 1 ? "lists" \\: "list"; 2: props.label
+#: src/components/device/DevicePanel.tsx
+msgid "{0} {1} on {2} may be incomplete."
+msgstr "{0} {1} on {2} may be incomplete."
+
+#. 0: props.label
+#: src/components/device/DevicePanel.tsx
+msgid "Device discovery on {0} reported a warning."
+msgstr "Device discovery on {0} reported a warning."
+
+#. 0: props.label
+#: src/components/device/DevicePanel.tsx
+msgid "Retry device discovery on {0}"
+msgstr "Retry device discovery on {0}"
+
+#. 0: props.label
+#: src/components/device/DevicePanel.tsx
+msgid "Details for {0}"
+msgstr "Details for {0}"
+
+#. 0: props.label
+#: src/components/device/DevicePanel.tsx
+msgid "Dismiss device warning for {0}"
+msgstr "Dismiss device warning for {0}"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Finishing setup"
+msgstr "Finishing setup"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "One moment."
+msgstr "One moment."
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Start without an agent"
+msgstr "Start without an agent"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Set up one agent to start."
+msgstr "Set up one agent to start."
+
+#. 0: newCount; 1: newCount === 1 ? "project" \\: "projects"
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Import {0} {1} and start"
+msgstr "Import {0} {1} and start"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Import threads and start"
+msgstr "Import threads and start"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Welcome to T3 Code"
+msgstr "Welcome to T3 Code"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Setting up <0/>."
+msgstr "Setting up <0/>."
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "T3 Code collects anonymous usage data to improve the app."
+msgstr "T3 Code collects anonymous usage data to improve the app."
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "To opt out, see the"
+msgstr "To opt out, see the"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "See the"
+msgstr "See the"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "privacy policy"
+msgstr "privacy policy"
+
+#. 0: agentName(provider)
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Could not turn on {0}"
+msgstr "Could not turn on {0}"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Turn on"
+msgstr "Turn on"
+
+#. 0: name
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Turn on: {0}"
+msgstr "Turn on: {0}"
+
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Set up"
+msgstr "Set up"
+
+#. 0: name
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Set up: {0}"
+msgstr "Set up: {0}"
+
+#. 0: label
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Checking {0}…"
+msgstr "Checking {0}…"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Add more agents"
+msgstr "Add more agents"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Set up an agent"
+msgstr "Set up an agent"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "More agents in the ACP Registry"
+msgstr "More agents in the ACP Registry"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Browse"
+msgstr "Browse"
+
+#. 0: IMPORT_SOURCES_LABEL
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Looking for projects in your {0} history…"
+msgstr "Looking for projects in your {0} history…"
+
+#. 0: selected.length; 1: selected.length === 1 ? "project" \\: "projects"
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Import {0} {1} and their threads"
+msgstr "Import {0} {1} and their threads"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Import projects and their threads"
+msgstr "Import projects and their threads"
+
+#. 0: IMPORT_SOURCES_LABEL
+#: src/components/onboarding/WelcomePage.tsx
+msgid "From your {0} history"
+msgstr "From your {0} history"
+
+#. 0: candidates.length
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Review all {0}"
+msgstr "Review all {0}"
+
+#. 0: scan.error
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Could not check projects again. {0}"
+msgstr "Could not check projects again. {0}"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Use T3 Code on your phone"
+msgstr "Use T3 Code on your phone"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Scan with your phone to get the app."
+msgstr "Scan with your phone to get the app."
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "T3 Code app for iPhone and Android"
+msgstr "T3 Code app for iPhone and Android"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Phone"
+msgstr "Phone"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Checking T3 Connect…"
+msgstr "Checking T3 Connect…"
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Could not check T3 Connect."
+msgstr "Could not check T3 Connect."
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "<0/> Your phone can reach this computer. Sign in to the app with the same account."
+msgstr "<0/> Your phone can reach this computer. Sign in to the app with the same account."
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "T3 Connect is on for this computer. Sign in to the app with the same account."
+msgstr "T3 Connect is on for this computer. Sign in to the app with the same account."
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "T3 Connect is on, but the app cannot reach this computer."
+msgstr "T3 Connect is on, but the app cannot reach this computer."
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Signed in. Share this computer so the app can reach it."
+msgstr "Signed in. Share this computer so the app can reach it."
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Sign in to T3 Connect here, then in the app with the same account."
+msgstr "Sign in to T3 Connect here, then in the app with the same account."
+
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Could not save Codex setup"
+msgstr "Could not save Codex setup"
+
+#. 0: setup.file
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Added to {0}. Open a new terminal to use <0/>."
+msgstr "Added to {0}. Open a new terminal to use <0/>."
+
+#. 0: " "; 1: setup.file
+#: src/components/onboarding/WelcomePage.tsx
+msgid "Use <0/> from any terminal. Adds one line to{0} {1}."
+msgstr "Use <0/> from any terminal. Adds one line to{0} {1}."
+
+#: src/components/onboarding/WelcomePage.tsx
+#: src/components/settings/CliCommandSettingsRow.tsx
+msgid "Add to PATH"
+msgstr "Add to PATH"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Connect to an environment first."
+msgstr "Connect to an environment first."
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "T3 Connect is not available in this build."
+msgstr "T3 Connect is not available in this build."
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Runs commands and edits files without asking"
+msgstr "Runs commands and edits files without asking"
+
+#. 0: appName
+#. 0: appName
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "What can {0} do?"
+msgstr "What can {0} do?"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "<0/> Checking T3 Connect…"
+msgstr "<0/> Checking T3 Connect…"
+
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Connect to {0} first."
+msgstr "Connect to {0} first."
+
+#. 0: name
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "{0}'s T3 Connect is offline"
+msgstr "{0}'s T3 Connect is offline"
+
+#. 0: name
+#. 0: name
+#. 0: name
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Can't check T3 Connect on {0}"
+msgstr "Can't check T3 Connect on {0}"
+
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Update T3 Code on {0}"
+msgstr "Update T3 Code on {0}"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Your T3 Connect account is out of tunnels."
+msgstr "Your T3 Connect account is out of tunnels."
+
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Restart T3 Code on {0}."
+msgstr "Restart T3 Code on {0}."
+
+#. 0: name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Turn on T3 Connect for {0}"
+msgstr "Turn on T3 Connect for {0}"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Which app?"
+msgstr "Which app?"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Something else…"
+msgstr "Something else…"
+
+#. 0: app?.name ?? "the app"
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "When {0} opens the sign-in page, choose what it may do and approve with your T3 Connect account."
+msgstr "When {0} opens the sign-in page, choose what it may do and approve with your T3 Connect account."
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Apps that require their own client ID cannot connect."
+msgstr "Apps that require their own client ID cannot connect."
+
+#. 0: app.name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "{0} help"
+msgstr "{0} help"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Back to commands"
+msgstr "Back to commands"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Back to one click"
+msgstr "Back to one click"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Set up another way"
+msgstr "Set up another way"
+
+#. 0: app.name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Run these where {0} runs."
+msgstr "Run these where {0} runs."
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Could not copy"
+msgstr "Could not copy"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Use Set up another way."
+msgstr "Use Set up another way."
+
+#. 0: app.name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Open {0} on the web"
+msgstr "Open {0} on the web"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Getting code…"
+msgstr "Getting code…"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Get code"
+msgstr "Get code"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "New code"
+msgstr "New code"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Code to approve <0/>"
+msgstr "Code to approve <0/>"
+
+#. 0: Math.floor(left / 60); 1: String(left % 60).padStart(2, "0")
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Expires {0}:{1} · one use"
+msgstr "Expires {0}:{1} · one use"
+
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "The code expired."
+msgstr "The code expired."
+
+#. 0: label
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Copy {0}"
+msgstr "Copy {0}"
+
+#. 0: named.join(", ")
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Linked: {0}"
+msgstr "Linked: {0}"
+
+#: src/components/preview/PreviewAnnotationSpeech.tsx
+msgid "Could not update annotation voice input"
+msgstr "Could not update annotation voice input"
+
+#: src/components/chat/ChatComposer.tsx
+msgid "⇥ Tab"
+msgstr "⇥ Tab"
+
+#: src/components/chat/ChatComposer.tsx
+msgid "Live transcription"
+msgstr "Live transcription"
+
+#: src/components/chat/BackgroundWorkDetails.tsx
+msgid "Background work"
+msgstr "Background work"
+
+#. 0: version !== null || providerCount > 0 ? " · " \\: ""
+#: src/components/sidebar/UpdateEverythingDialog.tsx
+msgid "{0}Checking for more…"
+msgstr "{0}Checking for more…"
+
+#: src/components/chat/ComposerFreshSession.tsx
+msgid "Your next message starts a fresh session"
+msgstr "Your next message starts a fresh session"
+
+#: src/components/chat/ComposerFreshSession.tsx
+msgid "The agent won't see earlier messages in this thread."
+msgstr "The agent won't see earlier messages in this thread."
+
+#: src/components/chat/ComposerSpeechButton.tsx
+msgid "Skip"
+msgstr "Skip"
+
+#. 0: link.host
+#: src/components/chat/SecretRequestCard.tsx
+msgid "Open {0} <0/>"
+msgstr "Open {0} <0/>"
+
+#. 0: statuses.map((status) => status.text).join(" · ")
+#: src/components/chat/ThreadActivityBanners.tsx
+msgid "Pi · {0}"
+msgstr "Pi · {0}"
+
+#: src/components/chat/V2LifecycleRow.tsx
+msgid "New session"
+msgstr "New session"
+
+#: src/components/chat/VoiceInputErrorPill.tsx
+#: src/components/chat/VoiceInputErrorPill.tsx
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Voice input failed"
+msgstr "Voice input failed"
+
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Open voice settings"
+msgstr "Open voice settings"
+
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Retry transcription"
+msgstr "Retry transcription"
+
+#: src/components/chat/VoiceInputErrorPill.tsx
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Record again"
+msgstr "Record again"
+
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Dismiss voice input error"
+msgstr "Dismiss voice input error"
+
+#. 0: props.cancelShortcutLabel ? ` (${props.cancelShortcutLabel})` \\: ""
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Dismiss voice input error {0}"
+msgstr "Dismiss voice input error {0}"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Selected microphone (Unavailable)"
+msgstr "Selected microphone (Unavailable)"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "System default"
+msgstr "System default"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Set up voice input"
+msgstr "Set up voice input"
+
+#. 0: environment?.label ?? "your transcription environment"
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Transcribe speech on {0} and use voice input across environments."
+msgstr "Transcribe speech on {0} and use voice input across environments."
+
+#. 0: languageLabel(props.language)
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Recommended for {0}"
+msgstr "Recommended for {0}"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Speech model download progress"
+msgstr "Speech model download progress"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Verifying download…"
+msgstr "Verifying download…"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Starting download…"
+msgstr "Starting download…"
+
+#. 0: progress
+#. 0: Math.round(progress)
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0}% downloaded"
+msgstr "{0}% downloaded"
+
+#. 0: Math.round(model.size / 1024 / 1024); 1: " "; 2: environment?.label ?? "your transcription environment"
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Download the {0} MB model to{1} {2}. Microphone audio is sent there for transcription, as chosen in Voice settings."
+msgstr "Download the {0} MB model to{1} {2}. Microphone audio is sent there for transcription, as chosen in Voice settings."
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Silero (1.2 MB), used for silence filtering and pause detection, downloads alongside the speech model. An installed copy is reused."
+msgstr "Silero (1.2 MB), used for silence filtering and pause detection, downloads alongside the speech model. An installed copy is reused."
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Loading transcription models…"
+msgstr "Loading transcription models…"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Refresh microphones"
+msgstr "Refresh microphones"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "The selected microphone is unavailable. Choose another or use the system default."
+msgstr "The selected microphone is unavailable. Choose another or use the system default."
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Speak and transcribe in multiple languages or translate into English, and get names and technical terms right with the dictionary in Voice settings."
+msgstr "Speak and transcribe in multiple languages or translate into English, and get names and technical terms right with the dictionary in Voice settings."
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Choose another model or language"
+msgstr "Choose another model or language"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Choose a model or language"
+msgstr "Choose a model or language"
+
+#: src/components/chat/VoiceInputSetup.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Retry loading models"
+msgstr "Retry loading models"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Cancel download"
+msgstr "Cancel download"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Download model"
+msgstr "Download model"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Ask an environment admin to download"
+msgstr "Ask an environment admin to download"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Customize in Voice settings"
+msgstr "Customize in Voice settings"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Start dictating"
+msgstr "Start dictating"
+
+#: src/components/chat/ZoomableImage.tsx
+msgid "Click to zoom in or return to fit. Pinch or Ctrl+scroll to zoom, scroll or drag to pan. Use Enter to toggle zoom, plus or minus to zoom, and 0 to fit."
+msgstr "Click to zoom in or return to fit. Pinch or Ctrl+scroll to zoom, scroll or drag to pan. Use Enter to toggle zoom, plus or minus to zoom, and 0 to fit."
+
+#: src/components/pullRequest/PullRequestMarkdownTextarea.tsx
+msgid "Open issue"
+msgstr "Open issue"
+
+#: src/components/pullRequest/PullRequestMarkdownTextarea.tsx
+msgid "Closed issue"
+msgstr "Closed issue"
+
+#: src/components/chat/UsageLimitRecoveryBanner.tsx
+msgid "Resumes"
+msgstr "Resumes"
+
+#: src/components/pullRequest/PullRequestReviewAnnotation.tsx
+msgid "<0/> Add to chat"
+msgstr "<0/> Add to chat"
+
+#: src/components/settings/AuthorizedClientsSettings.tsx
+msgid "<0/> Use in another app (MCP)"
+msgstr "<0/> Use in another app (MCP)"
+
+#: src/components/settings/ChatGptAccountPicker.tsx
+msgid "Remove connection"
+msgstr "Remove connection"
+
+#. 0: list
+#: src/components/settings/DeviceSourcesSettings.tsx
+msgid "{0} list may be incomplete"
+msgstr "{0} list may be incomplete"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "OpenRouter model"
+msgstr "OpenRouter model"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Search transcription models"
+msgstr "Search transcription models"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "No transcription model matches."
+msgstr "No transcription model matches."
+
+#. 0: current
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "OpenRouter no longer lists {0}. Dictation stays off until you choose another model."
+msgstr "OpenRouter no longer lists {0}. Dictation stays off until you choose another model."
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Replace API key"
+msgstr "Replace API key"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "API key"
+msgstr "API key"
+
+#. 0: company
+#. 0: company
+#: src/components/settings/CloudVoiceConfiguration.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "{0} API key"
+msgstr "{0} API key"
+
+#. 0: company
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "{0} API key reference"
+msgstr "{0} API key reference"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Enter API key"
+msgstr "Enter API key"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Enter an API key, not a URL or secret reference."
+msgstr "Enter an API key, not a URL or secret reference."
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Updating the key keeps dictation enabled."
+msgstr "Updating the key keeps dictation enabled."
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Leave blank to keep the saved key."
+msgstr "Leave blank to keep the saved key."
+
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Anyone with dictation access to {0} can bill this key."
+msgstr "Anyone with dictation access to {0} can bill this key."
+
+#. 0: company
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Remove the {0} key?"
+msgstr "Remove the {0} key?"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Manage OpenRouter dictation"
+msgstr "Manage OpenRouter dictation"
+
+#. 0: company
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Manage {0} key"
+msgstr "Manage {0} key"
+
+#. 0: name
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Use {0} for dictation?"
+msgstr "Use {0} for dictation?"
+
+#. 0: name; 1: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Everyone using {0} for dictation on {1} will lose access."
+msgstr "Everyone using {0} for dictation on {1} will lose access."
+
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Anyone with dictation access to {0} can use this API key."
+msgstr "Anyone with dictation access to {0} can use this API key."
+
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Connect to {0} with dictation access to continue."
+msgstr "Connect to {0} with dictation access to continue."
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Retry loading API key"
+msgstr "Retry loading API key"
+
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Update {0} to use OpenRouter dictation."
+msgstr "Update {0} to use OpenRouter dictation."
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Checking for an API key…"
+msgstr "Checking for an API key…"
+
+#. 0: environment.label
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Ask an administrator on {0} to add an API key."
+msgstr "Ask an administrator on {0} to add an API key."
+
+#. 0: environment.label
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Uses the API key saved on {0}. This choice applies only to this device."
+msgstr "Uses the API key saved on {0}. This choice applies only to this device."
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "This choice applies only to this device. Choose Off to stop sharing."
+msgstr "This choice applies only to this device. Choose Off to stop sharing."
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Remove key…"
+msgstr "Remove key…"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Remove key"
+msgstr "Remove key"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Save and enable"
+msgstr "Save and enable"
+
+#: src/components/settings/CloudVoiceConfiguration.tsx
+msgid "Save key"
+msgstr "Save key"
+
+#. 0: visible.every((recommendation) => recommendation.reclaimable) ? "" \\: " Run the command on each machine to reclaim it. It restarts the background service. Quit the desktop app first if it hosts the environment."
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "These databases still hold space freed by history cleanup.{0}"
+msgstr "These databases still hold space freed by history cleanup.{0}"
+
+#. 0: amount; 1: label
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Reclaiming {0} on {1}"
+msgstr "Reclaiming {0} on {1}"
+
+#. 0: minutes
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "T3 Code there restarts and is back in about {0} min."
+msgstr "T3 Code there restarts and is back in about {0} min."
+
+#. 0: label
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Could not reclaim space on {0}"
+msgstr "Could not reclaim space on {0}"
+
+#. 0: minutes
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Restarts T3 Code there. It is offline for about {0} min."
+msgstr "Restarts T3 Code there. It is offline for about {0} min."
+
+#. 0: status.reclaimFailure
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "The last attempt failed: {0}"
+msgstr "The last attempt failed: {0}"
+
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Reclaim"
+msgstr "Reclaim"
+
+#. 0: amount; 1: label
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Reclaim {0} on {1}?"
+msgstr "Reclaim {0} on {1}?"
+
+#. 0: label; 1: minutes
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "T3 Code on {0} stops, rebuilds its database, and starts again. It is offline for about {1} min. Running agents stop when it restarts."
+msgstr "T3 Code on {0} stops, rebuilds its database, and starts again. It is offline for about {1} min. Running agents stop when it restarts."
+
+#: src/components/settings/DatabaseStorageNotice.tsx
+msgid "Restart and reclaim"
+msgstr "Restart and reclaim"
+
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "Show folder threads on two lines: the title, then the branch, pull request, and agent."
+msgstr "Show folder threads on two lines: the title, then the branch, pull request, and agent."
+
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "Share a thread with a guest who watches it live in a browser and sends messages you approve. Sign in to T3 Connect to use guest links."
+msgstr "Share a thread with a guest who watches it live in a browser and sends messages you approve. Sign in to T3 Connect to use guest links."
+
+#. 0: " "
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "Share a thread with a guest who watches it live in a browser and sends messages you approve. Needs T3 Connect: sign in and link this machine in{0} <0>Sharing & access</0> . Turning it off stops every guest link."
+msgstr "Share a thread with a guest who watches it live in a browser and sends messages you approve. Needs T3 Connect: sign in and link this machine in{0} <0>Sharing & access</0> . Turning it off stops every guest link."
+
+#. 0: " "
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "Let agents here work on your other machines, and theirs here. Turn it on for each machine, then link them in{0} <0>Connections</0> . While off, nothing new starts over a link; running tasks finish."
+msgstr "Let agents here work on your other machines, and theirs here. Turn it on for each machine, then link them in{0} <0>Connections</0> . While off, nothing new starts over a link; running tasks finish."
+
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "Show a predicted next message in the empty composer after a Claude or Codex turn. Tab uses it. Each is an extra cached request on your plan. Needs Codex 0.165+. Claude threads update on restart."
+msgstr "Show a predicted next message in the empty composer after a Claude or Codex turn. Tab uses it. Each is an extra cached request on your plan. Needs Codex 0.165+. Claude threads update on restart."
+
+#: src/components/settings/LabsSettingsPanel.tsx
+msgid "On a Mac, clone new worktrees from a checkout cached in the T3 home folder instead of writing every file. Uses Git’s normal checkout when it can’t. Turning it off deletes the cache."
+msgstr "On a Mac, clone new worktrees from a checkout cached in the T3 home folder instead of writing every file. Uses Git’s normal checkout when it can’t. Turning it off deletes the cache."
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "<0/> Test microphone"
+msgstr "<0/> Test microphone"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Cancel microphone test"
+msgstr "Cancel microphone test"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Recording time"
+msgstr "Recording time"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Microphone input level"
+msgstr "Microphone input level"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Opening microphone…"
+msgstr "Opening microphone…"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Pause recording"
+msgstr "Pause recording"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Play recording"
+msgstr "Play recording"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Recording playback position"
+msgstr "Recording playback position"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Could not play this recording. Try recording again."
+msgstr "Could not play this recording. Try recording again."
+
+#: src/components/settings/SavedEnvironmentRows.tsx
+msgid "Run `t3 connect link` on the host, then restart T3 Code there."
+msgstr "Run `t3 connect link` on the host, then restart T3 Code there."
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "New thread each run"
+msgstr "New thread each run"
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "Started by the first run"
+msgstr "Started by the first run"
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "Destination thread"
+msgstr "Destination thread"
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "Search all threads..."
+msgstr "Search all threads..."
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "No threads found."
+msgstr "No threads found."
+
+#: src/components/settings/ScheduledTasksSettings.tsx
+msgid "Deleting the thread also deletes this task."
+msgstr "Deleting the thread also deletes this task."
+
+#. 0: label
+#: src/components/settings/SecretsSettings.tsx
+msgid "Nothing reads from {0}. The secrets themselves are untouched."
+msgstr "Nothing reads from {0}. The secrets themselves are untouched."
+
+#. 0: label
+#: src/components/settings/SecretsSettings.tsx
+msgid "These read from {0} and will be unset. The secrets themselves are untouched."
+msgstr "These read from {0} and will be unset. The secrets themselves are untouched."
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Hide the commands, edits, and searches agents run. Hide successful keeps failures. Zen shows only final answers. Approvals, questions, and errors always show."
+msgstr "Hide the commands, edits, and searches agents run. Hide successful keeps failures. Zen shows only final answers. Approvals, questions, and errors always show."
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "For thread titles and other generated text. Source control has its own setting. Text generators from Providers also appear here."
+msgstr "For thread titles and other generated text. Source control has its own setting. Text generators from Providers also appear here."
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "See your agents, import projects, and set up your phone."
+msgstr "See your agents, import projects, and set up your phone."
+
+#. 0: score.errorPercent
+#: src/components/settings/SpeechModelComparison.tsx
+msgid "<0/> ( {0}% error)"
+msgstr "<0/> ( {0}% error)"
+
+#. 0.0: seconds
+#: src/components/settings/SpeechModelComparison.tsx
+msgid "<0>{0} s</0> / 30 s"
+msgstr "<0>{0} s</0> / 30 s"
+
+#. 0: " "; 1: tier === "cpu" && data && data.secondsPer30s.cpu === undefined ? ( "update server" ) \\: seconds == null ? ( "not benchmarked" ) \\: ( <> <strong className="font-medium text-foreground">{seconds} s</strong> / 30 s </> )
+#: src/components/settings/SpeechModelComparison.tsx
+msgid "Speed:{0} {1}"
+msgstr "Speed:{0} {1}"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Custom commit and pull request instructions for all selected environments"
+msgstr "Custom commit and pull request instructions for all selected environments"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Keep commit subjects under 60 characters. Keep pull request descriptions short and plain."
+msgstr "Keep commit subjects under 60 characters. Keep pull request descriptions short and plain."
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Custom commit and pull request instructions"
+msgstr "Custom commit and pull request instructions"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Must be a coding agent: it reads the pull request over many steps. Off uses the writer model, or Codex or Claude if that model is a text generator."
+msgstr "Must be a coding agent: it reads the pull request over many steps. Off uses the writer model, or Codex or Claude if that model is a text generator."
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Use the repository's pull request template when it has one."
+msgstr "Use the repository's pull request template when it has one."
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Model for commit messages, pull request text, and branch or bookmark names. When disabled, use the text generation model configured for this environment."
+msgstr "Model for commit messages, pull request text, and branch or bookmark names. When disabled, use the text generation model configured for this environment."
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Commits & pull requests"
+msgstr "Commits & pull requests"
+
+#: src/components/settings/SpeechLanguageSelect.tsx
+msgid "Auto-detect"
+msgstr "Auto-detect"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "No text generators yet"
+msgstr "No text generators yet"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Add a model API to write thread titles, commit messages, and other short text without starting a coding agent."
+msgstr "Add a model API to write thread titles, commit messages, and other short text without starting a coding agent."
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Off · "
+msgstr "Off · "
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Show models"
+msgstr "Show models"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "<0/> Add generator"
+msgstr "<0/> Add generator"
+
+#. 0: environmentLabel
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "This deletes the API key stored on {0}. Anything set to use this generator falls back to the text generation model."
+msgstr "This deletes the API key stored on {0}. Anything set to use this generator falls back to the text generation model."
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Add a text generator"
+msgstr "Add a text generator"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Writes thread titles, commit messages, and other short text without starting a coding agent. Your API key is stored on this environment."
+msgstr "Writes thread titles, commit messages, and other short text without starting a coding agent. Your API key is stored on this environment."
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Service"
+msgstr "Service"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Base URL"
+msgstr "Base URL"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "API key (optional)"
+msgstr "API key (optional)"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Name (optional)"
+msgstr "Name (optional)"
+
+#. 0: name; 1: modelCount; 2: modelCount === 1 ? "model" \\: "models"
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "{0} is connected and lists {1} {2}. Switch any of these to it, or keep what they use now."
+msgstr "{0} is connected and lists {1} {2}. Switch any of these to it, or keep what they use now."
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Connecting"
+msgstr "Connecting"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Save and continue"
+msgstr "Save and continue"
+
+#. 0: selection.model
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "{0} answered. It works."
+msgstr "{0} answered. It works."
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Follows the text generation model"
+msgstr "Follows the text generation model"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Search models"
+msgstr "Search models"
+
+#. 0: name
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Couldn't load {0} models"
+msgstr "Couldn't load {0} models"
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "The model list couldn't load."
+msgstr "The model list couldn't load."
+
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "Loading the model list."
+msgstr "Loading the model list."
+
+#. 0: models.length; 1: models.length === 1 ? "model" \\: "models"
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "{0} {1} available. Pick one in a text generation model picker."
+msgstr "{0} {1} available. Pick one in a text generation model picker."
+
+#. 0: name
+#: src/components/settings/TextGeneratorsSettings.tsx
+msgid "{0} models"
+msgstr "{0} models"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Recommended"
+msgstr "Recommended"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "A good default pick for the languages it covers."
+msgstr "A good default pick for the languages it covers."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Live preview"
+msgstr "Live preview"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Shows words in your draft as you speak, before the recording finishes."
+msgstr "Shows words in your draft as you speak, before the recording finishes."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Translate"
+msgstr "Translate"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Can write English text from speech in another language. Turn on Translate to English to use it."
+msgstr "Can write English text from speech in another language. Turn on Translate to English to use it."
+
+#. 0: model.name
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} download progress"
+msgstr "{0} download progress"
+
+#. 0: model.name
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Cancel {0} download"
+msgstr "Cancel {0} download"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "<0/> Download"
+msgstr "<0/> Download"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "<0/> Selected"
+msgstr "<0/> Selected"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Use model"
+msgstr "Use model"
+
+#. 0: model.name
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Delete {0}"
+msgstr "Delete {0}"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Add words or phrases, separated by commas or line breaks"
+msgstr "Add words or phrases, separated by commas or line breaks"
+
+#. 0: label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Add a word or phrase to the {0}"
+msgstr "Add a word or phrase to the {0}"
+
+#. 0: term
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Alias for {0}"
+msgstr "Alias for {0}"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Misspelling"
+msgstr "Misspelling"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Alias"
+msgstr "Alias"
+
+#. 0: term
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Add an alias for {0}"
+msgstr "Add an alias for {0}"
+
+#. 0: label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} entries"
+msgstr "{0} entries"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Shared dictionary"
+msgstr "Shared dictionary"
+
+#. 0: scope.scope.label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Saved with {0} on its environment. Everyone who dictates in this project gets these spellings, along with their own dictionary. Project spellings win when the two overlap."
+msgstr "Saved with {0} on its environment. Everyone who dictates in this project gets these spellings, along with their own dictionary. Project spellings win when the two overlap."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Saved on the environment and used in every project there, along with each person’s own dictionary. Pick a project above to limit these words to one project."
+msgstr "Saved on the environment and used in every project there, along with each person’s own dictionary. Pick a project above to limit these words to one project."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Cleanup model not saved"
+msgstr "Cleanup model not saved"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Model for transcript cleanup, such as a cheaper or faster one. When disabled, use the text generation model configured for this environment."
+msgstr "Model for transcript cleanup, such as a cheaper or faster one. When disabled, use the text generation model configured for this environment."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Connect an environment first."
+msgstr "Connect an environment first."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Use a separate cleanup model"
+msgstr "Use a separate cleanup model"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Could not load transcription models"
+msgstr "Could not load transcription models"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Hardware"
+msgstr "Hardware"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Auto uses the environment’s GPU when it has one."
+msgstr "Auto uses the environment’s GPU when it has one."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Selected GPU"
+msgstr "Selected GPU"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Transcription hardware"
+msgstr "Transcription hardware"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Unload model"
+msgstr "Unload model"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Release the model’s memory on the environment after it sits idle."
+msgstr "Release the model’s memory on the environment after it sits idle."
+
+#. 0: status.reason
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "This environment can’t transcribe audio: {0}."
+msgstr "This environment can’t transcribe audio: {0}."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Languages"
+msgstr "Languages"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "All languages"
+msgstr "All languages"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "No languages match."
+msgstr "No languages match."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Browse models by language"
+msgstr "Browse models by language"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Models for "
+msgstr "Models for "
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "All models"
+msgstr "All models"
+
+#. 0: sortLabels[sort]; 1: downloadedOnly ? ", downloaded only" \\: ""
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Sort and filter models: {0}{1}"
+msgstr "Sort and filter models: {0}{1}"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Sort by"
+msgstr "Sort by"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Downloaded only"
+msgstr "Downloaded only"
+
+#. 0: status.benchmarkTier === "cpu" ? "CPU" \\: "GPU"
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Pick languages to see models that support all of them. Accuracy is word or character error rate: lower is better. Speed is the time to transcribe 30 seconds of audio on Handy’s benchmark {0}."
+msgstr "Pick languages to see models that support all of them. Accuracy is word or character error rate: lower is better. Speed is the time to transcribe 30 seconds of audio on Handy’s benchmark {0}."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Close model test"
+msgstr "Close model test"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Say a sentence in the language above. Cleanup is skipped, so you see exactly what the model heard. The transcript stays on this page."
+msgstr "Say a sentence in the language above. Cleanup is skipped, so you see exactly what the model heard. The transcript stays on this page."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "No speech recognized. Try again."
+msgstr "No speech recognized. Try again."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Test transcript"
+msgstr "Test transcript"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "<0/> Test model"
+msgstr "<0/> Test model"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Waiting for the environment to connect"
+msgstr "Waiting for the environment to connect"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Selected microphone (unavailable)"
+msgstr "Selected microphone (unavailable)"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Manage OpenRouter"
+msgstr "Manage OpenRouter"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Manage key"
+msgstr "Manage key"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "System default follows your operating system. Record a ten-second test and play it back here. Test audio stays on this device and is never transcribed."
+msgstr "System default follows your operating system. Record a ten-second test and play it back here. Test audio stays on this device and is never transcribed."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "How the dictation shortcut starts and stops recording."
+msgstr "How the dictation shortcut starts and stops recording."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Dictation shortcut mode"
+msgstr "Dictation shortcut mode"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Use"
+msgstr "Use"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Chosen environment (unavailable)"
+msgstr "Chosen environment (unavailable)"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "<0/> Off"
+msgstr "<0/> Off"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "On an environment"
+msgstr "On an environment"
+
+#. 0: CLOUD_SPEECH_LABELS[provider]; 1: environment.label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} via {1}"
+msgstr "{0} via {1}"
+
+#. 0: environment.label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Cloud via {0}"
+msgstr "Cloud via {0}"
+
+#. 0: chosenEnvironment.label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} can’t transcribe audio locally. Choose a different destination."
+msgstr "{0} can’t transcribe audio locally. Choose a different destination."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Language"
+msgstr "Language"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "The cloud provider can detect your language automatically."
+msgstr "The cloud provider can detect your language automatically."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Choose an environment above to see the languages its transcription model supports."
+msgstr "Choose an environment above to see the languages its transcription model supports."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Translate to English"
+msgstr "Translate to English"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Speak any language and get English text."
+msgstr "Speak any language and get English text."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Transcription"
+msgstr "Transcription"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "OpenAI handles silence automatically."
+msgstr "OpenAI handles silence automatically."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Skip silence and other non-speech audio before transcription, keeping a short buffer so words aren’t cut off."
+msgstr "Skip silence and other non-speech audio before transcription, keeping a short buffer so words aren’t cut off."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Remove filler words like “um” and “uh” from transcripts."
+msgstr "Remove filler words like “um” and “uh” from transcripts."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Names and terms transcription should spell your way, saved on this device. Add an alias when it keeps hearing a term wrong. The name of the project you dictate in is also sent as a hint."
+msgstr "Names and terms transcription should spell your way, saved on this device. Add an alias when it keeps hearing a term wrong. The name of the project you dictate in is also sent as a hint."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Transcription options"
+msgstr "Transcription options"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Fixes punctuation, numbers, and spoken corrections with the cleanup model on the draft’s environment. Sends the transcript and nearby draft text, never audio."
+msgstr "Fixes punctuation, numbers, and spoken corrections with the cleanup model on the draft’s environment. Sends the transcript and nearby draft text, never audio."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Custom cleanup instructions"
+msgstr "Custom cleanup instructions"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Cleanup instructions"
+msgstr "Cleanup instructions"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Use the built-in instructions or write your own."
+msgstr "Use the built-in instructions or write your own."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Built-in"
+msgstr "Built-in"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "The word or phrase you say to flag a correction, like “sorry” or “scratch that”. Cleanup applies the correction only where one is meant, and hears the cue as a hint."
+msgstr "The word or phrase you say to flag a correction, like “sorry” or “scratch that”. Cleanup applies the correction only where one is meant, and hears the cue as a hint."
+
+#: src/i18n/staticUiLabels.ts
+msgid "Voice"
+msgstr "Voice"
