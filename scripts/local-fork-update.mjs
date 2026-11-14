@@ -87,7 +87,9 @@ async function prepare(version) {
   if (await exists(output))
     throw new Error("Candidate directory already exists; choose a new version.");
   await NodeFSP.mkdir(output, { recursive: true });
-  run("vp", ["run", "check:changed", "--concurrency", "1"]);
+  run("vp", ["run", "check:changed", "--concurrency", "1"], {
+    env: { ...process.env, VITEST_MAX_WORKERS: "1" },
+  });
   run("/usr/bin/python3", ["-B", "scripts/local-update/install_test.py"]);
   if (git("status", "--porcelain"))
     throw new Error("Checks changed tracked sources; review and commit first.");

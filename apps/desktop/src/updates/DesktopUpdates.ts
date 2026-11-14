@@ -1027,7 +1027,7 @@ export const make = Effect.gen(function* () {
           { concurrency: "unbounded" },
         );
         yield* electronApp.quit;
-        return { accepted: true, completed: false, failed: false };
+        return { accepted: true, completed: true, failed: false };
       }).pipe(
         Effect.catchCause((cause) =>
           Effect.gen(function* () {

@@ -1,3 +1,5 @@
+import { vi } from "vite-plus/test";
+import * as LocalUpdate from "./localUpdate.ts";
 import * as NodeModule from "node:module";
 
 import { assert, describe, it } from "@effect/vitest";
@@ -106,11 +108,18 @@ describe("DesktopUpdates", () => {
   it.effect(
     "offers a staged fork without replacing the running bundle or enabling network updates",
     () => {
+      const steps: string[] = [];
       let phase = "prepared";
       const version = "1.2.4-fork.20261115.1";
       const harness = makeHarness({
         env: { T3CODE_DISABLE_AUTO_UPDATE: "true" },
         stagedExists: true,
+        stopBackend: Effect.sync(() => {
+          steps.push("stop");
+        }),
+        quitApp: Effect.sync(() => {
+          steps.push("quit");
+        }),
         localUpdateManifest: () =>
           JSON.stringify({
             version,
@@ -136,6 +145,19 @@ describe("DesktopUpdates", () => {
           assert.equal(harness.checkCount(), 0);
           phase = "failed";
           assert.isUndefined((yield* updates.getState).preparedVersion);
+          phase = "prepared";
+          using _installer = vi
+            .spyOn(LocalUpdate, "startLocalUpdateInstaller")
+            .mockImplementation(async () => {
+              steps.push("arm");
+              return () => {
+                steps.push("cancel");
+              };
+            });
+          const installed = yield* updates.installPrepared(version);
+          assert.isTrue(installed.accepted);
+          assert.isTrue(installed.completed);
+          assert.deepEqual(steps, ["arm", "stop", "quit"]);
         }),
       ).pipe(Effect.provide(harness.layer));
     },

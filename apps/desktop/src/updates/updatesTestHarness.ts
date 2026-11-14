@@ -32,6 +32,7 @@ export interface UpdatesHarnessOptions {
   readonly downloadUpdate?: Effect.Effect<void, ElectronUpdater.ElectronUpdaterDownloadUpdateError>;
   readonly quitAndInstall?: Effect.Effect<void, ElectronUpdater.ElectronUpdaterQuitAndInstallError>;
   readonly stopBackend?: Effect.Effect<void>;
+  readonly quitApp?: Effect.Effect<void>;
   readonly startBackend?: Effect.Effect<void>;
   readonly backendDesiredRunning?: boolean;
   readonly backendInstances?: ReadonlyArray<DesktopBackendPool.DesktopBackendInstance>;
@@ -302,7 +303,7 @@ export function makeHarness(options: UpdatesHarnessOptions = {}) {
 
   const layer = DesktopUpdates.layer.pipe(
     Layer.provide(layerFileSystem),
-    Layer.provide(Layer.mock(ElectronApp.ElectronApp, { quit: Effect.void })),
+    Layer.provide(Layer.mock(ElectronApp.ElectronApp, { quit: options.quitApp ?? Effect.void })),
     Layer.provide(DesktopUpdatePolicy.layerTest(options.policy)),
     Layer.provideMerge(layerUpdater),
     Layer.provideMerge(layerWindow),
