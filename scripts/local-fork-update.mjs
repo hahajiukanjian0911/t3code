@@ -87,7 +87,7 @@ async function prepare(version) {
   if (await exists(output))
     throw new Error("Candidate directory already exists; choose a new version.");
   await NodeFSP.mkdir(output, { recursive: true });
-  run("vp", ["run", "check:changed"]);
+  run("vp", ["run", "check:changed", "--concurrency", "1"]);
   run("/usr/bin/python3", ["-B", "scripts/local-update/install_test.py"]);
   if (git("status", "--porcelain"))
     throw new Error("Checks changed tracked sources; review and commit first.");
@@ -153,7 +153,7 @@ async function prepare(version) {
   if (!cliVersion.includes(version)) throw new Error("Packaged backend version mismatch.");
   const staged = `/Applications/.T3-Code-update-${version}.app`;
   if (await exists(staged)) throw new Error("Staged bundle already exists.");
-  await NodeFSP.cp(candidate, staged, { recursive: true, force: false, errorOnExist: true });
+  run("/usr/bin/ditto", [candidate, staged]);
   run("/usr/bin/codesign", ["--verify", "--deep", "--strict", staged]);
   const installer = NodePath.join(output, "install.py");
   await NodeFSP.copyFile(NodePath.join(root, "scripts/local-update/install.py"), installer);
