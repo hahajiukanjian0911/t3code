@@ -65,7 +65,11 @@ async function prepare(version) {
     throw new Error("Commit reviewed changes on a clean main first.");
   if (await exists(pending)) {
     const previous = JSON.parse(await NodeFSP.readFile(pending, "utf8"));
-    if (["prepared", "swapping", "database-backed-up"].includes(previous.phase))
+    if (
+      ["prepared", "swapping", "database-backed-up", "installed-pending-verification"].includes(
+        previous.phase,
+      )
+    )
       throw new Error("Resolve the existing pending update before preparing another.");
   }
   const current = run(
