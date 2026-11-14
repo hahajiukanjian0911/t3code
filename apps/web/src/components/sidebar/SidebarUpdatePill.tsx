@@ -229,19 +229,23 @@ function SidebarUpdateControl() {
   }
 
   const action = state ? resolveDesktopUpdateButtonAction(state) : "none";
-  const isDownloading = state?.status === "downloading";
+  const isDownloading = !state?.installedVersion && state?.status === "downloading";
   const localUpdateVersion =
-    state && action !== "none" ? getDesktopUpdateDownloadedVersion(state) : null;
+    state && !state.installedVersion && action !== "none"
+      ? getDesktopUpdateDownloadedVersion(state)
+      : null;
   const everything = useUpdateEverything(localUpdateVersion);
   const checkProviderUpdates = useCheckProviderUpdates();
-  const runsEverything = everything.hasUpdates && !isDownloading;
+  const runsEverything = everything.hasUpdates && !isDownloading && !state?.installedVersion;
   const run = useUpdateEverythingRun();
   const isRunningEverything = run !== null;
-  const showCheckIcon = shouldShowDesktopUpdateCheckIcon({
-    isAnimationLatched: isCheckAnimationLatched,
-    isChecking: state?.status === "checking" || isCheckingProviders,
-    prefersReducedMotion,
-  });
+  const showCheckIcon =
+    !state?.installedVersion &&
+    shouldShowDesktopUpdateCheckIcon({
+      isAnimationLatched: isCheckAnimationLatched,
+      isChecking: state?.status === "checking" || isCheckingProviders,
+      prefersReducedMotion,
+    });
   const { iconStatus, showUpdateDetails, showUpdateIconState } = resolveSidebarUpdatePresentation({
     action,
     showsEverything: runsEverything,
@@ -269,7 +273,9 @@ function SidebarUpdateControl() {
         : !canCheckForUpdate(state);
   const isInteractionDisabled = disabled || isActionPending || isRunningEverything;
   const showReleaseNotesPopover =
-    !isRunningEverything && shouldUseSidebarUpdateReleaseNotesPopover(showUpdateDetails, state);
+    !state?.installedVersion &&
+    !isRunningEverything &&
+    shouldUseSidebarUpdateReleaseNotesPopover(showUpdateDetails, state);
 
   const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
   const [releaseNotesTriggerFocusVisible, setReleaseNotesTriggerFocusVisible] = useState(false);
@@ -324,7 +330,9 @@ function SidebarUpdateControl() {
         setIsActionPending(false);
         return;
       }
-      void installLocalUpdate(bridge).finally(() => setIsActionPending(false));
+      void installLocalUpdate(bridge, undefined, state.installedVersion).finally(() =>
+        setIsActionPending(false),
+      );
       return;
     }
 
@@ -465,7 +473,8 @@ function SidebarUpdateControl() {
       aria-label={idleTooltip?.detail ? `${tooltip}: ${idleTooltip.detail}` : tooltip}
       aria-disabled={isInteractionDisabled || undefined}
       className={cn(
-        "inline-flex size-8 items-center justify-center rounded-full outline-hidden ring-ring transition-colors focus-visible:ring-2 focus-visible:ring-inset",
+        "inline-flex h-8 items-center justify-center rounded-full outline-hidden ring-ring transition-colors focus-visible:ring-2 focus-visible:ring-inset",
+        state?.installedVersion ? "gap-2 px-3 text-xs" : "w-8",
         isInteractionDisabled ? "cursor-not-allowed" : "cursor-pointer",
         showUpdateIconState
           ? cn(
@@ -503,6 +512,7 @@ function SidebarUpdateControl() {
       }}
     >
       {statusIcon}
+      {state?.installedVersion ? <span>Restart to update</span> : null}
     </button>
   );
 

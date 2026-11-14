@@ -44,6 +44,7 @@ export function getDesktopUpdateReleaseHistoryUrl(
 export function resolveDesktopUpdateButtonAction(
   state: DesktopUpdateState,
 ): DesktopUpdateButtonAction {
+  if (state.installedVersion) return "install";
   if (
     state.downloadedVersion &&
     (state.status === "downloaded" ||
@@ -68,6 +69,7 @@ export function shouldShowArm64IntelBuildWarning(state: DesktopUpdateState | nul
 }
 
 export function isDesktopUpdateButtonDisabled(state: DesktopUpdateState | null): boolean {
+  if (state?.installedVersion) return false;
   return state?.status === "downloading";
 }
 
@@ -87,6 +89,8 @@ export function getArm64IntelBuildWarningDescription(state: DesktopUpdateState):
 }
 
 export function getDesktopUpdateButtonTooltip(state: DesktopUpdateState): string {
+  if (state.installedVersion)
+    return `Version ${state.installedVersion} is installed. Restart to use the new version.`;
   if (
     state.notAppliedVersion !== undefined &&
     (state.status === "available" || state.status === "downloaded") &&
@@ -121,8 +125,11 @@ export function getDesktopUpdateButtonTooltip(state: DesktopUpdateState): string
 }
 
 export function getDesktopUpdateInstallConfirmationMessage(
-  state: Pick<DesktopUpdateState, "availableVersion" | "downloadedVersion">,
+  state: Pick<DesktopUpdateState, "availableVersion" | "downloadedVersion" | "installedVersion">,
 ): string {
+  if (state.installedVersion) {
+    return `Restart T3 Code to use installed version ${state.installedVersion}?\n\nAny running tasks will be interrupted. Make sure you're ready before continuing.`;
+  }
   const version = state.downloadedVersion ?? state.availableVersion;
   return `Install update${version ? ` ${version}` : ""} and restart T3 Code?\n\nAny running tasks will be interrupted. Make sure you're ready before continuing.`;
 }

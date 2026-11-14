@@ -84,6 +84,24 @@ function publish(update: DesktopUpdateState | null) {
 const releaseNotes = () => document.querySelector('[aria-label="Update release notes"]');
 
 describe("SidebarUpdatePill release notes", () => {
+  it("shows the installed fork restart button ahead of other updates", async () => {
+    setup(
+      {
+        ...nightlyUpdate([]),
+        enabled: false,
+        status: "disabled",
+        installedVersion: "0.1.8-fork.20261114.1",
+      },
+      { hasUpdates: true },
+    );
+    await using screen = await render(<SidebarUpdatePill />);
+    await expect
+      .element(screen.getByRole("button", { name: /Restart to use the new version/ }))
+      .toBeVisible();
+    await expect
+      .element(screen.getByRole("button", { name: /Restart to use the new version/ }))
+      .toBeEnabled();
+  });
   it("closes when the release notes stop applying", async () => {
     setup(nightlyUpdate(RELEASE_NOTES));
     await using _screen = await render(<SidebarUpdatePill />);

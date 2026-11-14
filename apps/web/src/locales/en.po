@@ -7661,7 +7661,9 @@ msgstr "Later"
 msgid "This app"
 msgstr "This app"
 
+#: src/components/settings/SettingsPanels.tsx
 #: src/components/sidebar/SidebarUpdateCapsule.tsx
+#: src/components/sidebar/SidebarUpdatePill.tsx
 msgid "Restart to update"
 msgstr "Restart to update"
 

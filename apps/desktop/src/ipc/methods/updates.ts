@@ -8,6 +8,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 import * as DesktopUpdates from "../../updates/DesktopUpdates.ts";
+import * as DesktopLifecycle from "../../app/DesktopLifecycle.ts";
 import * as IpcChannels from "../channels.ts";
 import * as DesktopIpc from "../DesktopIpc.ts";
 
@@ -51,9 +52,18 @@ export const installUpdate = DesktopIpc.makeIpcMethod({
   result: DesktopUpdateActionResultSchema,
   handler: Effect.fn("desktop.ipc.updates.install")(function* (expectedVersion) {
     const updates = yield* DesktopUpdates.DesktopUpdates;
+    const state = yield* updates.getState;
+    if (state.installedVersion !== undefined) {
+      if (expectedVersion !== undefined && expectedVersion !== state.installedVersion) {
+        return { accepted: false, completed: false, state };
+      }
+      const lifecycle = yield* DesktopLifecycle.DesktopLifecycle;
+      yield* lifecycle.relaunch(`installedUpdate=${state.installedVersion}`);
+      return { accepted: true, completed: true, state };
+    }
     if (expectedVersion === undefined) return yield* updates.install;
-    const { accepted, completed, state } = yield* updates.installPrepared(expectedVersion);
-    return { accepted, completed, state };
+    const result = yield* updates.installPrepared(expectedVersion);
+    return { accepted: result.accepted, completed: result.completed, state: result.state };
   }),
 });
 

@@ -23,6 +23,32 @@ import * as DesktopUpdates from "./DesktopUpdates.ts";
 import { flushCallbacks, makeHarness } from "./updatesTestHarness.ts";
 
 describe("DesktopUpdates", () => {
+  it.effect("detects a replaced fork bundle even with automatic updates disabled", () => {
+    let version = "0.1.8-fork.20261110.2";
+    const harness = makeHarness({
+      appVersion: version,
+      env: { T3CODE_DISABLE_AUTO_UPDATE: "true" },
+      installedPlist: () =>
+        `<plist><dict><key>CFBundleShortVersionString</key><string>${version}</string></dict></plist>`,
+    });
+    return Effect.scoped(
+      Effect.gen(function* () {
+        const updates = yield* DesktopUpdates.DesktopUpdates;
+        yield* updates.configure;
+        assert.isUndefined((yield* updates.getState).installedVersion);
+        version = "0.1.8-fork.20261114.1";
+        yield* TestClock.adjust("30 seconds");
+        assert.equal(harness.sentStates.at(-1)?.installedVersion, version);
+        assert.equal((yield* updates.getState).installedVersion, version);
+        assert.equal(harness.sentStates.at(-1)?.installedVersion, version);
+        version = "0.1.8-fork.20261109.1";
+        assert.isUndefined((yield* updates.getState).installedVersion);
+        assert.equal(harness.checkCount(), 0);
+        assert.deepEqual(harness.installSteps, []);
+      }),
+    ).pipe(Effect.provide(Layer.merge(TestClock.layer(), harness.layer)));
+  });
+
   it.effect("updates Linux .deb installs and leaves other non-AppImage installs off", () =>
     Effect.gen(function* () {
       const linuxState = (packageType: string | undefined) =>

@@ -238,6 +238,7 @@ function layerTest(input: {
   readonly previewZoomReapplies?: number[];
   readonly onReveal?: (window: Electron.BrowserWindow) => void;
   readonly focusedWindow?: Electron.BrowserWindow;
+  readonly onQuit?: Effect.Effect<void>;
 }) {
   let desktopSettings = input.desktopSettings ?? DesktopAppSettings.DEFAULT_DESKTOP_SETTINGS;
   const layerDesktopAppSettings = Layer.succeed(DesktopAppSettings.DesktopAppSettings, {
@@ -312,7 +313,9 @@ function layerTest(input: {
         layerDesktopClientSettings,
         layerDesktopServerExposure,
         DesktopState.layer,
-        layerElectronApp,
+        input.onQuit
+          ? Layer.mock(ElectronApp.ElectronApp)({ quit: input.onQuit })
+          : layerElectronApp,
         Layer.succeed(ElectronMenu.ElectronMenu, {
           setApplicationMenu: () => Effect.void,
           showContextMenu: () => Effect.succeedNone,
@@ -695,6 +698,58 @@ describe("DesktopWindow", () => {
         assert.isFalse(fakeWindow.setIgnoreMenuShortcuts.mock.lastCall?.[0]);
       }).pipe(Effect.provide(layer));
     }),
+  );
+
+  it.effect.each(["window", "webContents"] as const)(
+    "stops handling input when quitting destroys the %s",
+    (destroyed) =>
+      Effect.gen(function* () {
+        using _now = vi.spyOn(Date, "now").mockReturnValue(1);
+        const fake = makeFakeBrowserWindow();
+        const contents = fake.window.webContents;
+        const createCount = yield* Ref.make(0);
+        const mainWindow = yield* Ref.make<Option.Option<Electron.BrowserWindow>>(Option.none());
+        const quit = vi.fn(() => {
+          if (destroyed === "window") {
+            fake.isDestroyed.mockReturnValue(true);
+            Object.defineProperty(fake.window, "webContents", {
+              get: () => {
+                throw new TypeError("Object has been destroyed");
+              },
+            });
+          } else {
+            vi.mocked(contents.isDestroyed).mockReturnValue(true);
+          }
+          fake.setIgnoreMenuShortcuts.mockImplementation(() => {
+            throw new TypeError("Object has been destroyed");
+          });
+        });
+
+        yield* Effect.gen(function* () {
+          const windows = yield* DesktopWindow.DesktopWindow;
+          yield* windows.handleBackendReady(new URL("http://127.0.0.1:3773"));
+          const beforeInput = fake.webContentsListeners.get("before-input-event")!;
+          const event = { preventDefault: vi.fn() };
+          const input = {
+            type: "keyDown",
+            isAutoRepeat: false,
+            key: "q",
+            meta: true,
+            control: false,
+            alt: false,
+            shift: false,
+          };
+          beforeInput(event, input);
+          fake.setIgnoreMenuShortcuts.mockClear();
+          beforeInput(event, input);
+          assert.equal(quit.mock.calls.length, 1);
+          assert.equal(fake.setIgnoreMenuShortcuts.mock.calls.length, 0);
+        }).pipe(
+          Effect.provide(
+            layerTest({ window: fake.window, createCount, mainWindow, onQuit: Effect.sync(quit) }),
+          ),
+        );
+      }),
   );
 
   // Chromium hands the main window's zoom level down to embedded preview

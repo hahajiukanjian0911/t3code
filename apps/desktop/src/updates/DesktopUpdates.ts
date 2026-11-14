@@ -407,6 +407,7 @@ export const make = Effect.gen(function* () {
   );
 
   const stateChanges = yield* PubSub.sliding<DesktopUpdateState>(16);
+  let installedVersion: string | undefined;
   // Serialize writes and publishes against subscription so snapshots cannot overlap the first change.
   const stateMutex = yield* Semaphore.make(1);
 
@@ -414,12 +415,37 @@ export const make = Effect.gen(function* () {
     Effect.flatMap((state) => electronWindow.sendAll(IpcChannels.UPDATE_STATE_CHANNEL, state)),
   );
 
-  const setState = (state: DesktopUpdateState): Effect.Effect<void> =>
-    stateMutex
+  const setState = (state: DesktopUpdateState): Effect.Effect<void> => {
+    const { installedVersion: _installedVersion, ...rest } = state;
+    const next = { ...rest, ...(installedVersion ? { installedVersion } : {}) };
+    return stateMutex
       .withPermits(1)(
-        Ref.set(updateStateRef, state).pipe(Effect.andThen(PubSub.publish(stateChanges, state))),
+        Ref.set(updateStateRef, next).pipe(Effect.andThen(PubSub.publish(stateChanges, next))),
       )
       .pipe(Effect.andThen(emitState));
+  };
+
+  // Read outside ASAR: Electron caches archive headers across manual bundle replacements.
+  const refreshInstalledVersion = Effect.fn("desktop.updates.refreshInstalledVersion")(
+    function* () {
+      if (!environment.isPackaged || environment.platform !== "darwin") return;
+      const plist = yield* fileSystem
+        .readFileString(environment.path.join(environment.resourcesPath, "..", "Info.plist"))
+        .pipe(Effect.orElseSucceed(() => ""));
+      const version = plist
+        .match(/<key>CFBundleShortVersionString<\/key>\s*<string>([^<]+)<\/string>/)?.[1]
+        ?.trim();
+      const next =
+        version &&
+        /^\d+\.\d+\.\d+(?:-[\w.-]+)?(?:\+[\w.-]+)?$/.test(version) &&
+        compareSemverVersions(version, environment.appVersion) > 0
+          ? version
+          : undefined;
+      if (installedVersion === next) return;
+      installedVersion = next;
+      yield* setState(yield* Ref.get(updateStateRef));
+    },
+  );
 
   const updateState = (
     f: (state: DesktopUpdateState) => DesktopUpdateState,
@@ -1097,7 +1123,7 @@ export const make = Effect.gen(function* () {
   });
 
   return DesktopUpdates.of({
-    getState: Ref.get(updateStateRef),
+    getState: refreshInstalledVersion().pipe(Effect.andThen(Ref.get(updateStateRef))),
     isActionActive: activeUpdateAction.pipe(Effect.map(Option.isSome)),
     isInstallActive: activeUpdateAction.pipe(
       Effect.map((action) => Option.isSome(action) && action.value === "install"),
@@ -1152,6 +1178,14 @@ export const make = Effect.gen(function* () {
           Option.orElse(disabledReason, () => channelBlockedReason(settings.updateChannel)),
         ),
       );
+      if (environment.isPackaged && environment.platform === "darwin") {
+        yield* refreshInstalledVersion();
+        yield* refreshInstalledVersion().pipe(
+          Effect.delay("30 seconds"),
+          Effect.forever,
+          Effect.forkScoped,
+        );
+      }
       if (Option.isSome(disabledReason)) {
         return;
       }
