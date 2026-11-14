@@ -12850,6 +12850,8 @@ msgstr "无法复制 MCP URL"
 #: src/components/settings/IntegrationsSettings.tsx
 #: src/components/settings/SavedEnvironmentRows.tsx
 #: src/components/settings/SavedEnvironmentRows.tsx
+#: src/components/settings/SettingsPanels.tsx
+#: src/components/sidebar/SidebarUpdatePill.tsx
 msgid "Update"
 msgstr "更新"
 

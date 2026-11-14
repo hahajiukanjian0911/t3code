@@ -241,7 +241,7 @@ function AboutVersionSection() {
         return;
       }
       void bridge
-        .installUpdate(updateState?.installedVersion)
+        .installUpdate(updateState?.preparedVersion ?? updateState?.installedVersion)
         .catch((error: unknown) => {
           toastManager.add(
             stackedThreadToast({
@@ -298,9 +298,11 @@ function AboutVersionSection() {
     // Off its track, "up to date" only means no switch is pending; Review moves it.
     ...(appOffTrack ? {} : { "up-to-date": "Up to Date" }),
   };
-  const buttonLabel = updateState?.installedVersion
-    ? "Restart to update"
-    : (actionLabel[action] ?? statusLabel[updateState?.status ?? ""] ?? "Check for Updates");
+  const buttonLabel = updateState?.preparedVersion
+    ? "Update"
+    : updateState?.installedVersion
+      ? "Restart to update"
+      : (actionLabel[action] ?? statusLabel[updateState?.status ?? ""] ?? "Check for Updates");
   const description =
     action === "download" || action === "install"
       ? "Update available."

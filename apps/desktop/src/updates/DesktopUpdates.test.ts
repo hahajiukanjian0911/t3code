@@ -103,6 +103,44 @@ describe("DesktopUpdates", () => {
     ).pipe(Effect.provide(Layer.merge(TestClock.layer(), harness.layer)));
   });
 
+  it.effect(
+    "offers a staged fork without replacing the running bundle or enabling network updates",
+    () => {
+      let phase = "prepared";
+      const version = "1.2.4-fork.20261115.1";
+      const harness = makeHarness({
+        env: { T3CODE_DISABLE_AUTO_UPDATE: "true" },
+        stagedExists: true,
+        localUpdateManifest: () =>
+          JSON.stringify({
+            version,
+            phase,
+            commit: "a".repeat(40),
+            installedPath: "/",
+            stagedPath: "/.T3-Code-update-test.app",
+            backupPath: "/tmp/backup.app",
+            installerPath: "/tmp/install.py",
+            asarSha256: "b".repeat(64),
+            previousAsarSha256: "c".repeat(64),
+          }),
+      });
+      return Effect.scoped(
+        Effect.gen(function* () {
+          const updates = yield* DesktopUpdates.DesktopUpdates;
+          yield* updates.configure;
+          assert.equal((yield* updates.getState).preparedVersion, version);
+          assert.isUndefined((yield* updates.getState).installedVersion);
+          const mismatch = yield* updates.installPrepared("1.2.5");
+          assert.isFalse(mismatch.accepted);
+          assert.deepEqual(harness.installSteps, []);
+          assert.equal(harness.checkCount(), 0);
+          phase = "failed";
+          assert.isUndefined((yield* updates.getState).preparedVersion);
+        }),
+      ).pipe(Effect.provide(harness.layer));
+    },
+  );
+
   it.effect("updates Linux .deb installs and leaves other non-AppImage installs off", () =>
     Effect.gen(function* () {
       const linuxState = (packageType: string | undefined) =>

@@ -229,18 +229,17 @@ function SidebarUpdateControl() {
   }
 
   const action = state ? resolveDesktopUpdateButtonAction(state) : "none";
-  const isDownloading = !state?.installedVersion && state?.status === "downloading";
+  const hasLocalUpdate = Boolean(state?.preparedVersion || state?.installedVersion);
+  const isDownloading = !hasLocalUpdate && state?.status === "downloading";
   const localUpdateVersion =
-    state && !state.installedVersion && action !== "none"
-      ? getDesktopUpdateDownloadedVersion(state)
-      : null;
+    state && !hasLocalUpdate && action !== "none" ? getDesktopUpdateDownloadedVersion(state) : null;
   const everything = useUpdateEverything(localUpdateVersion);
   const checkProviderUpdates = useCheckProviderUpdates();
-  const runsEverything = everything.hasUpdates && !isDownloading && !state?.installedVersion;
+  const runsEverything = everything.hasUpdates && !isDownloading && !hasLocalUpdate;
   const run = useUpdateEverythingRun();
   const isRunningEverything = run !== null;
   const showCheckIcon =
-    !state?.installedVersion &&
+    !hasLocalUpdate &&
     shouldShowDesktopUpdateCheckIcon({
       isAnimationLatched: isCheckAnimationLatched,
       isChecking: state?.status === "checking" || isCheckingProviders,
@@ -273,7 +272,7 @@ function SidebarUpdateControl() {
         : !canCheckForUpdate(state);
   const isInteractionDisabled = disabled || isActionPending || isRunningEverything;
   const showReleaseNotesPopover =
-    !state?.installedVersion &&
+    !hasLocalUpdate &&
     !isRunningEverything &&
     shouldUseSidebarUpdateReleaseNotesPopover(showUpdateDetails, state);
 
@@ -331,9 +330,11 @@ function SidebarUpdateControl() {
         setIsActionPending(false);
         return;
       }
-      void installLocalUpdate(bridge, undefined, state.installedVersion).finally(() =>
-        setIsActionPending(false),
-      );
+      void installLocalUpdate(
+        bridge,
+        undefined,
+        state.preparedVersion ?? state.installedVersion,
+      ).finally(() => setIsActionPending(false));
       return;
     }
 
@@ -475,7 +476,7 @@ function SidebarUpdateControl() {
       aria-disabled={isInteractionDisabled || undefined}
       className={cn(
         "inline-flex h-8 items-center justify-center rounded-full outline-hidden ring-ring transition-colors focus-visible:ring-2 focus-visible:ring-inset",
-        state?.installedVersion ? "gap-2 px-3 text-xs" : "w-8",
+        hasLocalUpdate ? "gap-2 px-3 text-xs" : "w-8",
         isInteractionDisabled ? "cursor-not-allowed" : "cursor-pointer",
         showUpdateIconState
           ? cn(
@@ -513,7 +514,9 @@ function SidebarUpdateControl() {
       }}
     >
       {statusIcon}
-      {state?.installedVersion ? <span>Restart to update</span> : null}
+      {hasLocalUpdate ? (
+        <span>{state?.preparedVersion ? "Update" : "Restart to update"}</span>
+      ) : null}
     </button>
   );
 

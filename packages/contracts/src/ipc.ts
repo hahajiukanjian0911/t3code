@@ -279,6 +279,7 @@ export interface DesktopUpdateState {
   currentVersion: string;
   /** A newer app bundle already installed on disk, awaiting a restart. */
   installedVersion?: string;
+  preparedVersion?: string;
   hostArch: DesktopRuntimeArch;
   appArch: DesktopRuntimeArch;
   runningUnderArm64Translation: boolean;
@@ -325,6 +326,7 @@ export const DesktopUpdateStateSchema = Schema.Struct({
   channel: DesktopUpdateChannelSchema,
   currentVersion: Schema.String,
   installedVersion: Schema.optionalKey(Schema.String),
+  preparedVersion: Schema.optionalKey(Schema.String),
   hostArch: DesktopRuntimeArchSchema,
   appArch: DesktopRuntimeArchSchema,
   runningUnderArm64Translation: Schema.Boolean,

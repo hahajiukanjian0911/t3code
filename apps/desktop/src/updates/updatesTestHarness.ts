@@ -1,3 +1,4 @@
+import * as ElectronApp from "../electron/ElectronApp.ts";
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import type { DesktopUpdateState } from "@t3tools/contracts";
@@ -41,6 +42,8 @@ export interface UpdatesHarnessOptions {
   readonly policy?: DesktopUpdatePolicy.UpdatePolicy;
   readonly appVersion?: string;
   readonly installedPlist?: () => string;
+  readonly localUpdateManifest?: () => string;
+  readonly stagedExists?: boolean;
   /** Starts from in-memory settings with this track saved, as after a restart. */
   readonly savedChannel?: DesktopAppSettings.DesktopSettings["updateChannel"];
   /** Adds a WSL backend beside the primary, as on a Windows host with WSL enabled. */
@@ -251,7 +254,10 @@ export function makeHarness(options: UpdatesHarnessOptions = {}) {
   const isInstallRecord = (path: string) =>
     path.endsWith(DesktopUpdates.DESKTOP_UPDATE_INSTALL_RECORD_FILE);
   const layerFileSystem = FileSystem.layerNoop({
+    exists: () => Effect.succeed(options.stagedExists ?? false),
     readFileString: (path) => {
+      if (path.endsWith("/local-updates/pending.json") && options.localUpdateManifest)
+        return Effect.sync(options.localUpdateManifest);
       if (path === "/missing/Info.plist" && options.installedPlist) {
         return Effect.sync(options.installedPlist);
       }
@@ -296,6 +302,7 @@ export function makeHarness(options: UpdatesHarnessOptions = {}) {
 
   const layer = DesktopUpdates.layer.pipe(
     Layer.provide(layerFileSystem),
+    Layer.provide(Layer.mock(ElectronApp.ElectronApp, { quit: Effect.void })),
     Layer.provide(DesktopUpdatePolicy.layerTest(options.policy)),
     Layer.provideMerge(layerUpdater),
     Layer.provideMerge(layerWindow),

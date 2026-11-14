@@ -33,6 +33,8 @@ import * as DesktopConfig from "../app/DesktopConfig.ts";
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopObservability from "../app/DesktopObservability.ts";
 import * as DesktopState from "../app/DesktopState.ts";
+import * as ElectronApp from "../electron/ElectronApp.ts";
+import { parseLocalUpdate, startLocalUpdateInstaller } from "./localUpdate.ts";
 import * as ElectronUpdater from "../electron/ElectronUpdater.ts";
 import * as ElectronWindow from "../electron/ElectronWindow.ts";
 import * as IpcChannels from "../ipc/channels.ts";
@@ -375,6 +377,7 @@ export const make = Effect.gen(function* () {
   const sshEnvironment = yield* DesktopSshEnvironment.DesktopSshEnvironment;
   const desktopState = yield* DesktopState.DesktopState;
   const electronUpdater = yield* ElectronUpdater.ElectronUpdater;
+  const electronApp = yield* ElectronApp.ElectronApp;
   const electronWindow = yield* ElectronWindow.ElectronWindow;
   const environment = yield* DesktopEnvironment.DesktopEnvironment;
   const fileSystem = yield* FileSystem.FileSystem;
@@ -416,6 +419,14 @@ export const make = Effect.gen(function* () {
 
   const stateChanges = yield* PubSub.sliding<DesktopUpdateState>(16);
   let installedVersion: string | undefined;
+  let localUpdate: ReturnType<typeof parseLocalUpdate>;
+  let localContents = "";
+  const localManifestPath = environment.path.join(
+    environment.baseDir,
+    "local-updates",
+    "pending.json",
+  );
+  const installedPath = environment.path.resolve(environment.resourcesPath, "..", "..");
   // Serialize writes and publishes against subscription so snapshots cannot overlap the first change.
   const stateMutex = yield* Semaphore.make(1);
 
@@ -424,8 +435,16 @@ export const make = Effect.gen(function* () {
   );
 
   const setState = (state: DesktopUpdateState): Effect.Effect<void> => {
-    const { installedVersion: _installedVersion, ...rest } = state;
-    const next = { ...rest, ...(installedVersion ? { installedVersion } : {}) };
+    const {
+      installedVersion: _installedVersion,
+      preparedVersion: _preparedVersion,
+      ...rest
+    } = state;
+    const next = {
+      ...rest,
+      ...(installedVersion ? { installedVersion } : {}),
+      ...(localUpdate ? { preparedVersion: localUpdate.version } : {}),
+    };
     return stateMutex
       .withPermits(1)(
         Ref.set(updateStateRef, next).pipe(Effect.andThen(PubSub.publish(stateChanges, next))),
@@ -437,6 +456,22 @@ export const make = Effect.gen(function* () {
   const refreshInstalledVersion = Effect.fn("desktop.updates.refreshInstalledVersion")(
     function* () {
       if (!environment.isPackaged || environment.platform !== "darwin") return;
+      const contents = yield* fileSystem
+        .readFileString(localManifestPath)
+        .pipe(Effect.orElseSucceed(() => ""));
+      const candidate =
+        policy.message === null
+          ? parseLocalUpdate(contents, installedPath, environment.appVersion)
+          : undefined;
+      const nextLocal =
+        candidate &&
+        (yield* fileSystem.exists(candidate.stagedPath).pipe(Effect.orElseSucceed(() => false)))
+          ? candidate
+          : undefined;
+      const localChanged =
+        localContents !== contents || localUpdate?.version !== nextLocal?.version;
+      localContents = contents;
+      localUpdate = nextLocal;
       const plist = yield* fileSystem
         .readFileString(environment.path.join(environment.resourcesPath, "..", "Info.plist"))
         .pipe(Effect.orElseSucceed(() => ""));
@@ -449,7 +484,7 @@ export const make = Effect.gen(function* () {
         compareSemverVersions(version, environment.appVersion) > 0
           ? version
           : undefined;
-      if (installedVersion === next) return;
+      if (installedVersion === next && !localChanged) return;
       installedVersion = next;
       yield* setState(yield* Ref.get(updateStateRef));
     },
@@ -947,6 +982,62 @@ export const make = Effect.gen(function* () {
         failed: false,
         state: yield* Ref.get(updateStateRef),
       };
+    }
+    yield* refreshInstalledVersion();
+    if (localUpdate) {
+      const candidate = localUpdate;
+      if (
+        (expectedVersion !== undefined && expectedVersion !== candidate.version) ||
+        !(yield* tryStartUpdateAction("install"))
+      ) {
+        return {
+          accepted: false,
+          completed: false,
+          failed: false,
+          state: yield* Ref.get(updateStateRef),
+        };
+      }
+      let cancel: (() => void) | undefined;
+      const result = yield* Effect.gen(function* () {
+        cancel = yield* Effect.tryPromise({
+          try: (signal) => startLocalUpdateInstaller(localManifestPath, candidate, signal),
+          catch: (cause) => new DesktopUpdateUnexpectedActionError({ action: "install", cause }),
+        }).pipe(Effect.timeout("15 seconds"));
+        yield* Ref.set(desktopState.quitting, true);
+        yield* writeUpdateRestartMarker;
+        yield* writeUpdateInProgressMarker;
+        yield* writeInstallRecord(candidate.version);
+        const instances = yield* pool.list;
+        yield* Ref.set(
+          installRunningBackendsRef,
+          yield* Effect.filter(instances, (instance) =>
+            instance.snapshot.pipe(Effect.map((snapshot) => snapshot.desiredRunning)),
+          ),
+        );
+        yield* Effect.all(
+          [
+            Effect.forEach(
+              instances,
+              (instance) =>
+                instance.stop({ timeout: DesktopBackendManager.BACKEND_QUIT_STOP_TIMEOUT }),
+              { concurrency: "unbounded" },
+            ),
+            sshEnvironment.closeAllTunnels,
+          ],
+          { concurrency: "unbounded" },
+        );
+        yield* electronApp.quit;
+        return { accepted: true, completed: false, failed: false };
+      }).pipe(
+        Effect.catchCause((cause) =>
+          Effect.gen(function* () {
+            cancel?.();
+            yield* recoverFailedInstall(`Local update failed: ${Cause.pretty(cause)}`);
+            return { accepted: true, completed: false, failed: true };
+          }),
+        ),
+      );
+      return { ...result, state: yield* Ref.get(updateStateRef) };
     }
     const result = yield* installDownloadedUpdate(expectedVersion);
     return {

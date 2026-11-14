@@ -31,20 +31,23 @@ const baseState: DesktopUpdateState = {
 };
 
 describe("desktop update button state", () => {
-  it("offers a restart for a manually installed fork while network updates are off", () => {
-    const state: DesktopUpdateState = {
-      ...baseState,
-      enabled: false,
-      status: "disabled",
-      installedVersion: "1.0.1-fork.20261114.1",
-    };
-    expect(resolveDesktopUpdateButtonAction(state)).toBe("install");
-    expect(isDesktopUpdateButtonDisabled(state)).toBe(false);
-    expect(getDesktopUpdateButtonTooltip(state)).toContain(state.installedVersion);
-    expect(getDesktopUpdateInstallConfirmationMessage(state)).toContain(
-      "Any running tasks will be interrupted",
-    );
-  });
+  it.each(["installedVersion", "preparedVersion"] as const)(
+    "offers %s while network updates are off",
+    (field) => {
+      const state: DesktopUpdateState = {
+        ...baseState,
+        enabled: false,
+        status: "disabled",
+        [field]: "1.0.1-fork.20261114.1",
+      };
+      expect(resolveDesktopUpdateButtonAction(state)).toBe("install");
+      expect(isDesktopUpdateButtonDisabled(state)).toBe(false);
+      expect(getDesktopUpdateButtonTooltip(state)).toContain(state[field]);
+      expect(getDesktopUpdateInstallConfirmationMessage(state)).toContain(
+        "Any running tasks will be interrupted",
+      );
+    },
+  );
   it("keeps retry action available after a download error", () => {
     const state: DesktopUpdateState = {
       ...baseState,
