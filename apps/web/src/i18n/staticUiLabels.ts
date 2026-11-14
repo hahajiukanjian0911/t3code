@@ -208,6 +208,9 @@ const SOURCE_LABELS = [
   "Transcription language",
   "Transcription models",
   "Welcome page",
+  "Preferences",
+  "More",
+  "Settings",
 ] as const;
 
 function createUiLabels(_revision: number): readonly string[] {
@@ -416,6 +419,9 @@ function createUiLabels(_revision: number): readonly string[] {
     "Transcription language",
     "Transcription models",
     "Welcome page",
+    "Preferences",
+    "More",
+    "Settings",
   ];
 }
 

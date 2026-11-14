@@ -7,12 +7,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1\n"
 "X-Plurals-Order: other\n"
-"Project-Id-Version: \n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: \n"
-"PO-Revision-Date: \n"
-"Last-Translator: \n"
-"Language-Team: \n"
 
 #: src/browser/BrowserDeviceToolbar.tsx
 msgid "Dimensions"
@@ -132,15 +126,10 @@ msgstr "{0} 上的文件夹"
 msgid "Copy ignored files"
 msgstr "复制被忽略的文件"
 
-#. 0: selectedFiles.size; 1: files.length; 2: selectedBytes > 0 ? ` · ${formatBytes(selectedBytes)}` \\: ""
+#. 0: selectedFiles.size; 1: allIgnoredFiles.data?.files.length ?? 0; 2: selectedBytes > 0 ? ` · ${formatBytes(selectedBytes)}` \\: ""
 #: src/components/AddProjectToMachineDialog.tsx
 msgid "{0} of {1} {2}"
 msgstr "{0}，共 {1} {2}"
-
-#. 0: files.length
-#: src/components/AddProjectToMachineDialog.tsx
-msgid "Showing the first {0} files."
-msgstr "仅显示前 {0} 个文件。"
 
 #: src/browser/ServerBrowserSurface.tsx
 #: src/components/AddProjectToMachineDialog.tsx
@@ -200,6 +189,7 @@ msgstr "仅显示前 {0} 个文件。"
 #: src/components/settings/ProjectIconPickerDialog.tsx
 #: src/components/settings/ProviderAuthenticationSection.tsx
 #: src/components/settings/ProviderModelsSection.tsx
+#: src/components/settings/RevokeConnectDeviceDialog.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/settings/SecretProviderDialog.tsx
 #: src/components/settings/SecretsSettings.tsx
@@ -393,13 +383,12 @@ msgstr "工作区"
 #: src/components/CommandPalette.tsx
 #: src/components/CommandPalette.tsx
 #: src/components/CommandPalette.tsx
+#: src/components/ConnectDeviceApprovalCoordinator.tsx
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
 #: src/components/ProjectCloneToastCoordinator.tsx
-#: src/components/Sidebar.tsx
-#: src/components/Sidebar.tsx
 #: src/components/Sidebar.tsx
 #: src/components/Sidebar.tsx
 #: src/components/Sidebar.tsx
@@ -447,15 +436,12 @@ msgstr "工作区"
 #: src/components/promptLinks/NewThreadLinkView.tsx
 #: src/components/pullRequest/PullRequestsPage.tsx
 #: src/components/settings/ArchivedThreadsPanel.tsx
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
 #: src/components/settings/DatabaseStorageNotice.tsx
 #: src/components/settings/ProjectFaviconPickerDialog.tsx
 #: src/components/settings/ProjectSettingsPanel.tsx
 msgid "An error occurred."
 msgstr "发生错误。"
-
-#: src/components/BranchToolbarBranchSelector.tsx
-msgid "Branch name copied"
-msgstr "分支名称已复制"
 
 #: src/components/BranchToolbarBranchSelector.tsx
 msgid "Failed to copy branch name"
@@ -495,12 +481,6 @@ msgstr "创建新引用“{0}”"
 #: src/components/media/MediaActions.tsx
 msgid "Copy full path"
 msgstr "复制完整路径"
-
-#: src/components/BranchToolbar.tsx
-#: src/components/Sidebar.tsx
-#: src/components/media/MediaActions.tsx
-msgid "Path copied"
-msgstr "路径已复制"
 
 #: src/components/BranchToolbar.tsx
 #: src/components/Sidebar.tsx
@@ -781,6 +761,7 @@ msgstr "此连接需要源代码管理写入权限及添加项目权限。"
 #: src/components/CommandPalette.tsx
 #: src/components/CommandPalette.tsx
 #: src/components/CommandPalette.tsx
+#: src/components/CommandPalette.tsx
 #: src/components/promptLinks/NewThreadLinkView.tsx
 msgid "Clone failed"
 msgstr "克隆失败"
@@ -847,7 +828,6 @@ msgstr "创建并添加"
 #: src/components/settings/ProviderAccentColorPicker.tsx
 #: src/components/settings/ProviderModelsSection.tsx
 #: src/components/settings/ProviderModelsSection.tsx
-#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Add"
 msgstr "添加"
 
@@ -859,7 +839,6 @@ msgid "{0} Enter"
 msgstr "{0} Enter"
 
 #: src/components/CommandPaletteContent.tsx
-#: src/components/settings/SettingsPanels.tsx
 msgid "Enter"
 msgstr "Enter"
 
@@ -979,6 +958,7 @@ msgstr "返回"
 msgid "Copy command"
 msgstr "复制命令"
 
+#: src/components/ChatView.tsx
 #: src/components/ChatView.tsx
 msgid "The composer is not ready"
 msgstr "输入框尚未就绪"
@@ -1131,6 +1111,7 @@ msgstr "确认操作"
 msgid "This action requires your confirmation."
 msgstr "此操作需要你的确认。"
 
+#: src/components/ConfirmDialogHost.tsx
 #: src/components/ConfirmDialogHost.tsx
 msgid "Confirm"
 msgstr "确认"
@@ -1527,7 +1508,6 @@ msgstr "<0/> 高级"
 #: src/components/settings/BackgroundActivitySettings.tsx
 #: src/components/settings/BrowserImportWizard.tsx
 #: src/components/settings/CaptureShortcutConfig.tsx
-#: src/components/settings/MicrophoneTest.tsx
 #: src/components/settings/ProviderWizardAuthenticationStep.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/settings/SnapShotSetupDialog.tsx
@@ -1571,6 +1551,7 @@ msgstr "无法打开文件"
 msgid "Git initialization failed"
 msgstr "Git 初始化失败"
 
+#: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
 msgid "Git action options"
 msgstr "Git 操作选项"
@@ -1632,14 +1613,6 @@ msgstr "在你的计算机上运行："
 #: src/components/HostedEmptyState.tsx
 msgid "Or download the desktop app"
 msgstr "或下载桌面应用"
-
-#: src/components/KeybindingsUpdateToast.tsx
-msgid "Keybindings updated"
-msgstr "快捷键已更新"
-
-#: src/components/KeybindingsUpdateToast.tsx
-msgid "Keybindings configuration reloaded successfully."
-msgstr "快捷键配置已重新加载。"
 
 #: src/components/KeybindingsUpdateToast.tsx
 msgid "Invalid keybindings configuration"
@@ -1749,6 +1722,7 @@ msgstr "项目操作"
 msgid "Add project action…"
 msgstr "添加项目操作…"
 
+#: src/components/ProjectScriptsControl.tsx
 #: src/components/ProjectScriptsControl.tsx
 msgid "Script actions"
 msgstr "脚本操作"
@@ -2011,10 +1985,8 @@ msgstr "{0} 更新失败"
 
 #. 0: serverLabel
 #. 0: serverLabel
-#. 0: savedTheme.label
 #: src/components/ServerUpdateAction.tsx
 #: src/components/ServerUpdateAction.tsx
-#: src/components/settings/ThemeEditorHost.tsx
 msgid "{0} updated"
 msgstr "{0} 已更新"
 
@@ -2106,16 +2078,8 @@ msgid "This connection cannot change one or more selected threads."
 msgstr "当前连接无法更改一个或多个所选对话。"
 
 #: src/components/Sidebar.tsx
-msgid "Branch copied"
-msgstr "分支已复制"
-
-#: src/components/Sidebar.tsx
 msgid "Failed to copy branch"
 msgstr "复制分支失败"
-
-#: src/components/Sidebar.tsx
-msgid "Thread ID copied"
-msgstr "任务 ID 已复制"
 
 #: src/components/Sidebar.tsx
 msgid "Failed to copy thread ID"
@@ -2190,10 +2154,6 @@ msgid "Failed to snooze threads"
 msgstr "稍后处理多个任务失败"
 
 #: src/components/Sidebar.tsx
-msgid "Failed to regenerate thread titles"
-msgstr "重新生成多个任务标题失败"
-
-#: src/components/Sidebar.tsx
 msgid "Failed to delete threads"
 msgstr "删除多个任务失败"
 
@@ -2212,10 +2172,6 @@ msgstr "无法将对话转换为项目"
 #: src/components/Sidebar.tsx
 msgid "Failed to update auto-settle"
 msgstr "更新自动收起设置失败"
-
-#: src/components/Sidebar.tsx
-msgid "Failed to regenerate thread title"
-msgstr "重新生成任务标题失败"
 
 #: src/components/Sidebar.tsx
 msgid "Path unavailable"
@@ -2992,7 +2948,6 @@ msgstr "审阅导读（beta）"
 msgid "Rich text composer"
 msgstr "富文本输入框"
 
-#: src/components/settings/ScheduledTasksSettings.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Scheduled tasks"
 msgstr "定时任务"
@@ -3387,8 +3342,8 @@ msgstr "恢复此设备的默认设置"
 msgid "Reconnect {0} to change its settings."
 msgstr "重新连接 {0} 后才能更改其设置。"
 
-#: src/components/settings/SettingsBreadcrumb.tsx
 #: src/components/sidebar/SidebarChrome.tsx
+#: src/i18n/staticUiLabels.ts
 #: src/routes/_chat.settings.tsx
 msgid "Settings"
 msgstr "设置"
@@ -3851,10 +3806,6 @@ msgid "View cited assistant text: {0}"
 msgstr "查看引用的智能体文本：{0}"
 
 #: src/components/chat/AssistantCitationChip.tsx
-msgid "<0/> Go to source"
-msgstr "<0/> 跳转到来源"
-
-#: src/components/chat/AssistantCitationChip.tsx
 #: src/components/chat/AssistantCitationChip.tsx
 msgid "Edit citation comment"
 msgstr "编辑引用批注"
@@ -4066,6 +4017,7 @@ msgid "Audio unavailable"
 msgstr "音频不可用"
 
 #: src/components/chat/ChatMarkdownMedia.tsx
+#: src/components/media/MediaVideoPlayer.tsx
 msgid "Video unavailable"
 msgstr "视频不可用"
 
@@ -4483,7 +4435,7 @@ msgid "Close {0} preview"
 msgstr "关闭{0}预览"
 
 #. 0: mediaLabel
-#. 0: props.title
+#. 0: title
 #: src/components/chat/ExpandedImageDialog.tsx
 #: src/components/chat/HtmlRenderDialog.tsx
 msgid "Expanded {0} preview"
@@ -4585,10 +4537,6 @@ msgid "Link {0}"
 msgstr "关联 {0}"
 
 #: src/components/chat/LinkRequestCard.tsx
-msgid "Agents here can then launch, message and wait on threads there. Revoke it in that machine's Connections."
-msgstr "此处的 Agent 随后便可在那里启动、发送消息和等待对话。可在那台机器的“连接”设置中撤销。"
-
-#: src/components/chat/LinkRequestCard.tsx
 #: src/components/settings/LinkedEnvironmentsSettings.tsx
 msgid "Paste the code"
 msgstr "粘贴代码"
@@ -4670,13 +4618,6 @@ msgstr "复制{0}失败"
 #: src/components/preview/PreviewView.tsx
 msgid "Clipboard API unavailable."
 msgstr "剪贴板 API 不可用。"
-
-#. 0: title
-#. 0: label
-#: src/components/chat/MarkdownFileLink.tsx
-#: src/components/pullRequest/PullRequestDetailPanel.tsx
-msgid "{0} copied"
-msgstr "已复制{0}"
 
 #: src/components/chat/MarkdownFileLink.tsx
 msgid "Preview media"
@@ -4871,7 +4812,6 @@ msgstr "只读。这些子 Agent 无法接收消息。"
 #: src/components/files/FileBrowserPanel.tsx
 #: src/components/files/FilePreviewPanel.tsx
 #: src/components/files/FilePreviewPanel.tsx
-#: src/components/preview/PreviewChromeRow.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 msgid "Loading…"
@@ -4930,11 +4870,6 @@ msgstr "在 {0} 中打开"
 msgid "Open"
 msgstr "打开"
 
-#. 0: environmentLabel
-#: src/components/chat/OpenInPicker.tsx
-msgid "No SSH route to {0}"
-msgstr "没有通往 {0} 的 SSH 路由"
-
 #: src/components/chat/OpenInPicker.tsx
 msgid "No installed editors found"
 msgstr "未找到已安装的编辑器"
@@ -4952,6 +4887,7 @@ msgstr "选择打开方式…"
 msgid "Open file in preferred editor"
 msgstr "在首选编辑器中打开文件"
 
+#: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 msgid "Choose editor"
 msgstr "选择编辑器"
@@ -5237,6 +5173,7 @@ msgstr "继续"
 msgid "Agent not responding to Stop"
 msgstr "Agent 未响应停止请求"
 
+#: src/components/chat/ComposerPrimaryActions.tsx
 #: src/components/chat/ThreadActivityBanners.tsx
 msgid "Stopping"
 msgstr "正在停止"
@@ -5329,6 +5266,7 @@ msgid "Merge conflicts with {0}"
 msgstr "与 {0} 存在合并冲突"
 
 #: src/components/chat/ThreadDetailsPrRow.tsx
+#: src/components/pullRequest/PullRequestResolveThreadButton.tsx
 #: src/components/pullRequest/PullRequestReviewAnnotation.tsx
 msgid "Resolve"
 msgstr "标记为已解决"
@@ -5403,14 +5341,17 @@ msgid "Find in thread"
 msgstr "在对话中查找"
 
 #: src/components/chat/ThreadFindBar.tsx
+#: src/components/preview/PreviewFindBar.tsx
 msgid "Previous match"
 msgstr "上一个匹配项"
 
 #: src/components/chat/ThreadFindBar.tsx
+#: src/components/preview/PreviewFindBar.tsx
 msgid "Next match"
 msgstr "下一个匹配项"
 
 #: src/components/chat/ThreadFindBar.tsx
+#: src/components/preview/PreviewFindBar.tsx
 msgid "Close find"
 msgstr "关闭查找"
 
@@ -5655,6 +5596,7 @@ msgid "Jump to message: {0}"
 msgstr "跳转到消息：{0}"
 
 #: src/components/chat/TimelineAssistantRows.tsx
+#: src/components/chat/TimelineAssistantRows.tsx
 #: src/components/sidebar/UpdateEverythingDialog.tsx
 #: src/components/ui/standalone-page.tsx
 msgid "T3 Code"
@@ -5696,10 +5638,6 @@ msgstr "下载{0}"
 #: src/components/chat/TimelineUserMessageRow.tsx
 msgid "You"
 msgstr "你"
-
-#: src/components/chat/TimelineUserMessageRow.tsx
-msgid "<0/> Steer"
-msgstr "<0/> 引导"
 
 #: src/components/chat/TimelineUserMessageRow.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
@@ -6353,10 +6291,6 @@ msgstr "搜索文件"
 #: src/components/files/FileBrowserPanel.tsx
 msgid "Copy mention"
 msgstr "复制引用"
-
-#: src/components/files/FileBrowserPanel.tsx
-msgid "Mention copied"
-msgstr "引用已复制"
 
 #: src/components/files/FileBrowserPanel.tsx
 msgid "Failed to copy mention"
@@ -7092,11 +7026,6 @@ msgstr "<0/> 已允许"
 msgid "Allow"
 msgstr "允许"
 
-#. 0: label ? ` · ${label}` \\: ""
-#: src/components/media/MediaVideoPlayer.tsx
-msgid "<0/> Video unavailable{0}"
-msgstr "<0/> 视频不可用{0}"
-
 #: src/components/media/MediaVideoPlayer.tsx
 msgid "Video preview"
 msgstr "视频预览"
@@ -7145,10 +7074,6 @@ msgstr "复制图片"
 msgid "Could not {0}"
 msgstr "无法{0}"
 
-#: src/components/media/MediaActions.tsx
-msgid "URL copied"
-msgstr "URL 已复制"
-
 #. 0: noun
 #: src/components/media/MediaActions.tsx
 msgid "Preparing {0} download…"
@@ -7157,14 +7082,6 @@ msgstr "正在准备下载 {0}…"
 #: src/components/media/MediaActions.tsx
 msgid "Copying image…"
 msgstr "正在复制图片…"
-
-#: src/components/media/MediaActions.tsx
-msgid "Download started"
-msgstr "下载已开始"
-
-#: src/components/media/MediaActions.tsx
-msgid "Image copied"
-msgstr "图片已复制"
 
 #: src/components/media/MediaActions.tsx
 msgid "The media action failed."
@@ -7176,6 +7093,7 @@ msgid "Forward"
 msgstr "前进"
 
 #: src/components/chat/ThreadActivityBanners.tsx
+#: src/components/preview/PreviewChromeRow.tsx
 #: src/components/preview/PreviewChromeRow.tsx
 msgid "Stop"
 msgstr "停止"
@@ -7256,6 +7174,7 @@ msgstr "预览菜单"
 #: src/components/chat/ComposerPendingApprovalActions.tsx
 #: src/components/preview/PreviewMoreMenu.tsx
 #: src/components/settings/DeviceSourcesSettings.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "More"
 msgstr "更多"
 
@@ -8123,6 +8042,7 @@ msgstr "更多{0}操作"
 #: src/components/projectScriptEditor.tsx
 #: src/components/pullRequest/PullRequestActionsMenu.tsx
 #: src/components/settings/CaptureShortcutConfig.tsx
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
 #: src/components/settings/SnapShotSettings.tsx
 #: src/components/settings/SnapShotSetupDialog.tsx
 #: src/components/settings/TelemetryExportSettings.tsx
@@ -8336,11 +8256,6 @@ msgstr "详情"
 msgid "Unable to open check details"
 msgstr "无法打开检查详情"
 
-#. 0: checks.length - incompleteCount; 1: checks.length
-#: src/components/pullRequest/PullRequestChecksPopover.tsx
-msgid "{0}/{1} checks"
-msgstr "{0}/{1} 项检查"
-
 #. 0: summary ?? presentation.label
 #: src/components/pullRequest/PullRequestChecksPopover.tsx
 msgid "Open checks: {0}"
@@ -8546,6 +8461,7 @@ msgstr "已创建回退{0}"
 msgid "Branch deleted"
 msgstr "分支已删除"
 
+#: src/components/chat/ThreadDetailsPrRow.tsx
 #: src/components/pullRequest/PullRequestDetailPanel.tsx
 #: src/components/pullRequest/PullRequestDetailPanel.tsx
 #: src/components/pullRequest/PullRequestDetailPanel.tsx
@@ -8577,6 +8493,7 @@ msgstr "请从项目中重试，或先打开一个任务。"
 msgid "Asked in a thread"
 msgstr "已在任务中提问"
 
+#: src/components/chat/ThreadDetailsPrRow.tsx
 #: src/components/pullRequest/PullRequestDetailPanel.tsx
 #: src/components/pullRequest/PullRequestDetailPanel.tsx
 msgid "The task is in the composer. Read it over, then send."
@@ -9326,7 +9243,7 @@ msgstr "<0/> 关联拉取请求"
 msgid "<0/> Link"
 msgstr "<0/> 关联"
 
-#. 0: listQuery.error
+#. 0: listError
 #: src/components/pullRequest/PullRequestsPage.tsx
 msgid "{0} Showing the last pull requests loaded."
 msgstr "{0}正在显示最近加载的拉取请求。"
@@ -9352,11 +9269,6 @@ msgstr "全部服务器"
 #: src/components/pullRequest/PullRequestsPage.tsx
 msgid "Sort pull requests"
 msgstr "排序拉取请求"
-
-#. 0: shortLabel
-#: src/components/pullRequest/PullRequestsPage.tsx
-msgid "{0} link copied"
-msgstr "{0}链接已复制"
 
 #. 0: shortLabel
 #: src/components/pullRequest/PullRequestsPage.tsx
@@ -9415,24 +9327,8 @@ msgid "ACP session already imported"
 msgstr "ACP 会话已导入过"
 
 #: src/components/settings/AcpSessionManagementSection.tsx
-msgid "ACP session deleted"
-msgstr "ACP 会话已删除"
-
-#: src/components/settings/AcpSessionManagementSection.tsx
 msgid "Invalid provider headers"
 msgstr "服务提供方请求头无效"
-
-#: src/components/settings/AcpSessionManagementSection.tsx
-msgid "ACP provider configured"
-msgstr "ACP 服务提供方已配置"
-
-#: src/components/settings/AcpSessionManagementSection.tsx
-msgid "ACP provider disabled"
-msgstr "ACP 服务提供方已停用"
-
-#: src/components/settings/AcpSessionManagementSection.tsx
-msgid "Logged out of ACP agent"
-msgstr "已退出 ACP Agent"
 
 #: src/components/settings/AcpSessionManagementSection.tsx
 msgid "Native sessions"
@@ -9622,6 +9518,7 @@ msgstr "尝试更宽泛的搜索词。"
 msgid "Downloading"
 msgstr "正在下载"
 
+#: src/components/chat/ComposerAttachmentStrip.tsx
 #: src/components/settings/AcpRegistrySearchStep.tsx
 msgid "Preparing"
 msgstr "正在准备"
@@ -9814,30 +9711,6 @@ msgstr "手动配置"
 #: src/components/settings/AuthorizedClientsSettings.tsx
 msgid "{0}: show {1}"
 msgstr "{0}：查看 {1}"
-
-#: src/components/settings/AuthorizedClientsSettings.tsx
-msgid "Hosted app link copied"
-msgstr "托管应用链接已复制"
-
-#: src/components/settings/AuthorizedClientsSettings.tsx
-msgid "Pairing URL copied"
-msgstr "配对 URL 已复制"
-
-#: src/components/settings/AuthorizedClientsSettings.tsx
-msgid "Pairing code copied"
-msgstr "配对码已复制"
-
-#: src/components/settings/AuthorizedClientsSettings.tsx
-msgid "Open it in the browser on the device you want to connect."
-msgstr "在要连接设备的浏览器中打开。"
-
-#: src/components/settings/AuthorizedClientsSettings.tsx
-msgid "Open it in the client you want to pair to this environment."
-msgstr "在要与此环境配对的客户端中打开。"
-
-#: src/components/settings/AuthorizedClientsSettings.tsx
-msgid "Paste it into another client to finish pairing."
-msgstr "粘贴到另一客户端以完成配对。"
 
 #: src/components/settings/AuthorizedClientsSettings.tsx
 msgid "Could not copy hosted app link"
@@ -10330,10 +10203,6 @@ msgstr "Codex 影子主目录路径"
 #: src/components/settings/CodexSetupSection.tsx
 msgid "Not used"
 msgstr "不使用"
-
-#: src/components/settings/ConnectionDiagnosisDetails.tsx
-msgid "Diagnostics copied"
-msgstr "已复制诊断信息"
 
 #: src/components/settings/ConnectionDiagnosisDetails.tsx
 msgid "Could not copy diagnostics"
@@ -11071,6 +10940,7 @@ msgid "<0/> Add route"
 msgstr "<0/> 添加路由"
 
 #: src/components/settings/EnvironmentRoutesList.tsx
+#: src/components/settings/MicrophoneOrderList.tsx
 msgid "In use"
 msgstr "使用中"
 
@@ -11516,10 +11386,6 @@ msgstr "没有关联环境"
 msgid "Link another machine running T3 Code, such as a VPS, so agents here can launch and drive threads there."
 msgstr "关联另一台运行 T3 Code 的机器（例如 VPS），此处的 Agent 便可在那里启动并操作对话。"
 
-#: src/components/settings/LinkedEnvironmentsSettings.tsx
-msgid "From that environment's Connections, or t3 pair there"
-msgstr "来自目标环境的连接设置，或在那里运行 t3 pair"
-
 #. 0: environment.label
 #: src/components/settings/LoadBalancingSettings.tsx
 msgid "{0} load preference"
@@ -11714,14 +11580,6 @@ msgstr "工作树子模块"
 #: src/components/settings/ProjectActionsSettings.tsx
 msgid "Commands that run in this project's checkout or its worktree, with optional shortcuts."
 msgstr "在项目检出目录或工作树中运行的命令，可选配快捷键。"
-
-#: src/components/settings/ProjectActionsSettings.tsx
-msgid "Different actions across environments"
-msgstr "各环境的操作不同"
-
-#: src/components/settings/ProjectActionsSettings.tsx
-msgid "Choose one environment to edit its list. Adding an action here adds it on every selected environment."
-msgstr "选择一个环境编辑其列表。在这里添加操作会添加到每个所选环境。"
 
 #: src/components/settings/ProjectActionsSettings.tsx
 msgid "A t3.json exists in this checkout but fails to parse, so every action and icon it declares is ignored. Check the JSON syntax and icon values."
@@ -12098,6 +11956,8 @@ msgstr "模型偏好和自定义模型保存在所选环境，并在已连接设
 
 #: src/components/settings/ProviderInstanceCard.tsx
 #: src/components/settings/TextGeneratorsSettings.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Models"
 msgstr "模型"
 
@@ -12203,7 +12063,9 @@ msgstr "{0} {1} {2} 个收藏"
 msgid "custom"
 msgstr "自定义"
 
+#. 0: name
 #. 0: model.name
+#: src/components/settings/MicrophoneOrderList.tsx
 #: src/components/settings/ProviderModelsSection.tsx
 msgid "Move {0} up"
 msgstr "上移 {0}"
@@ -12212,7 +12074,9 @@ msgstr "上移 {0}"
 msgid "Move up"
 msgstr "上移"
 
+#. 0: name
 #. 0: model.name
+#: src/components/settings/MicrophoneOrderList.tsx
 #: src/components/settings/ProviderModelsSection.tsx
 msgid "Move {0} down"
 msgstr "下移 {0}"
@@ -12799,39 +12663,13 @@ msgid "Filter {0} value"
 msgstr "筛选 {0} 值"
 
 #: src/components/settings/ScheduledTasksSettings.tsx
-#: src/components/settings/ScheduledTasksSettings.tsx
 msgid "On webhook"
 msgstr "收到 Webhook 时"
 
-#. 0: ONCE_FORMATTER.format(new Date(schedule.runAt))
-#: src/components/settings/ScheduledTasksSettings.tsx
-msgid "Once, {0}"
-msgstr "单次，{0}"
-
-#. 0: minutes
-#: src/components/settings/ScheduledTasksSettings.tsx
-msgid "Every {0} min"
-msgstr "每 {0} 分钟"
-
-#. 0: Math.round(schedule.everyMs / 1000)
-#: src/components/settings/ScheduledTasksSettings.tsx
-msgid "Every {0} sec"
-msgstr "每 {0} 秒"
-
-#: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/usage/UsagePage.tsx
 #: src/components/usage/UsageProviderChart.tsx
 msgid "Daily"
 msgstr "每日"
-
-#: src/components/settings/ScheduledTasksSettings.tsx
-msgid "Weekdays"
-msgstr "工作日"
-
-#. 0: days; 1: schedule.timeOfDay
-#: src/components/settings/ScheduledTasksSettings.tsx
-msgid "{0} at {1}"
-msgstr "{0} {1}"
 
 #: src/components/settings/ScheduledTasksSettings.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
@@ -12991,10 +12829,6 @@ msgstr "密钥"
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Days to run"
 msgstr "运行日期"
-
-#: src/components/settings/SavedEnvironmentRows.tsx
-msgid "Trace ID copied"
-msgstr "追踪 ID 已复制"
 
 #: src/components/settings/SavedEnvironmentRows.tsx
 msgid "Could not copy trace ID"
@@ -13223,14 +13057,6 @@ msgstr "重置 {0}"
 #: src/components/settings/SettingsFontPreviews.tsx
 msgid "Terminal font preview"
 msgstr "终端字体预览"
-
-#: src/components/settings/SettingsPanels.tsx
-msgid "Could not download update"
-msgstr "无法下载更新"
-
-#: src/components/settings/SettingsPanels.tsx
-msgid "Download failed."
-msgstr "下载失败。"
 
 #: src/components/settings/SettingsPanels.tsx
 msgid "Could not install update"
@@ -13568,10 +13394,6 @@ msgstr "未找到设置"
 #: src/components/settings/SettingsSidebarNav.tsx
 msgid "Settings search results"
 msgstr "设置搜索结果"
-
-#: src/components/settings/SettingsSidebarNav.tsx
-msgid "Settings sections"
-msgstr "设置分区"
 
 #: src/components/settings/SettingsScopeSentence.tsx
 msgid "Applying settings for"
@@ -14454,30 +14276,6 @@ msgstr "无法保存主题"
 msgid "Browser storage is unavailable, so the change was not kept."
 msgstr "浏览器存储不可用，未能保留此次更改。"
 
-#. 0: mergedAppearance
-#: src/components/settings/ThemeEditorHost.tsx
-msgid "Its {0} palette was added."
-msgstr "已添加{0}配色。"
-
-#. 0: savedTheme.label
-#: src/components/settings/ThemeEditorHost.tsx
-msgid "{0} saved"
-msgstr "已保存主题“{0}”"
-
-#: src/components/settings/ThemeEditorHost.tsx
-msgid "Your changes are now active."
-msgstr "更改已生效。"
-
-#: src/components/settings/ThemeEditorHost.tsx
-msgid "Your changes are saved."
-msgstr "更改已保存。"
-
-#. 0: savedTheme.label
-#: src/components/settings/ThemeEditorHost.tsx
-msgid "{0} created"
-msgstr "已创建主题“{0}”"
-
-#: src/components/settings/ThemeEditorHost.tsx
 #: src/components/settings/ThemeSettings.tsx
 msgid "It’s now active."
 msgstr "该主题现已启用。"
@@ -15297,15 +15095,6 @@ msgid "Show {0} more"
 msgstr "再显示 {0} 项"
 
 #: src/components/Sidebar.tsx
-msgid "No threads in these projects yet"
-msgstr "这些项目中暂无对话"
-
-#. 0: scopedProjectGroups[0].displayName
-#: src/components/Sidebar.tsx
-msgid "No threads in {0} yet"
-msgstr "{0} 中还没有任务"
-
-#: src/components/Sidebar.tsx
 msgid "No threads yet"
 msgstr "还没有任务"
 
@@ -15349,6 +15138,7 @@ msgid "Denying…"
 msgstr "正在拒绝…"
 
 #: src/components/auth/ConnectAgentSurface.tsx
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
 msgid "Deny"
 msgstr "拒绝"
 
@@ -15987,6 +15777,7 @@ msgstr "更多回复"
 msgid "Submit review"
 msgstr "提交评审"
 
+#: src/components/pullRequest/PullRequestResolveThreadButton.tsx
 #: src/components/pullRequest/PullRequestReviewAnnotation.tsx
 msgid "Unresolve"
 msgstr "标记为未解决"
@@ -16478,11 +16269,6 @@ msgstr "显示完整脚本"
 msgid "Using…"
 msgstr "正在使用…"
 
-#: src/components/usage/UsageLimits.tsx
-#: src/components/usage/UsageLimitsPooled.tsx
-msgid "Use reset"
-msgstr "使用重置额度"
-
 #: src/components/usage/UsageLimitsPooled.tsx
 msgid "Using reset credit…"
 msgstr "正在使用重置额度…"
@@ -16853,6 +16639,7 @@ msgid "Scan with your phone camera."
 msgstr "使用手机相机扫描。"
 
 #: src/components/settings/LinkMachineSelect.tsx
+#: src/components/settings/MicrophoneOrderList.tsx
 msgid "Not connected"
 msgstr "未连接"
 
@@ -16944,6 +16731,10 @@ msgstr "打开浏览器"
 msgid "Open docs"
 msgstr "打开文档"
 
+#: src/components/HostedEmptyState.tsx
+#: src/components/auth/ApproveAgentSurface.tsx
+#: src/components/cloud/ConnectCliAuthSurface.tsx
+#: src/components/onboarding/WelcomePage.tsx
 #: src/components/settings/ProviderAuthenticationSection.tsx
 msgid "Retry sign-in"
 msgstr "重新登录"
@@ -17146,6 +16937,7 @@ msgstr "最新版"
 msgid "Queue"
 msgstr "排队"
 
+#: src/components/chat/TimelineUserMessageRow.tsx
 #: src/components/settings/SettingsPanels.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "Steer"
@@ -17761,6 +17553,7 @@ msgstr "授予"
 #: src/components/device/DeviceToolsPanel.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
 msgid "Revoke"
 msgstr "撤销"
 
@@ -17780,11 +17573,6 @@ msgstr "<0/> 刷新失败，重试"
 #: src/components/files/OfficeViewer.tsx
 msgid "{0} {1} of {2}"
 msgstr "{0} {1}/{2}"
-
-#. 0: page + 1; 1: count; 2: sheet.rowCount.toLocaleString(); 3: " "; 4: sheet.columns.toLocaleString(); 5: fileSize !== undefined ? ` · ${fileSize === 0 ? "0 bytes" \\: formatAttachmentSize(fileSize)}` \\: ""
-#: src/components/files/OfficeViewer.tsx
-msgid "Sheet {0} of {1} · {2} rows ·{3} {4} columns {5}"
-msgstr "工作表 {0}/{1} · {2} 行 ·{3} {4} 列 {5}"
 
 #: src/components/files/OfficeViewer.tsx
 msgid "Text and images. Layout and embedded objects may differ from the original."
@@ -18001,10 +17789,6 @@ msgid "Use a reset credit?"
 msgstr "使用一个重置额度？"
 
 #: src/components/usage/UsageLimits.tsx
-msgid "This redeems one credit on your account and clears the current rate-limit windows. It cannot be undone."
-msgstr "这会兑换账号中的一个额度并清空当前速率限制窗口，且无法撤销。"
-
-#: src/components/usage/UsageLimits.tsx
 msgid "Use credit"
 msgstr "使用额度"
 
@@ -18085,6 +17869,7 @@ msgstr "此处无法使用剪贴板。请将此配对码手动复制到另一个
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/AuthorizedClientsSettings.tsx
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
 msgid "Revoking…"
 msgstr "正在撤销…"
 
@@ -18438,6 +18223,7 @@ msgstr "建议尝试"
 msgid "Add direct route"
 msgstr "添加直连路径"
 
+#: src/components/chat/useSystemComposerBanners.tsx
 #: src/components/settings/ConnectionDiagnosisDetails.tsx
 msgid "Retry now"
 msgstr "立即重试"
@@ -18751,10 +18537,6 @@ msgid "Link an environment"
 msgstr "关联环境"
 
 #: src/components/settings/LinkedEnvironmentsSettings.tsx
-msgid "Agents here can then launch, message and wait on threads there. It appears in that environment's Connections, where it can be revoked."
-msgstr "此处的 Agent 随后便可在那里启动、发送消息和等待对话。链接会出现在目标环境的连接设置中，可在那里撤销。"
-
-#: src/components/settings/LinkedEnvironmentsSettings.tsx
 msgid "Already linked. Linking again renews it with the access you pick."
 msgstr "已关联。再次关联会按所选权限续期。"
 
@@ -18769,13 +18551,6 @@ msgstr "此应用没有其他机器可访问的 {0} 地址。请输入其 HTTPS 
 #: src/components/settings/LinkedEnvironmentsSettings.tsx
 msgid "Address"
 msgstr "地址"
-
-#. 0: targetName
-#. 0: machine.label
-#: src/components/chat/LinkRequestCard.tsx
-#: src/components/settings/LinkedEnvironmentsSettings.tsx
-msgid "Create a link on {0}: Settings → Connections → Create link, then paste its code here."
-msgstr "在 {0} 上创建链接：“设置 → 连接 → 创建链接”，然后在此粘贴其代码。"
 
 #: src/components/chat/LinkRequestCard.tsx
 #: src/components/settings/LinkedEnvironmentsSettings.tsx
@@ -19150,11 +18925,6 @@ msgstr "审阅链接…"
 msgid "Only a session that manages access here can answer this."
 msgstr "仅有管理此处访问权限的会话能回应此请求。"
 
-#. 0: targetName
-#: src/components/chat/LinkRequestCard.tsx
-msgid "This environment is already linked to {0}. The agent can use that link as it is; change its access in Settings → Connections."
-msgstr "此环境已与 {0} 关联。Agent 可直接使用该链接；在“设置 → 连接”中更改其访问权限。"
-
 #: src/components/chat/LinkRequestCard.tsx
 msgid "Use this link"
 msgstr "使用此链接"
@@ -19229,10 +18999,6 @@ msgstr "<0/> 在本地工作"
 #: src/components/chat/WorktreeSetupCard.tsx
 msgid "<0/> Cancel"
 msgstr "<0/> 取消"
-
-#: src/components/chat/WorktreeSetupCard.tsx
-msgid "<0/> Details"
-msgstr "<0/> 详情"
 
 #: src/i18n/staticUiLabels.ts
 msgid "Ask anything. @ files, $ skills, / commands"
@@ -19386,7 +19152,6 @@ msgstr "遵循拉取请求模板"
 #: src/components/chat/VoiceInputSetup.tsx
 #: src/components/chat/VoiceInputSetup.tsx
 #: src/components/settings/VoiceSettingsPanel.tsx
-#: src/components/settings/VoiceSettingsPanel.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Microphone"
 msgstr "麦克风"
@@ -19413,6 +19178,7 @@ msgstr "静音过滤"
 msgid "Suggest next prompt"
 msgstr "建议下一条提示词"
 
+#: src/components/settings/MicrophoneTest.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Test microphone"
 msgstr "测试麦克风"
@@ -19896,11 +19662,6 @@ msgstr "无法复制"
 msgid "Use Set up another way."
 msgstr "请选择「使用其他设置方式」。"
 
-#. 0: app.name
-#: src/components/mcp/UseInAnotherAppDialog.tsx
-msgid "Open {0} on the web"
-msgstr "打开 {0} 网页版"
-
 #: src/components/mcp/UseInAnotherAppDialog.tsx
 msgid "Getting code…"
 msgstr "正在获取登录码…"
@@ -19984,8 +19745,6 @@ msgid "New session"
 msgstr "新会话"
 
 #: src/components/chat/VoiceInputErrorPill.tsx
-#: src/components/chat/VoiceInputErrorPill.tsx
-#: src/components/chat/VoiceInputErrorPill.tsx
 msgid "Voice input failed"
 msgstr "语音输入失败"
 
@@ -20006,11 +19765,6 @@ msgstr "重新录音"
 msgid "Dismiss voice input error"
 msgstr "关闭语音输入错误提示"
 
-#. 0: props.cancelShortcutLabel ? ` (${props.cancelShortcutLabel})` \\: ""
-#: src/components/chat/VoiceInputErrorPill.tsx
-msgid "Dismiss voice input error {0}"
-msgstr "关闭语音输入错误提示 {0}"
-
 #: src/components/chat/VoiceInputSetup.tsx
 #: src/components/chat/VoiceInputSetup.tsx
 msgid "Selected microphone (Unavailable)"
@@ -20018,8 +19772,6 @@ msgstr "所选麦克风（不可用）"
 
 #: src/components/chat/VoiceInputSetup.tsx
 #: src/components/chat/VoiceInputSetup.tsx
-#: src/components/settings/VoiceSettingsPanel.tsx
-#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "System default"
 msgstr "系统默认"
 
@@ -20027,21 +19779,10 @@ msgstr "系统默认"
 msgid "Set up voice input"
 msgstr "设置语音输入"
 
-#. 0: environment?.label ?? "your transcription environment"
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "Transcribe speech on {0} and use voice input across environments."
-msgstr "在 {0} 上转写语音，并跨环境使用语音输入。"
-
-#. 0: languageLabel(props.language)
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "Recommended for {0}"
-msgstr "适用于 {0} 的推荐项"
-
 #: src/components/chat/VoiceInputSetup.tsx
 msgid "Speech model download progress"
 msgstr "语音模型下载进度"
 
-#: src/components/chat/VoiceInputSetup.tsx
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Verifying download…"
 msgstr "正在验证下载…"
@@ -20057,15 +19798,6 @@ msgstr "正在开始下载…"
 msgid "{0}% downloaded"
 msgstr "已下载 {0}%"
 
-#. 0: Math.round(model.size / 1024 / 1024); 1: " "; 2: environment?.label ?? "your transcription environment"
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "Download the {0} MB model to{1} {2}. Microphone audio is sent there for transcription, as chosen in Voice settings."
-msgstr "将 {0} MB 的模型下载到{1} {2}。按照语音设置中的选择，麦克风音频将发送到该位置转写。"
-
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "Silero (1.2 MB), used for silence filtering and pause detection, downloads alongside the speech model. An installed copy is reused."
-msgstr "用于静音过滤和停顿检测的 Silero（1.2 MB）会随语音模型一起下载；已安装时会复用。"
-
 #: src/components/chat/VoiceInputSetup.tsx
 #: src/components/settings/CloudVoiceConfiguration.tsx
 msgid "Loading transcription models…"
@@ -20073,24 +19805,9 @@ msgstr "正在加载转写模型…"
 
 #: src/components/chat/VoiceInputSetup.tsx
 #: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Refresh microphones"
 msgstr "刷新麦克风"
-
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "The selected microphone is unavailable. Choose another or use the system default."
-msgstr "所选麦克风不可用。请选择其他麦克风或使用系统默认设备。"
-
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "Speak and transcribe in multiple languages or translate into English, and get names and technical terms right with the dictionary in Voice settings."
-msgstr "支持多语言听写或翻译为英文；可通过语音设置中的词典提高名称和技术术语的准确性。"
-
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "Choose another model or language"
-msgstr "选择其他模型或语言"
-
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "Choose a model or language"
-msgstr "选择模型或语言"
 
 #: src/components/chat/VoiceInputSetup.tsx
 #: src/components/settings/CloudVoiceConfiguration.tsx
@@ -20104,18 +19821,6 @@ msgstr "取消下载"
 #: src/components/chat/VoiceInputSetup.tsx
 msgid "Download model"
 msgstr "下载模型"
-
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "Ask an environment admin to download"
-msgstr "请环境管理员下载"
-
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "Customize in Voice settings"
-msgstr "在语音设置中自定义"
-
-#: src/components/chat/VoiceInputSetup.tsx
-msgid "Start dictating"
-msgstr "开始听写"
 
 #: src/components/chat/ZoomableImage.tsx
 msgid "Click to zoom in or return to fit. Pinch or Ctrl+scroll to zoom, scroll or drag to pan. Use Enter to toggle zoom, plus or minus to zoom, and 0 to fit."
@@ -20354,10 +20059,6 @@ msgstr "Claude 或 Codex 回合结束后，在空输入框中显示预测的下�
 #: src/components/settings/LabsSettingsPanel.tsx
 msgid "On a Mac, clone new worktrees from a checkout cached in the T3 home folder instead of writing every file. Uses Git’s normal checkout when it can’t. Turning it off deletes the cache."
 msgstr "在 Mac 上，使用 T3 home 中缓存的检出副本克隆新工作树，避免逐个写入文件。无法使用时回退到 Git 常规检出。关闭后会删除缓存。"
-
-#: src/components/settings/MicrophoneTest.tsx
-msgid "<0/> Test microphone"
-msgstr "<0/> 测试麦克风"
 
 #: src/components/settings/MicrophoneTest.tsx
 msgid "Cancel microphone test"
@@ -20641,10 +20342,6 @@ msgstr "使用模型"
 msgid "Delete {0}"
 msgstr "删除 {0}"
 
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Add words or phrases, separated by commas or line breaks"
-msgstr "添加词语或短语，用逗号或换行分隔"
-
 #. 0: label
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Add a word or phrase to the {0}"
@@ -20676,15 +20373,6 @@ msgstr "{0} 个条目"
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Shared dictionary"
 msgstr "共享词典"
-
-#. 0: scope.scope.label
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Saved with {0} on its environment. Everyone who dictates in this project gets these spellings, along with their own dictionary. Project spellings win when the two overlap."
-msgstr "与 {0} 一起保存在其环境中。所有在此项目中听写的人都会使用这些拼写，同时保留个人词典。两者重合时优先使用项目拼写。"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Saved on the environment and used in every project there, along with each person’s own dictionary. Pick a project above to limit these words to one project."
-msgstr "保存在环境中，供该环境的所有项目使用，同时保留个人词典。在上方选择项目可将这些词限定为仅在该项目使用。"
 
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Cleanup model not saved"
@@ -20737,9 +20425,6 @@ msgid "This environment can’t transcribe audio: {0}."
 msgstr "此环境无法转写音频：{0}。"
 
 #: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Languages"
-msgstr "语言"
-
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "All languages"
 msgstr "所有语言"
@@ -20751,14 +20436,6 @@ msgstr "没有匹配的语言。"
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Browse models by language"
 msgstr "按语言浏览模型"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Models for "
-msgstr "适用于以下语言的模型："
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "All models"
-msgstr "所有模型"
 
 #. 0: sortLabels[sort]; 1: downloadedOnly ? ", downloaded only" \\: ""
 #: src/components/settings/VoiceSettingsPanel.tsx
@@ -20773,18 +20450,9 @@ msgstr "排序依据"
 msgid "Downloaded only"
 msgstr "仅已下载"
 
-#. 0: status.benchmarkTier === "cpu" ? "CPU" \\: "GPU"
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Pick languages to see models that support all of them. Accuracy is word or character error rate: lower is better. Speed is the time to transcribe 30 seconds of audio on Handy’s benchmark {0}."
-msgstr "选择语言以查看同时支持这些语言的模型。准确度以词或字符错误率衡量，越低越好；速度为在 Handy 基准测试硬件 {0} 上转写 30 秒音频所需的时间。"
-
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Close model test"
 msgstr "关闭模型测试"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Say a sentence in the language above. Cleanup is skipped, so you see exactly what the model heard. The transcript stays on this page."
-msgstr "用上方语言说一句话。测试会跳过文本整理，直接显示模型识别的原文；转写文本仅保留在此页面。"
 
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "No speech recognized. Try again."
@@ -20803,10 +20471,6 @@ msgid "Waiting for the environment to connect"
 msgstr "正在等待环境连接"
 
 #: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Selected microphone (unavailable)"
-msgstr "所选麦克风（不可用）"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Manage OpenRouter"
 msgstr "管理 OpenRouter"
 
@@ -20815,20 +20479,8 @@ msgid "Manage key"
 msgstr "管理密钥"
 
 #: src/components/settings/VoiceSettingsPanel.tsx
-msgid "System default follows your operating system. Record a ten-second test and play it back here. Test audio stays on this device and is never transcribed."
-msgstr "系统默认跟随操作系统设置。可录制十秒测试并在此回放；测试音频仅保留在此设备，不会转写。"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "How the dictation shortcut starts and stops recording."
-msgstr "设置听写快捷键如何开始和停止录音。"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Dictation shortcut mode"
 msgstr "听写快捷键模式"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Use"
-msgstr "使用"
 
 #: src/components/settings/VoiceSettingsPanel.tsx
 #: src/components/settings/VoiceSettingsPanel.tsx
@@ -20853,22 +20505,9 @@ msgstr "{0}，通过 {1}"
 msgid "Cloud via {0}"
 msgstr "通过 {0} 使用云端服务"
 
-#. 0: chosenEnvironment.label
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "{0} can’t transcribe audio locally. Choose a different destination."
-msgstr "{0} 无法在本地转写音频，请选择其他目标位置。"
-
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Language"
 msgstr "语言"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "The cloud provider can detect your language automatically."
-msgstr "云端服务商可以自动检测你的语言。"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Choose an environment above to see the languages its transcription model supports."
-msgstr "在上方选择环境，以查看其转写模型支持的语言。"
 
 #: src/components/settings/VoiceSettingsPanel.tsx
 #: src/components/settings/VoiceSettingsPanel.tsx
@@ -20884,50 +20523,17 @@ msgid "Transcription"
 msgstr "转写"
 
 #: src/components/settings/VoiceSettingsPanel.tsx
-msgid "OpenAI handles silence automatically."
-msgstr "OpenAI 会自动处理静音。"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Skip silence and other non-speech audio before transcription, keeping a short buffer so words aren’t cut off."
-msgstr "转写前跳过静音和其他非语音音频，并保留少量缓冲以免截断词语。"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Remove filler words like “um” and “uh” from transcripts."
-msgstr "从转写文本中移除「嗯」「呃」等语气词。"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Names and terms transcription should spell your way, saved on this device. Add an alias when it keeps hearing a term wrong. The name of the project you dictate in is also sent as a hint."
-msgstr "将希望采用的名称和术语拼写保存在此设备。某个术语经常被识别错误时，可添加别名。听写所在项目的名称也会作为提示发送。"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Transcription options"
-msgstr "转写选项"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Fixes punctuation, numbers, and spoken corrections with the cleanup model on the draft’s environment. Sends the transcript and nearby draft text, never audio."
-msgstr "在草稿所在环境中使用文本整理模型，修正标点、数字和口头纠正。只发送转写文本及附近草稿，不发送音频。"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Custom cleanup instructions"
 msgstr "自定义文本整理指令"
 
-#: src/components/settings/VoiceSettingsPanel.tsx
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Cleanup instructions"
 msgstr "文本整理指令"
 
 #: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Use the built-in instructions or write your own."
-msgstr "使用内置指令或编写自己的指令。"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Built-in"
 msgstr "内置"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "The word or phrase you say to flag a correction, like “sorry” or “scratch that”. Cleanup applies the correction only where one is meant, and hears the cue as a hint."
-msgstr "用于标记纠正的词语或短语，例如「抱歉」「刚才那句作废」。文本整理只在有纠正意图的位置修改，并将提示词作为线索。"
 
 #: src/i18n/staticUiLabels.ts
 msgid "Voice"
@@ -20951,3 +20557,685 @@ msgstr "将重启该位置的 T3 Code，约离线 {0} 分钟。"
 #: src/components/settings/DatabaseStorageNotice.tsx
 msgid "T3 Code on {0} stops, rebuilds its database, and starts again. It will be offline for about {1} min. Running agents stop when it restarts."
 msgstr "{0} 上的 T3 Code 将停止、重建数据库后重新启动，约离线 {1} 分钟。重启时，运行中的 Agent 会停止。"
+
+#: src/components/AddProjectToMachineDialog.tsx
+#: src/components/AddProjectToMachineDialog.tsx
+msgid "Search ignored files"
+msgstr "搜索已忽略的文件"
+
+#: src/components/AddProjectToMachineDialog.tsx
+msgid "No ignored files match."
+msgstr "没有匹配的已忽略文件。"
+
+#. 0: files.length; 1: canSearchFiles ? " Search to find the rest." \\: ""
+#: src/components/AddProjectToMachineDialog.tsx
+msgid "Showing the first {0} files. {1}"
+msgstr "显示前 {0} 个文件。{1}"
+
+#. 0: triggerLabel
+#: src/components/BranchToolbarBranchSelector.tsx
+msgid "Branch: {0}"
+msgstr "分支：{0}"
+
+#: src/components/ChatView.tsx
+msgid "Try replying after the connection or pending input is resolved."
+msgstr "连接恢复或待处理输入解决后，再尝试回复。"
+
+#: src/components/CommandPalette.tsx
+msgid "Find on page in browser"
+msgstr "在浏览器中查找页面内容"
+
+#: src/components/CommandPalette.tsx
+msgid "Choose a folder in the environment the repository is cloned into."
+msgstr "选择要将仓库克隆到的环境中的文件夹。"
+
+#. 0: environmentLabel
+#: src/components/ConnectDeviceApprovalCoordinator.tsx
+msgid "A device wants to connect to {0}"
+msgstr "有设备请求连接到 {0}"
+
+#. 0: device; 1: request.verificationCode
+#: src/components/ConnectDeviceApprovalCoordinator.tsx
+msgid "{0}. Approve only if it shows code {1}."
+msgstr "{0}。仅在设备显示验证码 {1} 时批准。"
+
+#: src/components/RightPanelSheet.tsx
+msgid "Workspace panel"
+msgstr "工作区面板"
+
+#. 0: settledCount > 0 ? "active threads" \\: "threads"; 1: scopedProjectGroups.length > 1 ? "these projects" \\: scopedProjectGroups[0]!.displayName; 2: settledCount > 0 ? "" \\: " yet"
+#: src/components/Sidebar.tsx
+msgid "No {0} in {1}{2}"
+msgstr "{1}{2} 中没有{0}"
+
+#: src/components/Sidebar.tsx
+msgid "Show all projects"
+msgstr "显示所有项目"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "Could not load sign-in"
+msgstr "无法加载登录页面"
+
+#: src/components/auth/ApproveAgentSurface.tsx
+msgid "T3 Connect sign-in did not load. Check your connection, then try again."
+msgstr "T3 Connect 登录页面未能加载。请检查连接后重试。"
+
+#: src/components/clerk/T3ConnectSidebarSignIn.tsx
+msgid "Retry T3 Connect"
+msgstr "重试 T3 Connect"
+
+#: src/components/cloud/ConnectOnboardingDialog.tsx
+#: src/components/settings/RevokeConnectDeviceDialog.tsx
+msgid "Require approval for new devices"
+msgstr "新设备连接需批准"
+
+#: src/components/cloud/ConnectOnboardingDialog.tsx
+#: src/components/settings/SavedEnvironmentRows.tsx
+msgid "Devices that sign in to your T3 Connect account wait until someone already connected here approves them."
+msgstr "登录你的 T3 Connect 账号的设备，需等待已连接到此处的用户批准。"
+
+#. 0: app.name
+#: src/components/mcp/UseInAnotherAppDialog.tsx
+msgid "Get {0}"
+msgstr "获取 {0}"
+
+#: src/components/files/FilePreviewPanel.tsx
+msgid "File contents"
+msgstr "文件内容"
+
+#. 0: page + 1; 1: count; 2: sheet.rowCount.toLocaleString(); 3: sheet.rowCount === 1 ? "" \\: "s"; 4: sheet.columns.toLocaleString(); 5: sheet.columns === 1 ? "" \\: "s"; 6: fileSize !== undefined ? ` · ${fileSize === 0 ? "0 bytes" \\: formatAttachmentSize(fileSize)}` \\: ""
+#: src/components/files/OfficeViewer.tsx
+msgid "Sheet {0} of {1} · {2} row {3} · {4} column {5} {6}"
+msgstr "工作表 {0}/{1} · {2} 行 {3} · {4} 列 {5} {6}"
+
+#: src/components/preview/PreviewFindBar.tsx
+#: src/components/preview/PreviewFindBar.tsx
+#: src/components/preview/PreviewFindBar.tsx
+msgid "Find in page"
+msgstr "在页面中查找"
+
+#. 0: findShortcutLabel ? <MenuShortcut>{findShortcutLabel}</MenuShortcut> \\: null
+#: src/components/preview/PreviewMoreMenu.tsx
+msgid "Find on page {0}"
+msgstr "在页面 {0} 中查找"
+
+#: src/components/preview/PreviewView.tsx
+msgid "Find on page isn't available for this page"
+msgstr "此页面不支持页内查找"
+
+#. 0: assistantCitationLabel(quoted)
+#: src/components/chat/AssistantCitationChip.tsx
+msgid "Go to quoted response: {0}"
+msgstr "前往引用的回复：{0}"
+
+#. 0: record.label
+#: src/components/chat/AssistantCitationChip.tsx
+msgid "Go to the response this replies to: {0}"
+msgstr "前往此消息回复的内容：{0}"
+
+#. 0: replyTo.subagents.map((subagent) => subagent.title).join(", ")
+#: src/components/chat/ChatComposer.tsx
+msgid "Replying to {0}"
+msgstr "正在回复 {0}"
+
+#: src/components/chat/ChatComposer.tsx
+msgid "Replying to"
+msgstr "正在回复"
+
+#: src/components/chat/ChatComposer.tsx
+msgid "Terminal output can't be added to a question answer."
+msgstr "终端输出不能添加到问题的回答中。"
+
+#: src/components/chat/ChatComposer.tsx
+msgid "Answer or dismiss the question first, then add it to chat."
+msgstr "请先回答或关闭问题，再将其添加到对话。"
+
+#: src/components/chat/ChatComposer.tsx
+msgid "Type your answer"
+msgstr "输入你的回答"
+
+#: src/components/chat/ComposerAttachmentStrip.tsx
+msgid "Image attachment"
+msgstr "图片附件"
+
+#: src/components/chat/ComposerPrimaryActions.tsx
+msgid "Stopping…"
+msgstr "正在停止…"
+
+#: src/components/chat/ComposerSpeechButton.tsx
+#: src/components/chat/ComposerSpeechButton.tsx
+msgid "Cancel voice input"
+msgstr "取消语音输入"
+
+#: src/components/chat/ComposerSpeechButton.tsx
+#: src/components/chat/ComposerSpeechButton.tsx
+msgid "Finish voice input"
+msgstr "完成语音输入"
+
+#: src/components/chat/LinkRequestCard.tsx
+msgid "Agents here can then launch, message and wait on threads there. Revoke it in that machine's Sharing & access."
+msgstr "此处的 Agent 随后可以在那台机器上启动对话、发送消息并等待结果。可在那台机器的「共享与访问」中撤销。"
+
+#. 0: targetName
+#. 0: machine.label
+#: src/components/chat/LinkRequestCard.tsx
+#: src/components/settings/LinkedEnvironmentsSettings.tsx
+msgid "Create a link on {0}: Settings → Sharing & access → Authorized clients → Create link, then paste its code here."
+msgstr "在 {0} 上创建连接：设置 → 共享与访问 → 已授权客户端 → 创建连接，然后将连接码粘贴到此处。"
+
+#. 0: targetName
+#: src/components/chat/LinkRequestCard.tsx
+msgid "This environment is already linked to {0}. The agent can use that link as it is; change its access in Settings → Environments."
+msgstr "此环境已连接到 {0}。Agent 可以直接使用该连接；可在「设置 → 环境」中调整访问权限。"
+
+#: src/components/chat/ModelPickerContent.tsx
+msgid "Searching project models..."
+msgstr "正在搜索项目模型…"
+
+#: src/components/chat/ThreadDetailsPrRow.tsx
+msgid "Resolve the conflicts in this thread"
+msgstr "在此对话中解决冲突"
+
+#: src/components/chat/ThreadDetailsPrRow.tsx
+msgid "Preparing fix"
+msgstr "正在准备修复"
+
+#: src/components/chat/ThreadDetailsPrRow.tsx
+msgid "Fix the failing checks in this thread"
+msgstr "在此对话中修复失败的检查"
+
+#: src/components/chat/ThreadRelationshipsControl.tsx
+msgid "Could not open the parent thread"
+msgstr "无法打开父对话"
+
+#: src/components/chat/ThreadRelationshipsControl.tsx
+msgid "The parent thread was deleted"
+msgstr "父对话已被删除"
+
+#: src/components/chat/TimelineAssistantRows.tsx
+#: src/components/chat/TimelineAssistantRows.tsx
+msgid "Reply to this response"
+msgstr "回复此条消息"
+
+#: src/components/chat/TimelineUserMessageRow.tsx
+msgid "Steer · waiting to be read"
+msgstr "引导消息 · 等待读取"
+
+#: src/components/chat/TimelineUserMessageRow.tsx
+msgid "Waiting for the agent to read this. It reads steers between steps, after a running command finishes."
+msgstr "等待 Agent 读取。它会在步骤之间、当前命令完成后读取引导消息。"
+
+#. 0: props.cancelShortcutLabel ? ` (${props.cancelShortcutLabel})` \\: ""
+#: src/components/chat/VoiceInputErrorPill.tsx
+msgid "Dismiss {0}"
+msgstr "关闭 {0}"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Voice input is ready"
+msgstr "语音输入已就绪"
+
+#. 0: destination
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Download a speech model once. Your audio is transcribed on {0}."
+msgstr "只需下载一次语音模型。音频将在 {0} 上转写。"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Pick a microphone, then start talking."
+msgstr "选择麦克风，然后开始说话。"
+
+#. 0: Math.round(model.size / 1024 / 1024)
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "{0} MB"
+msgstr "{0} MB"
+
+#. 0: languageLabel(props.language)
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Recommended for {0}. "
+msgstr "推荐用于 {0}。"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Verifying…"
+msgstr "正在验证…"
+
+#. 0: model.recommended && props.language ? `Recommended for ${languageLabel(props.language)}. ` \\: ""
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "{0} Includes a 1.2 MB silence detector."
+msgstr "{0} 包含一个 1.2 MB 的静音检测器。"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "That microphone is unplugged. Pick another one."
+msgstr "该麦克风已断开，请选择其他麦克风。"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Needs an admin to download"
+msgstr "需要管理员下载"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Other models"
+msgstr "其他模型"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Choose a model"
+msgstr "选择模型"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "<0/> Start dictating"
+msgstr "<0/> 开始听写"
+
+#: src/components/chat/VoiceInputSetup.tsx
+msgid "Voice settings"
+msgstr "语音设置"
+
+#. 0: detailsOpen ? <ChevronDownIcon aria-hidden /> \\: <ChevronRightIcon aria-hidden />
+#: src/components/chat/WorktreeSetupCard.tsx
+msgid "{0} Details"
+msgstr "{0} 详情"
+
+#. 0: activeEnvironmentUnavailableState.label
+#: src/components/chat/useSystemComposerBanners.tsx
+msgid "{0} is waiting to approve this device"
+msgstr "{0} 正等待批准此设备"
+
+#. 0: " "
+#: src/components/pullRequest/PullRequestChecksPopover.tsx
+msgid "<0/>{0} checks"
+msgstr "<0/>{0} 项检查"
+
+#: src/components/pullRequest/PullRequestLinkPreview.tsx
+msgid "commented"
+msgstr "发表了评论"
+
+#: src/components/pullRequest/PullRequestResolveThreadButton.tsx
+msgid "The conversation could not be updated"
+msgstr "无法更新此讨论"
+
+#: src/components/pullRequest/PullRequestTimelineTab.tsx
+msgid "Overview"
+msgstr "概览"
+
+#: src/components/pullRequest/PullRequestTimelineTab.tsx
+msgid "The linked item is not in the loaded activity."
+msgstr "已加载的动态中没有链接指向的条目。"
+
+#: src/components/usage/UsageLimitsPooled.tsx
+msgid "<0/> $0 cap"
+msgstr "<0/> 上限 $0"
+
+#: src/components/settings/CodexSetupSection.tsx
+msgid "Update Codex"
+msgstr "更新 Codex"
+
+#. 0: " "
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
+msgid "Waiting for approval ·{0} <0/>"
+msgstr "等待批准 ·{0} <0/>"
+
+#. 0: describeConnectDeviceClient(connectRequest)
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
+msgid "{0}. Approve only if the device in front of you shows this code."
+msgstr "{0}。仅在面前的设备显示此验证码时批准。"
+
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
+msgid "Approve"
+msgstr "批准"
+
+#. 0: formatAccessTimestamp(DateTime.formatIso(device.approvedAt))
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
+msgid "<0/> <1/> Trusted since {0}"
+msgstr "<0/> <1/> 自 {0} 起受信任"
+
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
+msgid "No device has connected through T3 Connect yet."
+msgstr "尚无设备通过 T3 Connect 连接。"
+
+#: src/components/settings/ConnectDeviceApprovalSettings.tsx
+msgid "T3 Connect devices"
+msgstr "T3 Connect 设备"
+
+#: src/components/settings/LinkMachineSelect.tsx
+msgid "Check this address"
+msgstr "核对此地址"
+
+#: src/components/settings/LinkMachineSelect.tsx
+msgid "This app cannot confirm it is one of your machines. The pairing code you paste is sent there. <0/>"
+msgstr "此应用无法确认它是否属于你的机器。粘贴的配对码会发送到该地址。<0/>"
+
+#: src/components/settings/LinkedEnvironmentsSettings.tsx
+msgid "Agents here can then launch, message and wait on threads there. It appears under Authorized clients in that environment's Sharing & access, where it can be revoked."
+msgstr "此处的 Agent 随后可以在那台机器上启动对话、发送消息并等待结果。连接会显示在该环境「共享与访问」中的「已授权客户端」下，可在那里撤销。"
+
+#: src/components/settings/LinkedEnvironmentsSettings.tsx
+msgid "From Sharing & access there, or t3 pair"
+msgstr "来自那里的「共享与访问」或 t3 pair"
+
+#: src/components/settings/MicrophoneOrderList.tsx
+msgid "Microphones, preferred first"
+msgstr "麦克风，优先使用的排在前面"
+
+#. 0: name
+#: src/components/settings/MicrophoneOrderList.tsx
+msgid "Forget {0}"
+msgstr "忘记 {0}"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "<0/> Stop"
+msgstr "<0/> 停止"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Record"
+msgstr "录制"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Discard recording"
+msgstr "丢弃录音"
+
+#: src/components/settings/MicrophoneTest.tsx
+msgid "Record ten seconds and play it back. The audio stays on this device."
+msgstr "录制十秒并回放。音频保留在此设备上。"
+
+#: src/components/settings/ProjectActionsSettings.tsx
+msgid "Different actions across checkouts"
+msgstr "各检出目录的操作不同"
+
+#: src/components/settings/ProjectActionsSettings.tsx
+msgid "Narrow the selection above to one checkout to edit its list. Adding an action here adds it to every selected checkout."
+msgstr "在上方只选择一个检出目录，即可编辑它的操作列表。在此处添加操作会将其添加到所有选中的检出目录。"
+
+#: src/components/settings/ProviderSettingsForm.tsx
+msgid "Enter a valid value. It was not saved."
+msgstr "请输入有效值。此值尚未保存。"
+
+#: src/components/settings/RevokeConnectDeviceDialog.tsx
+msgid "The device has to be approved here before it can connect again."
+msgstr "该设备需要在此处获批后才能再次连接。"
+
+#: src/components/settings/RevokeConnectDeviceDialog.tsx
+msgid "Approval for new devices is off, so a revoked device signed in to your T3 Connect account can connect again on its own."
+msgstr "新设备连接无需批准，因此已撤销但仍登录你的 T3 Connect 账号的设备可以自行再次连接。"
+
+#. 0: busy && <Spinner size="sm" />
+#: src/components/settings/RevokeConnectDeviceDialog.tsx
+msgid "{0} Revoke"
+msgstr "{0} 撤销"
+
+#: src/components/settings/SavedEnvironmentRows.tsx
+msgid "Require approval for new T3 Connect devices"
+msgstr "新的 T3 Connect 设备连接需批准"
+
+#. 0: props.label; 1: state.detail
+#: src/components/settings/SecretSourceInput.tsx
+msgid "{0} failed: {1}"
+msgstr "{0} 失败：{1}"
+
+#. 0: props.label
+#: src/components/settings/SecretSourceInput.tsx
+msgid "{0} resolved"
+msgstr "{0} 已解决"
+
+#. 0: label
+#: src/components/settings/SecretSourceInput.tsx
+msgid "Check {0}"
+msgstr "检查 {0}"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Screen reader"
+msgstr "屏幕阅读器"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "What a screen reader hears from the open thread: a turn starting, needing you, and ending. Status and messages adds what the agent writes before its last message. Everything adds each step."
+msgstr "屏幕阅读器会播报当前对话的轮次开始、需要你处理和轮次结束。「状态与消息」还会播报最终消息之前 Agent 写出的内容；「全部」则播报每个步骤。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Screen reader announcements"
+msgstr "屏幕阅读器播报"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Start the window title with the thread's status, like Needs approval, and its name, so screen readers read them first when you switch apps. Taskbars, shared screens, and time trackers see it too."
+msgstr "将对话状态（如「需要批准」）和名称放在窗口标题开头，便于切换应用时屏幕阅读器优先读出。任务栏、屏幕共享和时间跟踪工具也会看到这些内容。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Screen reader window title"
+msgstr "适用于屏幕阅读器的窗口标题"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Stop the computer from going to sleep while agents are working, and let it sleep once they finish. Closing a laptop lid still puts it to sleep."
+msgstr "Agent 工作时阻止电脑休眠，完成后恢复正常休眠。合上笔记本电脑盖仍会进入休眠。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Keep awake while agents work"
+msgstr "Agent 工作时保持唤醒"
+
+#: src/components/settings/SettingsScopeSentence.tsx
+msgid "Checkout scope"
+msgstr "检出目录范围"
+
+#: src/components/settings/SettingsScopeSentence.tsx
+msgid "Unavailable checkout"
+msgstr "检出目录不可用"
+
+#: src/components/settings/SettingsScopeSentence.tsx
+#: src/components/settings/SettingsScopeSentence.tsx
+msgid "All checkouts"
+msgstr "所有检出目录"
+
+#: src/components/settings/SettingsScopeSentence.tsx
+msgid "in"
+msgstr "位于"
+
+#. 0: item.label
+#: src/components/settings/SourceControlSettings.tsx
+msgid "Offer {0} when adding or publishing a project"
+msgstr "添加或发布项目时提供 {0}"
+
+#: src/components/settings/SourceControlSettings.tsx
+msgid "Offer when adding or publishing a project"
+msgstr "添加或发布项目时提供此选项"
+
+#: src/components/settings/SourceControlWritingSettings.tsx
+msgid "Writer model not saved"
+msgstr "写作模型未保存"
+
+#: src/components/settings/ThemeCssEditor.tsx
+msgid "Custom CSS"
+msgstr "自定义 CSS"
+
+#: src/components/settings/ThemeCssEditor.tsx
+msgid "CSS"
+msgstr "CSS"
+
+#. 0: position.line; 1: position.column
+#: src/components/settings/ThemeCssEditor.tsx
+msgid "Ln {0}, Col {1}"
+msgstr "第 {0} 行，第 {1} 列"
+
+#: src/components/settings/ThemeCssEditor.tsx
+msgid "Tab indents. Shift+Tab unindents. Press Escape, then Tab to leave."
+msgstr "Tab 增加缩进，Shift+Tab 减少缩进。先按 Escape，再按 Tab 可离开。"
+
+#: src/components/settings/ThemeCssEditor.tsx
+msgid "Tab moves to the next control."
+msgstr "Tab 移到下一个控件。"
+
+#: src/components/settings/ThemeCssEditor.tsx
+msgid "Clear CSS"
+msgstr "清除 CSS"
+
+#: src/components/settings/ThemeEditorPanel.tsx
+msgid "Saved with this theme and included when you export it. Web and desktop only. Rules that load remote files are ignored."
+msgstr "随此主题保存，导出时一并包含。仅适用于 Web 和桌面端。加载远程文件的规则会被忽略。"
+
+#. 0: cssOpen ? <ChevronDownIcon /> \\: <ChevronRightIcon />
+#: src/components/settings/ThemeEditorPanel.tsx
+msgid "{0} Custom CSS"
+msgstr "{0} 自定义 CSS"
+
+#. 0: model.linkedFrom
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Using your file at {0}"
+msgstr "正在使用位于 {0} 的文件"
+
+#. 0: model.name
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Stop using your {0} file; the file stays on disk"
+msgstr "停止使用你的 {0} 文件；磁盘上的文件会保留"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Add words, separated by commas"
+msgstr "添加词语，用逗号分隔"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "<0/> Add"
+msgstr "<0/> 添加"
+
+#. 0: scope.scope.label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Used by everyone who dictates in {0}."
+msgstr "供在 {0} 中听写的所有人使用。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Used by everyone who dictates on this environment."
+msgstr "供在此环境中听写的所有人使用。"
+
+#. 0: languagesLabel
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Filter by language: {0}"
+msgstr "按语言筛选：{0}"
+
+#. 0: languageLabel(accuracyLanguage)
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Most accurate in {0}"
+msgstr "在 {0} 中准确率最高"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Path to a model file or folder already on this environment"
+msgstr "此环境中已有模型文件或文件夹的路径"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Already downloaded elsewhere? Paste the model file or folder path"
+msgstr "已在其他位置下载？粘贴模型文件或文件夹路径"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Use existing"
+msgstr "使用已有模型"
+
+#. 0: status.benchmarkTier === "cpu" ? "CPU" \\: "GPU"
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Grades are error rates and speed is seconds per 30 s of audio, from Handy’s benchmark {0}."
+msgstr "评级为错误率，速度为每 30 秒音频所需的秒数，数据来自 Handy 的基准测试 {0}。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Say a sentence. Cleanup is skipped, so you see exactly what the model heard."
+msgstr "说一句话。本次跳过文本整理，直接显示模型听到的内容。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Voice input uses the first connected microphone in this list."
+msgstr "语音输入使用此列表中第一个已连接的麦克风。"
+
+#. 0: chosenEnvironment.label
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} can’t transcribe audio locally. Choose another destination."
+msgstr "{0} 无法在本地转写音频，请选择其他目标。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Where your speech is turned into text."
+msgstr "将语音转换为文字的位置。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "The provider detects your language automatically."
+msgstr "提供方会自动检测语言。"
+
+#. 0: model.model
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} detects the language automatically."
+msgstr "{0} 会自动检测语言。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "This model"
+msgstr "此模型"
+
+#. 0: model?.model ?? "This model"
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "{0} uses one fixed language."
+msgstr "{0} 仅使用一种固定语言。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "OpenAI handles silence itself."
+msgstr "OpenAI 会自行处理静音。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Skip silence and background noise before transcribing."
+msgstr "转写前跳过静音和背景噪声。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Drop “um” and “uh” from transcripts."
+msgstr "从转写结果中去除「嗯」「呃」等语气词。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Your dictionary"
+msgstr "你的词典"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Names and terms to spell your way, saved on this device."
+msgstr "按你的习惯拼写名称和术语，保存在此设备上。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Off by default. Sends the transcript and nearby draft text, never audio, to the cleanup model."
+msgstr "默认关闭。只将转写结果和草稿附近的文字发送给整理模型，不发送音频。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Instructions"
+msgstr "指令"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Your own instructions for cleanup."
+msgstr "你自定义的文本整理指令。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Fix punctuation, numbers, lists, and spoken corrections."
+msgstr "修正标点、数字、列表和口述更正。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "The phrase you say to fix a mistake, like “scratch that”."
+msgstr "用于更正错误的口令，例如「划掉刚才那句」。"
+
+#: src/components/sidebar/SidebarFolderDrop.tsx
+#: src/components/sidebar/SidebarFolderDrop.tsx
+msgid "Dropping folders needs the desktop app"
+msgstr "拖入文件夹需要桌面应用"
+
+#: src/components/sidebar/SidebarFolderDrop.tsx
+msgid "Browsers do not share folder paths. Use Add project to choose a folder."
+msgstr "浏览器不会提供文件夹路径。请使用「添加项目」选择文件夹。"
+
+#: src/components/sidebar/SidebarFolderDrop.tsx
+msgid "This computer's server is not connected yet"
+msgstr "此电脑的服务器尚未连接"
+
+#: src/components/sidebar/SidebarFolderDrop.tsx
+msgid "Try again when it connects."
+msgstr "连接后再试。"
+
+#. 0: folder.name
+#: src/components/sidebar/SidebarFolderDrop.tsx
+msgid "Could not add \"{0}\""
+msgstr "无法添加「{0}」"
+
+#: src/components/sidebar/SidebarFolderDrop.tsx
+msgid "T3 Code could not read the folder's path."
+msgstr "T3 Code 无法读取文件夹路径。"
+
+#: src/components/sidebar/SidebarFolderDrop.tsx
+msgid "Drop folders to add projects"
+msgstr "拖入文件夹以添加项目"
+
+#: src/components/sidebar/SidebarFolderDrop.tsx
+msgid "Only folders can be added as projects"
+msgstr "只有文件夹可以添加为项目"
+
+#: src/components/sidebar/SidebarFolderDrop.tsx
+msgid "Drop files on a thread to attach them."
+msgstr "将文件拖到对话中以添加附件。"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Preferences"
+msgstr "偏好设置"
