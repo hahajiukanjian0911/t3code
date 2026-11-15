@@ -21241,3 +21241,12 @@ msgstr "Drop files on a thread to attach them."
 #: src/i18n/staticUiLabels.ts
 msgid "Preferences"
 msgstr "Preferences"
+
+#. 0: state.preparedVersion
+#: src/components/sidebar/SidebarUpdatePill.tsx
+msgid "Update {0} is ready. Click to restart and install."
+msgstr "Update {0} is ready. Click to restart and install."
+
+#: src/components/sidebar/SidebarUpdateReleaseNotes.tsx
+msgid "Update ready to install"
+msgstr "Update ready to install"

@@ -141,6 +141,37 @@ describe("SidebarUpdatePill release notes", () => {
       }
     },
   );
+  it("shows local fork changes on focus without an upstream release link", async () => {
+    setup({
+      ...nightlyUpdate([]),
+      enabled: false,
+      status: "disabled",
+      preparedVersion: "0.1.9-fork.20261115.4",
+      releaseNotes: [
+        {
+          version: "0.1.9-fork.20261115.4",
+          items: ["修复更新签名", "优化侧栏展示"],
+          totalItems: 2,
+        },
+      ],
+    });
+    await using screen = await render(<SidebarUpdatePill />);
+    await userEvent.tab();
+    await expect.element(screen.getByText("修复更新签名")).toBeVisible();
+    await expect.element(screen.getByText("优化侧栏展示")).toBeVisible();
+    await expect.element(screen.getByRole("link", { name: /GitHub/ })).not.toBeInTheDocument();
+    const evidence = import.meta.env.VITE_LOCAL_UPDATE_EVIDENCE_DIR;
+    if (evidence) {
+      const { applyInterfaceLocale } = await import("../../i18n/runtime");
+      await applyInterfaceLocale("zh-CN");
+      try {
+        await expect.element(screen.getByText("更新已准备好")).toBeVisible();
+        await page.screenshot({ path: `${evidence}/local-update-notes.png` });
+      } finally {
+        await applyInterfaceLocale("en");
+      }
+    }
+  });
   it("closes when the release notes stop applying", async () => {
     setup(nightlyUpdate(RELEASE_NOTES));
     await using _screen = await render(<SidebarUpdatePill />);

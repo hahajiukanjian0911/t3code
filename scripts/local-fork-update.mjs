@@ -54,7 +54,7 @@ async function findApp(directory) {
     }
   }
 }
-async function prepare(version) {
+async function prepare(version, notesFile) {
   if (
     Effect.runSync(HostProcess.Platform) !== "darwin" ||
     Effect.runSync(HostProcess.Architecture) !== "arm64"
@@ -92,6 +92,14 @@ async function prepare(version) {
   if (free.bavail * free.bsize < 5 * 1024 ** 3)
     throw new Error("At least 5 GiB free space is required before packaging.");
   const commit = git("rev-parse", "HEAD");
+  const releaseNotes = notesFile
+    ? (await NodeFSP.readFile(NodePath.resolve(notesFile), "utf8"))
+        .split(/\r?\n/)
+        .map((line) => line.replace(/^\s*[-*]\s+/, "").trim())
+        .filter(Boolean)
+    : git("log", "--no-merges", "--max-count=20", "--format=%s", `fork/stable..${commit}`)
+        .split("\n")
+        .filter(Boolean);
   const output = NodePath.join(root, "release/local-stable", version);
   if (await exists(output))
     throw new Error("Candidate directory already exists; choose a new version.");
@@ -222,6 +230,7 @@ async function prepare(version) {
     phase: "prepared",
     preparedAt: new Date().toISOString(),
     migrations,
+    releaseNotes,
     ...(migrations.length
       ? {
           databasePath: NodePath.join(baseDir, "userdata/statev2.sqlite"),
@@ -316,8 +325,12 @@ async function verifyRuntime(pids) {
 }
 const [command, ...args] = process.argv.slice(2);
 try {
-  if (command === "prepare") await prepare(args[0]);
-  else if (command === "bootstrap") await bootstrap(args);
+  if (command === "prepare") {
+    const notesIndex = args.indexOf("--notes");
+    if (notesIndex >= 0 && !args[notesIndex + 1])
+      throw new Error("Provide a UTF-8 release notes file after --notes.");
+    await prepare(args[0], notesIndex < 0 ? undefined : args[notesIndex + 1]);
+  } else if (command === "bootstrap") await bootstrap(args);
   else if (command === "verify") await verifyRuntime(args);
   else if (command === "status") console.log(await NodeFSP.readFile(pending, "utf8"));
   else

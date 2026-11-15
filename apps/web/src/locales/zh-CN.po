@@ -21241,3 +21241,12 @@ msgstr "将文件拖到对话中以添加附件。"
 #: src/i18n/staticUiLabels.ts
 msgid "Preferences"
 msgstr "偏好设置"
+
+#. 0: state.preparedVersion
+#: src/components/sidebar/SidebarUpdatePill.tsx
+msgid "Update {0} is ready. Click to restart and install."
+msgstr "版本 {0} 已准备好，点击以重新启动并安装。"
+
+#: src/components/sidebar/SidebarUpdateReleaseNotes.tsx
+msgid "Update ready to install"
+msgstr "更新已准备好"

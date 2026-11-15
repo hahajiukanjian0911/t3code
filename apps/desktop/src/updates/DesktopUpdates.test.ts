@@ -124,6 +124,7 @@ describe("DesktopUpdates", () => {
           JSON.stringify({
             version,
             phase,
+            releaseNotes: ["修复更新签名", "优化侧栏展示"],
             commit: "a".repeat(40),
             installedPath: "/",
             stagedPath: "/.T3-Code-update-test.app",
@@ -138,6 +139,9 @@ describe("DesktopUpdates", () => {
           const updates = yield* DesktopUpdates.DesktopUpdates;
           yield* updates.configure;
           assert.equal((yield* updates.getState).preparedVersion, version);
+          assert.deepEqual((yield* updates.getState).releaseNotes, [
+            { version, items: ["修复更新签名", "优化侧栏展示"], totalItems: 2 },
+          ]);
           assert.isUndefined((yield* updates.getState).installedVersion);
           const mismatch = yield* updates.installPrepared("1.2.5");
           assert.isFalse(mismatch.accepted);
@@ -145,6 +149,7 @@ describe("DesktopUpdates", () => {
           assert.equal(harness.checkCount(), 0);
           phase = "failed";
           assert.isUndefined((yield* updates.getState).preparedVersion);
+          assert.deepEqual((yield* updates.getState).releaseNotes, []);
           phase = "prepared";
           using _installer = vi
             .spyOn(LocalUpdate, "startLocalUpdateInstaller")

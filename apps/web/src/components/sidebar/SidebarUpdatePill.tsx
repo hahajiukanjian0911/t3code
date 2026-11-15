@@ -254,15 +254,20 @@ function SidebarUpdateControl() {
   });
   const idleTooltip =
     !showUpdateDetails && !showCheckIcon ? getDesktopUpdateIdleTooltip(state, updatesDenial) : null;
-  const tooltip = runsEverything
-    ? everything.summary
-    : showUpdateDetails
-      ? state
-        ? getDesktopUpdateButtonTooltip(state)
-        : "Update available"
-      : showCheckIcon
-        ? "Checking for updates…"
-        : (idleTooltip?.title ?? "Check for updates");
+  const localUpdateMessage = state?.preparedVersion
+    ? `Update ${state.preparedVersion} is ready. Click to restart and install.`
+    : null;
+  const tooltip =
+    localUpdateMessage ??
+    (runsEverything
+      ? everything.summary
+      : showUpdateDetails
+        ? state
+          ? getDesktopUpdateButtonTooltip(state)
+          : "Update available"
+        : showCheckIcon
+          ? "Checking for updates…"
+          : (idleTooltip?.title ?? "Check for updates"));
   const disabled = showCheckIcon
     ? true
     : runsEverything
@@ -272,7 +277,7 @@ function SidebarUpdateControl() {
         : !canCheckForUpdate(state);
   const isInteractionDisabled = disabled || isActionPending || isRunningEverything;
   const showReleaseNotesPopover =
-    !hasLocalUpdate &&
+    (!hasLocalUpdate || Boolean(state?.preparedVersion)) &&
     !isRunningEverything &&
     shouldUseSidebarUpdateReleaseNotesPopover(showUpdateDetails, state);
 

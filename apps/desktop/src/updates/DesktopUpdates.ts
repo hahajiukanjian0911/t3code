@@ -443,7 +443,21 @@ export const make = Effect.gen(function* () {
     const next = {
       ...rest,
       ...(installedVersion ? { installedVersion } : {}),
-      ...(localUpdate ? { preparedVersion: localUpdate.version } : {}),
+      ...(localUpdate
+        ? {
+            preparedVersion: localUpdate.version,
+            releaseNotes: localUpdate.releaseNotes?.length
+              ? [
+                  {
+                    version: localUpdate.version,
+                    items: localUpdate.releaseNotes ?? [],
+                    totalItems: localUpdate.releaseNotes.length,
+                  },
+                ]
+              : [],
+            omittedReleaseCount: 0,
+          }
+        : { releaseNotes: rest.releaseNotes.filter((note) => note.version !== _preparedVersion) }),
     };
     return stateMutex
       .withPermits(1)(

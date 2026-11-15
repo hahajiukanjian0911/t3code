@@ -17,6 +17,7 @@ const Manifest = Schema.fromJsonString(
     installerPath: Schema.String,
     databasePath: Schema.optionalKey(Schema.String),
     databaseBackupPath: Schema.optionalKey(Schema.String),
+    releaseNotes: Schema.optionalKey(Schema.Array(Schema.String)),
     phase: Schema.Literal("prepared"),
   }),
 );
