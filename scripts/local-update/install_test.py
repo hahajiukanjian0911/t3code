@@ -17,7 +17,7 @@ spec.loader.exec_module(installer)
 
 class InstallerTests(unittest.TestCase):
     def test_wait_swap_backup_and_failures(self):
-        for failure in (None, "hash", "backup", "rename"):
+        for failure in (None, "hash", "old-hash", "backup", "rename"):
             with self.subTest(failure=failure), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 live, staged, backup = (root / name for name in ("old.app", "new.app", "backup.app"))
@@ -34,7 +34,7 @@ class InstallerTests(unittest.TestCase):
                     "phase": "prepared", "version": "0.1.9-fork.20261115.1",
                     "installedPath": str(live), "stagedPath": str(staged), "backupPath": str(backup),
                     "asarSha256": "wrong" if failure == "hash" else installer.digest(staged / "Contents/Resources/app.asar"),
-                    "previousAsarSha256": installer.digest(live / "Contents/Resources/app.asar"),
+                    "previousAsarSha256": "wrong" if failure == "old-hash" else installer.digest(live / "Contents/Resources/app.asar"),
                     "databasePath": str(database), "databaseBackupPath": str(root / "database-backup"),
                 }))
                 real_rename = Path.rename

@@ -1,7 +1,5 @@
 // @effect-diagnostics nodeBuiltinImport:off -- The detached installer handshake owns native streams beyond the desktop scope.
 import * as NodeChildProcess from "node:child_process";
-import * as NodeCrypto from "node:crypto";
-import * as NodeFS from "node:fs";
 import * as NodeFSP from "node:fs/promises";
 import * as NodePath from "node:path";
 import * as Schema from "effect/Schema";
@@ -57,15 +55,6 @@ export function parseLocalUpdate(
   }
 }
 
-async function asarHash(app: string) {
-  const hash = NodeCrypto.createHash("sha256");
-  for await (const chunk of NodeFS.createReadStream(
-    NodePath.join(app, "Contents/Resources/app.asar"),
-  ))
-    hash.update(chunk);
-  return hash.digest("hex");
-}
-
 export async function startLocalUpdateInstaller(
   manifestPath: string,
   update: LocalUpdate,
@@ -79,12 +68,7 @@ export async function startLocalUpdateInstaller(
   );
   if (!current || JSON.stringify(current) !== JSON.stringify(update))
     throw new Error("The prepared update changed. Check for updates again.");
-  const [previousHash, nextHash] = await Promise.all([
-    asarHash(update.installedPath),
-    asarHash(update.stagedPath),
-  ]);
-  if (previousHash !== update.previousAsarSha256 || nextHash !== update.asarSha256)
-    throw new Error("The prepared application changed. Prepare the update again.");
+  // The installer verifies both archive hashes before ready; Electron fs virtualizes ASAR paths.
   return await new Promise<() => void>((resolve, reject) => {
     const child = NodeChildProcess.spawn(
       "/usr/bin/python3",

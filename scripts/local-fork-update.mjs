@@ -67,7 +67,8 @@ async function prepare(version) {
   let previousSigningIdentity;
   if (await exists(pending)) {
     const previous = JSON.parse(await NodeFSP.readFile(pending, "utf8"));
-    previousSigningIdentity = previous.signingIdentity?.hash;
+    previousSigningIdentity =
+      previous.phase === "installed-runtime-verified" ? previous.signingIdentity?.hash : undefined;
     if (
       ["prepared", "swapping", "database-backed-up", "installed-pending-verification"].includes(
         previous.phase,
