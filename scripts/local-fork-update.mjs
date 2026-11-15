@@ -8,6 +8,7 @@ import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
 import * as NodeURL from "node:url";
 import { extractFile } from "@electron/asar";
+import { selectSigningIdentity } from "./local-update/signing.mjs";
 
 const root = NodePath.resolve(NodePath.dirname(NodeURL.fileURLToPath(import.meta.url)), "..");
 const baseDir = process.env.T3CODE_HOME || NodePath.join(NodeOS.homedir(), ".t3");
@@ -63,8 +64,10 @@ async function prepare(version) {
     throw new Error("Use X.Y.Z-fork.YYYYMMDD.N");
   if (git("branch", "--show-current") !== "main" || git("status", "--porcelain"))
     throw new Error("Commit reviewed changes on a clean main first.");
+  let previousSigningIdentity;
   if (await exists(pending)) {
     const previous = JSON.parse(await NodeFSP.readFile(pending, "utf8"));
+    previousSigningIdentity = previous.signingIdentity?.hash;
     if (
       ["prepared", "swapping", "database-backed-up", "installed-pending-verification"].includes(
         previous.phase,
@@ -72,6 +75,11 @@ async function prepare(version) {
     )
       throw new Error("Resolve the existing pending update before preparing another.");
   }
+  const signingIdentity = selectSigningIdentity(
+    run("/usr/bin/security", ["find-identity", "-v", "-p", "codesigning"], { stdio: "pipe" }),
+    process.env.T3CODE_LOCAL_SIGNING_IDENTITY,
+    previousSigningIdentity,
+  );
   const current = run(
     "/usr/libexec/PlistBuddy",
     ["-c", "Print :CFBundleShortVersionString", NodePath.join(installed, "Contents/Info.plist")],
@@ -91,6 +99,10 @@ async function prepare(version) {
     env: { ...process.env, VITEST_MAX_WORKERS: "1" },
   });
   run("/usr/bin/python3", ["-B", "scripts/local-update/install_test.py"]);
+  run(Effect.runSync(HostProcess.ExecutablePath), [
+    "--test",
+    "scripts/local-update/signing.test.mjs",
+  ]);
   if (git("status", "--porcelain"))
     throw new Error("Checks changed tracked sources; review and commit first.");
   run("git", ["push", "origin", "main"]);
@@ -138,7 +150,32 @@ async function prepare(version) {
     throw new Error("Packaged version or source commit mismatch.");
   if (await exists(NodePath.join(candidate, "Contents/Resources/app-update.yml")))
     throw new Error("Unexpected upstream update feed.");
-  run("/usr/bin/codesign", ["--force", "--deep", "--sign", "-", candidate]);
+  run("/usr/bin/codesign", [
+    "--force",
+    "--deep",
+    "--sign",
+    signingIdentity.hash,
+    "--preserve-metadata=entitlements,flags",
+    candidate,
+  ]);
+  const signedMetadata = NodeChildProcess.spawnSync(
+    "/usr/bin/codesign",
+    ["-d", "-r-", "--verbose=4", candidate],
+    { encoding: "utf8" },
+  );
+  const signature = signedMetadata.stdout + signedMetadata.stderr;
+  if (
+    signedMetadata.status !== 0 ||
+    signature.includes("Signature=adhoc") ||
+    !/TeamIdentifier=(?!not set)[A-Z0-9]+/.test(signature)
+  )
+    throw new Error("Candidate must carry the selected certificate signature.");
+  const requirement = signature.match(/designated => (.+)/)?.[1];
+  if (!requirement || /cdhash\s/.test(requirement))
+    throw new Error("Candidate needs a version-independent designated requirement.");
+  if (previousSigningIdentity) {
+    run("/usr/bin/codesign", ["--verify", "--strict", "-R", requirement, installed]);
+  }
   run("/usr/bin/codesign", ["--verify", "--deep", "--strict", candidate]);
   const cliVersion = run(
     NodePath.join(candidate, "Contents/MacOS/T3 Code (Beta)"),
@@ -176,6 +213,8 @@ async function prepare(version) {
     stagedPath: staged,
     backupPath: NodePath.join(output, "rollback", `T3 Code (Beta) ${current}.app`),
     previousVersion: current,
+    signingIdentity,
+    signingRequirement: requirement,
     previousAsarSha256: await hash(installed),
     asarSha256: await hash(staged),
     installerPath: installer,

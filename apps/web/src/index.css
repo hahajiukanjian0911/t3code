@@ -1,6 +1,7 @@
 /* Clerk injects its component styles into the clerk layer (clerkAppearance.cssLayerName). */
 @layer theme, base, clerk, components, utilities;
 @import "tailwindcss";
+@import "./interface.css";
 
 @custom-variant dark (&:is(.dark, .dark *));
 @custom-variant light (&:not(.dark, .dark *));
@@ -2474,12 +2475,13 @@ code {
 /* Rich text composer (Tiptap). The stored prompt stays markdown; only the
    surface renders styled text. Markers (** * ` ~~) appear as non-editable
    widgets while the caret is on styled text. */
-.composer-tiptap {
+.composer-tiptap.ProseMirror {
   position: relative;
 }
 
-/* Tiptap's injected base CSS disables ligatures; match sent messages. */
-.composer-tiptap.ProseMirror {
+/* Tiptap disables ligatures; keep the editor and its placeholder consistent. */
+.composer-tiptap.ProseMirror,
+.composer-tiptap {
   font-variant-ligatures: normal;
   font-feature-settings: normal;
 }

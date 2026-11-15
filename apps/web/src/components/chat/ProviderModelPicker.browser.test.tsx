@@ -163,7 +163,7 @@ it("keeps a docked picker open after a pick and hands focus to that model's effo
   await expect.element(search).toHaveFocus();
   await userEvent.keyboard("{ArrowRight}");
   await expect.element(page.getByRole("radio", { name: "High" })).toHaveFocus();
-  await userEvent.keyboard("{ArrowLeft}");
+  await userEvent.keyboard("{ArrowUp}");
   await expect.element(search).toHaveFocus();
 
   await page.getByRole("option", { name: /Second model/ }).click();

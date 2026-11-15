@@ -199,7 +199,7 @@ function ColumnRow(props: {
     "data-effort-row": true,
     // Focus lands on a level after a model pick.
     "data-effort-level": true,
-    // Up and Down move between rows.
+    // Arrow keys move between levels; Up and Down also reach the option rows.
     tabIndex: props.tabStop ? 0 : -1,
     className: COLUMN_ROW,
     onClick: props.onPick,
@@ -229,15 +229,20 @@ function ColumnRow(props: {
 }
 
 function moveBetweenRows(event: KeyboardEvent<HTMLElement>) {
-  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  const horizontal = event.key === "ArrowLeft" || event.key === "ArrowRight";
+  if (!horizontal && event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
   // An option's side menu is a React child here, but it moves through its own items.
   if (!event.currentTarget.contains(event.target as Node)) return;
   const rows = Array.from(
-    event.currentTarget.querySelectorAll<HTMLButtonElement>("[data-effort-row]:not(:disabled)"),
+    event.currentTarget.querySelectorAll<HTMLButtonElement>(
+      horizontal ? "[data-effort-level]:not(:disabled)" : "[data-effort-row]:not(:disabled)",
+    ),
   );
   const index = rows.findIndex((row) => row === document.activeElement);
-  const next =
-    rows[Math.min(rows.length - 1, Math.max(0, index + (event.key === "ArrowDown" ? 1 : -1)))];
+  if (index < 0 || (!horizontal && event.key === "ArrowUp" && index === 0)) return;
+  const forward = event.key === "ArrowDown" || event.key === "ArrowRight";
+  const next = rows[Math.min(rows.length - 1, Math.max(0, index + (forward ? 1 : -1)))];
   if (!next) return;
   event.preventDefault();
   event.stopPropagation();

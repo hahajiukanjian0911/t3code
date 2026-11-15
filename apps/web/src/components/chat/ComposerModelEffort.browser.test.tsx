@@ -100,6 +100,10 @@ it("draws an agent's reasoning as bars and keeps its mode out of the levels", as
   // Up and Down walk from the levels through the option rows without opening their menus.
   await userEvent.tab();
   await expect.element(screen.getByRole("radio", { name: "Medium" })).toHaveFocus();
+  await userEvent.keyboard("{ArrowLeft}");
+  await expect.element(screen.getByRole("radio", { name: "Low" })).toHaveFocus();
+  await userEvent.keyboard("{ArrowRight}");
+  await expect.element(screen.getByRole("radio", { name: "Medium" })).toHaveFocus();
   await userEvent.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}");
   const speed = screen.getByRole("button", { name: "Speed: Standard" });
   await expect.element(speed).toHaveFocus();

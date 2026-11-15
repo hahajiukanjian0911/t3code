@@ -1,6 +1,13 @@
 {
   "customNotices": [
     {
+      "name": "T3 Clawd interface styles",
+      "bundles": ["desktop", "web"],
+      "license": "MIT",
+      "sourceUrl": "https://github.com/rohit3a/t3-clawd",
+      "noticeFile": "apps/web/src/interface-LICENSE.txt"
+    },
+    {
       "name": "T3 Code Simplified Chinese translations",
       "bundles": ["desktop", "web"],
       "license": "MIT",

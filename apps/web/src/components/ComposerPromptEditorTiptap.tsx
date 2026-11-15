@@ -140,6 +140,9 @@ import { importPastedComposerText, readPastedPlainText } from "./composerInlineT
 import { didComposerSelectionChangeVisibly } from "./composerSelection";
 import type { ComposerDraftContextRecords } from "./composerContextPresentation";
 
+const COMPOSER_TEXT_CLASS_NAME =
+  "composer-tiptap font-(family-name:--font-composer,var(--font-sans)) text-(length:--font-size-prompt,var(--text-sm)) max-sm:pointer-coarse:text-(length:--font-size-prompt-touch) leading-relaxed";
+
 export interface ComposerPromptEditorHandle {
   focus: () => void;
   focusAt: (cursor: number) => void;
@@ -1079,7 +1082,8 @@ function ComposerPromptEditorTiptapInner(
 
   const editorAttributes = {
     class: cn(
-      "composer-tiptap -m-1 block max-h-52 min-h-[calc(2lh+--spacing(2))] overflow-y-auto p-1 whitespace-pre-wrap wrap-break-word bg-transparent leading-relaxed text-foreground focus:outline-none",
+      COMPOSER_TEXT_CLASS_NAME,
+      "-m-1 block max-h-52 min-h-[calc(2lh+--spacing(2))] overflow-y-auto p-1 whitespace-pre-wrap wrap-break-word bg-transparent text-foreground focus:outline-none",
       className,
     ),
     "data-testid": "composer-editor",
@@ -1831,12 +1835,7 @@ function ComposerPromptEditorTiptapInner(
     <RichComposerSkillsContext value={skills}>
       <ComposerContextRecordsContext value={contextRecords}>
         <ComposerCitationCommentContext value={citationCommentActions}>
-          <div
-            className={cn(
-              "relative flow-root font-(family-name:--font-composer,var(--font-sans)) text-(length:--font-size-prompt,var(--text-sm)) max-sm:pointer-coarse:text-(length:--font-size-prompt-touch)",
-              containerClassName,
-            )}
-          >
+          <div className={cn("relative flow-root", containerClassName)}>
             <EditorContent
               editor={editor}
               onKeyDown={(event) => {
@@ -1883,7 +1882,8 @@ function ComposerPromptEditorTiptapInner(
             {isEmpty && contextRecords.size === 0 && placeholder ? (
               <div
                 className={cn(
-                  "pointer-events-none absolute inset-0 leading-relaxed text-placeholder",
+                  COMPOSER_TEXT_CLASS_NAME,
+                  "pointer-events-none absolute inset-0 text-placeholder",
                   placeholderClassName,
                 )}
               >
