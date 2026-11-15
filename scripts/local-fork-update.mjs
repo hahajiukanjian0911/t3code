@@ -183,7 +183,7 @@ async function prepare(version, notesFile) {
   if (!requirement || /cdhash\s/.test(requirement))
     throw new Error("Candidate needs a version-independent designated requirement.");
   if (previousSigningIdentity) {
-    run("/usr/bin/codesign", ["--verify", "--strict", "-R", requirement, installed]);
+    run("/usr/bin/codesign", ["--verify", "--strict", "-R", `=${requirement}`, installed]);
   }
   run("/usr/bin/codesign", ["--verify", "--deep", "--strict", candidate]);
   const cliVersion = run(
