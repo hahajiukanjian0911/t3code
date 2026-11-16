@@ -249,6 +249,7 @@ export const ChatHeader = memo(function ChatHeader({
   return (
     <div
       ref={breadcrumbContainerRef}
+      data-workspace-tab-title={workspaceDock ? "" : undefined}
       className={cn(
         "flex min-w-0 flex-1 items-center gap-2 sm:gap-3",
         !workspaceDock && (rightPanelOpen ? "pr-10" : "pr-24"),

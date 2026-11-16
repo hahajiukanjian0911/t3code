@@ -381,7 +381,7 @@ import {
   WorkspacePanelActions,
   useWorkspaceDockEnabled,
 } from "./workspace/WorkspaceDock";
-import { rightPanelSurfaceTitle } from "./RightPanelTabs";
+import { rightPanelSurfaceTitle, RightPanelSurfaceIcon } from "./RightPanelTabs";
 import type { RightPanelSurface } from "../rightPanelStore";
 import { ChatRightPanel } from "./chat/ChatRightPanel";
 import { useDraftEnvironmentRouting } from "./chat/useDraftEnvironmentRouting";
@@ -4111,6 +4111,15 @@ export default function ChatView(props: ChatViewProps) {
           {rightPanelState.surfaces.map((surface) => (
             <WorkspaceWindow
               key={surface.id}
+              icon={
+                <RightPanelSurfaceIcon
+                  surface={surface}
+                  sessions={activePreviewState.sessions}
+                  desktopByTabId={activePreviewState.desktopByTabId}
+                  theme={resolvedTheme}
+                  environmentId={activeThreadRef.environmentId}
+                />
+              }
               id={`surface:${activeThreadKey}:${surface.id}`}
               title={rightPanelSurfaceTitle(
                 surface,

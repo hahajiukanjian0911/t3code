@@ -642,6 +642,32 @@ function previewFaviconOf(
   return { url, capturedUrl };
 }
 
+export function RightPanelSurfaceIcon({
+  surface,
+  sessions,
+  desktopByTabId,
+  theme,
+  environmentId,
+}: {
+  surface: RightPanelSurface;
+  sessions: Readonly<Record<string, PreviewSessionSnapshot>>;
+  desktopByTabId: Readonly<Record<string, DesktopPreviewOverlay>>;
+  theme: "light" | "dark";
+  environmentId: EnvironmentId | null;
+}) {
+  const favicon = previewFaviconOf(surface, sessions, desktopByTabId);
+  return (
+    <SurfaceIcon
+      surface={surface}
+      previewUrl={favicon.url}
+      previewCapturedUrl={favicon.capturedUrl}
+      theme={theme}
+      environmentId={environmentId}
+      pullRequestStatusSeed={undefined}
+    />
+  );
+}
+
 function SurfaceIcon({
   surface,
   previewUrl,

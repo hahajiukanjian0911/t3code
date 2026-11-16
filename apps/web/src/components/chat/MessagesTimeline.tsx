@@ -1441,8 +1441,8 @@ const ConversationTimeline = memo(function ConversationTimeline({
               initialScrollAtEnd={
                 !findActive && citationRequest === null && rememberedPosition?.atEnd !== false
               }
-              // Legend needs a data refresh to mount new pins without a scroll event.
-              dataVersion={`${readyCitationRequest?.key ?? listIdentityKey}:${alwaysRenderKeys.join(",")}`}
+              // Row count must invalidate positioning when live data changes during initial placement.
+              dataVersion={`${readyCitationRequest?.key ?? listIdentityKey}:${rows.length}:${alwaysRenderKeys.join(",")}`}
               {...(alwaysRender ? { alwaysRender } : {})}
               onLoad={handleListLoad}
               {...(anchoredEndSpace ? { anchoredEndSpace } : {})}

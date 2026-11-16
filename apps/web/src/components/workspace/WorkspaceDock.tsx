@@ -47,6 +47,7 @@ interface DockWindow {
   defaultPanel: WorkspacePanel;
   fixed: boolean;
   title: string;
+  icon: ReactNode;
   available: boolean;
   selected: boolean;
   activation: unknown;
@@ -253,6 +254,7 @@ function subscribeNothing() {
 export function WorkspaceWindow(props: {
   id: string;
   title: string;
+  icon?: ReactNode;
   panel: WorkspacePanel;
   children: ReactNode;
   enabled?: boolean;
@@ -293,6 +295,7 @@ function RegisteredWindow({
         defaultPanel: props.panel,
         fixed: props.fixed ?? false,
         title: props.title,
+        icon: props.icon,
         container,
         titleContainer,
         available: props.available ?? true,
@@ -308,6 +311,7 @@ function RegisteredWindow({
     store,
     props.id,
     props.title,
+    props.icon,
     props.available,
     props.selected,
     props.fixed,
@@ -655,11 +659,16 @@ function DockFrame({
           if (event.button === 1) store.close(id);
         }}
         className={cn(
-          "group flex h-6 max-w-48 shrink-0 items-center gap-2 rounded px-2 text-xs text-muted-foreground",
+          "workspace-window-label group flex h-6 max-w-48 shrink-0 items-center gap-2 rounded px-2 text-muted-foreground",
           groups[key].some((value) => value.active === id) && "bg-accent text-accent-foreground",
           index > 0 && tabs[index - 1]?.key !== key && "ml-2",
         )}
       >
+        {snapshot.windows[id]!.icon ? (
+          <span aria-hidden className="relative flex shrink-0 items-center">
+            {snapshot.windows[id]!.icon}
+          </span>
+        ) : null}
         <span className="truncate">{snapshot.windows[id]!.title}</span>
         {snapshot.windows[id]!.fixed ? null : (
           <span
@@ -773,7 +782,7 @@ function DockFrame({
             mainWindow.hasTitlebar ? (
               <PortalMount node={mainWindow.titleContainer} className="min-w-0" />
             ) : mainWindow.id === "route" && mainWindow.title === "T3 Code" ? null : (
-              <span className="truncate text-xs">{mainWindow.title}</span>
+              <span className="workspace-window-label truncate">{mainWindow.title}</span>
             )
           ) : null}
           {renderTabs(

@@ -701,8 +701,11 @@ describe("MessagesTimeline messages", () => {
       />,
     );
     await vi.waitFor(() => {
-      const row = screen.container.querySelector('[data-timeline-row-id="entry-b-user-4"]');
-      expect(row).not.toBeNull();
+      const state = base.listRef.current!.getState();
+      const index = state.indexByKey("entry-b-user-4");
+      // Saved offsets belong to list containers, before the message's top margin.
+      const row = index === undefined ? undefined : state.elementAtIndex(index);
+      expect(row).toBeDefined();
       expect(
         Math.abs(row!.getBoundingClientRect().top - viewport.getBoundingClientRect().top),
       ).toBeLessThanOrEqual(2);
@@ -2391,4 +2394,56 @@ it("keeps concurrent approvals actionable outside collapsed work and restores se
   await expect
     .element(screen.getByRole("button", { name: "Open the current tab", exact: true }))
     .toBeVisible();
+});
+
+it.each([false, true])("keeps restored live status rows separate (hidden=%s)", async (hidden) => {
+  setup();
+  const props = baseProps();
+  const runId = RunId.make("restored-live");
+  const entries = [message("Resume the interrupted run", {}, "resume-user")];
+  const ui = (shown: boolean, streamed: boolean) => (
+    <div
+      style={{ display: shown ? "flex" : "none", height: 600, width: 900, flexDirection: "column" }}
+    >
+      <MessagesTimeline
+        {...props}
+        isWorking
+        activeTurnStartedAt={CREATED_AT}
+        runningRunId={runId}
+        latestRun={{ runId, status: "running", startedAt: CREATED_AT, completedAt: null }}
+        timelineEntries={
+          streamed
+            ? [
+                ...entries,
+                message(
+                  "Restored commentary ".repeat(40),
+                  { role: "assistant", runId, streaming: true },
+                  "restored-commentary",
+                ),
+              ]
+            : entries
+        }
+      />
+    </div>
+  );
+  await using screen = await render(ui(!hidden, false));
+  await screen.rerender(ui(false, true));
+  await screen.rerender(ui(true, true));
+  await vi.waitFor(() => {
+    const rows = Array.from(
+      screen.container.querySelectorAll<HTMLElement>("[data-timeline-row-id]"),
+    ).filter((row) => row.checkVisibility());
+    expect(rows.length).toBeGreaterThan(1);
+    const bounds = rows
+      .map((row) => ({
+        kind: row.dataset.timelineRowKind,
+        top: row.getBoundingClientRect().top,
+        bottom: row.getBoundingClientRect().bottom,
+      }))
+      .sort((a, b) => a.top - b.top);
+    for (let i = 1; i < bounds.length; i++)
+      expect(bounds[i]!.top, JSON.stringify(bounds)).toBeGreaterThanOrEqual(
+        bounds[i - 1]!.bottom - 1,
+      );
+  });
 });
