@@ -3329,7 +3329,7 @@ export default function ChatView(props: ChatViewProps) {
 
   const chatHeader = embedded ? null : (
     <header
-      ref={threadPanelPopoverAnchorRef}
+      ref={workspaceDock ? undefined : threadPanelPopoverAnchorRef}
       data-chat-header={workspaceDock ? undefined : ""}
       className={cn(
         "relative [[data-panel-animations=true]_&]:motion-safe:transition-[padding-left] [[data-panel-animations=true]_&]:motion-safe:duration-(--panel-animation-duration) [[data-panel-animations=true]_&]:motion-safe:ease-out",
@@ -4091,6 +4091,8 @@ export default function ChatView(props: ChatViewProps) {
       {workspaceDock && activeThreadRef ? (
         <>
           <WorkspaceActions
+            windowId={`chat:${activeThreadKey}`}
+            anchorRef={threadPanelPopoverAnchorRef}
             onOpenBottom={toggleTerminalVisibilityStable}
             onOpenRight={
               rightPanelState.surfaces.length === 0 ? addFilesSurfaceStable : toggleRightPanelStable

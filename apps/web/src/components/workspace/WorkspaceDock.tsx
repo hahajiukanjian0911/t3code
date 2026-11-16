@@ -80,8 +80,16 @@ function createDockStore() {
   let body: HTMLDivElement | null = null;
   let parking: HTMLDivElement | null = null;
   let openers: Partial<Record<WorkspacePanel, () => void>> = {};
-  const actionsContainer = document.createElement("div");
-  actionsContainer.className = "flex h-full items-center";
+  const actionContainers = new Map<string, HTMLDivElement>();
+  const getActionsContainer = (id: string) => {
+    let node = actionContainers.get(id);
+    if (!node) {
+      node = document.createElement("div");
+      node.className = "flex items-center";
+      actionContainers.set(id, node);
+    }
+    return node;
+  };
   const park = (id: string) => {
     const container = snapshot.windows[id]?.container;
     if (container && parking) moveContainer(parking, container);
@@ -133,7 +141,7 @@ function createDockStore() {
     setParking: (node: HTMLDivElement | null) => {
       parking = node;
     },
-    actionsContainer,
+    getActionsContainer,
     setOpeners: (next: typeof openers) => {
       openers = next;
     },
@@ -190,6 +198,7 @@ function createDockStore() {
       publish({ ...snapshot, windows: { ...snapshot.windows, [window.id]: window }, layout: next });
     },
     unregister(id: string) {
+      actionContainers.delete(id);
       const { [id]: _removed, ...windows } = snapshot.windows;
       publish({ ...snapshot, windows });
     },
@@ -356,8 +365,21 @@ function WindowContents({
       onFocusCapture={activate}
       onPointerDownCapture={activate}
     >
+      {id === "route" && !visible ? null : (
+        <>
+          <WindowGrab store={store} id={id} title={title} />
+          <div
+            role="toolbar"
+            aria-label={title}
+            className="relative z-10 flex h-7 shrink-0 items-center justify-end gap-1 px-1 [-webkit-app-region:no-drag]"
+            data-workspace-window-controls=""
+          >
+            <PortalMount node={store.getActionsContainer(id)} className="flex items-center" />
+            <DockMenu store={store} id={id} />
+          </div>
+        </>
+      )}
       {children}
-      {id === "route" && !visible ? null : <WindowGrab store={store} id={id} title={title} />}
     </div>
   ) : null;
 }
@@ -384,10 +406,14 @@ function moveContainer(parent: HTMLElement, node: HTMLElement) {
   else parent.append(node);
 }
 export function WorkspaceActions({
+  windowId,
+  anchorRef,
   children,
   onOpenBottom,
   onOpenRight,
 }: {
+  windowId: string;
+  anchorRef?: { current: HTMLElement | null };
   children: ReactNode;
   onOpenBottom: () => void;
   onOpenRight: () => void;
@@ -398,7 +424,19 @@ export function WorkspaceActions({
     store?.setOpeners({ bottom: onOpenBottom, right: onOpenRight });
     return () => store?.setOpeners({});
   }, [store, onOpenBottom, onOpenRight]);
-  return store ? createPortal(children, store.actionsContainer) : null;
+  return store
+    ? createPortal(
+        <div
+          ref={(node) => {
+            if (anchorRef) anchorRef.current = node;
+          }}
+          className="flex items-center"
+        >
+          {children}
+        </div>,
+        store.getActionsContainer(windowId),
+      )
+    : null;
 }
 export function useWorkspaceWindowToggle() {
   const store = use(DockContext);
@@ -656,6 +694,22 @@ function DockFrame({
                   </span>
                 </MenuCheckboxItem>
               ))}
+              <MenuSeparator />
+              {Object.values(snapshot.windows)
+                .filter(
+                  (window) =>
+                    window.available &&
+                    (window.id !== "route" ||
+                      !Object.values(snapshot.windows).some(
+                        (value) => value.available && value.id.startsWith("chat:"),
+                      )),
+                )
+                .map((window) => (
+                  <MenuItem key={window.id} onClick={() => store.activate(window.id)}>
+                    {window.title}
+                  </MenuItem>
+                ))}
+              <MenuItem onClick={() => store.reset()}>Reset layout</MenuItem>
             </MenuPopup>
           </Menu>
           {leftTabs.length > 0 ? (
@@ -682,8 +736,6 @@ function DockFrame({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1 pl-3">
-          <PortalMount node={store.actionsContainer} className="flex h-full items-center" />
-          <DockMenu store={store} snapshot={snapshot} />
           {(
             [
               ["left", PanelLeftIcon, "sidebar.toggle"],
@@ -761,8 +813,12 @@ function DockFrame({
     </div>
   );
 }
-function DockMenu({ store, snapshot }: { store: DockStore; snapshot: DockSnapshot }) {
+function DockMenu({ store, id }: { store: DockStore; id: string }) {
   const panelLabels = workspacePanelLabel();
+  const split = (edge: "right" | "bottom") => {
+    const position = store.getSnapshot().layout.placements[id];
+    if (position) store.move(id, position, edge);
+  };
   return (
     <Menu>
       <MenuTrigger
@@ -771,57 +827,25 @@ function DockMenu({ store, snapshot }: { store: DockStore; snapshot: DockSnapsho
         <EllipsisIcon className="size-3.5" />
       </MenuTrigger>
       <MenuPopup>
-        {snapshot.focused ? (
-          <>
-            {workspacePanels.map((panel) => (
-              <MenuItem
-                key={panel}
-                onClick={() => store.move(snapshot.focused!, { panel, group: panel })}
-              >
-                Move to {panelLabels[panel]}
-              </MenuItem>
-            ))}
-            <MenuSeparator />
-            <MenuItem
-              onClick={() => {
-                const position = snapshot.layout.placements[snapshot.focused!];
-                if (position) store.move(snapshot.focused!, position, "right");
-              }}
-            >
-              <Columns2Icon />
-              <span>Split horizontally</span>
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                const position = snapshot.layout.placements[snapshot.focused!];
-                if (position) store.move(snapshot.focused!, position, "bottom");
-              }}
-            >
-              <Rows2Icon />
-              <span>Split vertically</span>
-            </MenuItem>
-            <MenuSeparator />
-          </>
-        ) : null}
-        {Object.values(snapshot.windows)
-          .filter(
-            (window) =>
-              window.available &&
-              (window.id !== "route" ||
-                !Object.values(snapshot.windows).some(
-                  (value) => value.available && value.id.startsWith("chat:"),
-                )),
-          )
-          .map((window) => (
-            <MenuItem key={window.id} onClick={() => store.activate(window.id)}>
-              {window.title}
-            </MenuItem>
-          ))}
-        <MenuItem onClick={() => store.reset()}>Reset layout</MenuItem>
+        {workspacePanels.map((panel) => (
+          <MenuItem key={panel} onClick={() => store.move(id, { panel, group: panel })}>
+            Move to {panelLabels[panel]}
+          </MenuItem>
+        ))}
+        <MenuSeparator />
+        <MenuItem onClick={() => split("right")}>
+          <Columns2Icon />
+          <span>Split horizontally</span>
+        </MenuItem>
+        <MenuItem onClick={() => split("bottom")}>
+          <Rows2Icon />
+          <span>Split vertically</span>
+        </MenuItem>
       </MenuPopup>
     </Menu>
   );
 }
+
 function PanelResize({ store, panel }: { store: DockStore; panel: "left" | "right" | "bottom" }) {
   const panelLabels = workspacePanelLabel();
   return (

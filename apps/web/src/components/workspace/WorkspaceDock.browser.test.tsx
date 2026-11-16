@@ -5,7 +5,7 @@ import { page, userEvent } from "vite-plus/test/browser";
 import { act, render } from "../../../test/render";
 import { BrowserSurfaceSlot } from "../../browser/BrowserSurfaceSlot";
 import { useBrowserSurfaceStore } from "../../browser/browserSurfaceStore";
-import { WorkspaceRoot, WorkspaceWindow } from "./WorkspaceDock";
+import { WorkspaceActions, WorkspaceRoot, WorkspaceWindow } from "./WorkspaceDock";
 
 function isolatedLayout() {
   const key = "t3code:workspace-layout:v1",
@@ -38,6 +38,9 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
         <WorkspaceWindow id="chat:test" title="Conversation" panel="main" selected>
           <Content mount={mount} />
         </WorkspaceWindow>
+        <WorkspaceActions windowId="chat:test" onOpenBottom={() => {}} onOpenRight={() => {}}>
+          <button>Conversation details</button>
+        </WorkspaceActions>
         <WorkspaceWindow id="file" title="README" panel="right">
           <p>File content</p>
         </WorkspaceWindow>
@@ -49,10 +52,31 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   const frame = screen.container.querySelector("iframe")!;
   await vi.waitFor(() => expect(frame.contentDocument?.body.textContent).toBe("ready"));
   const frameDocument = frame.contentDocument;
+  await page.screenshot({
+    path: "/Users/hahajiukanjian/Development/tools/t3code/outputs/workspace-window-controls/overview.png",
+  });
+  const chatControls = screen
+    .getByRole("button", { name: "Conversation details" })
+    .element()
+    .closest("[data-workspace-window-controls]")!;
+  expect(
+    chatControls.closest("[data-workspace-window]")?.getAttribute("data-workspace-window"),
+  ).toBe("chat:test");
+  expect(
+    screen.container.querySelector("[data-workspace-titlebar] [data-workspace-window-controls]"),
+  ).toBeNull();
   await userEvent.fill(screen.getByRole("textbox", { name: "draft" }), "unsent draft");
   expect(screen.container.querySelectorAll('[role="tab"]')).toHaveLength(0);
   await userEvent.click(screen.getByRole("textbox", { name: "draft" }));
-  await userEvent.click(screen.getByRole("button", { name: "Window actions" }));
+  await userEvent.click(screen.getByText("File content", { exact: true }));
+  await userEvent.click(
+    page
+      .elementLocator(input.closest("[data-workspace-window]")!)
+      .getByRole("button", { name: "Window actions" }),
+  );
+  await page.screenshot({
+    path: "/Users/hahajiukanjian/Development/tools/t3code/outputs/workspace-window-controls/menu.png",
+  });
   await userEvent.click(page.getByRole("menuitem", { name: "Move to Right panel" }));
   await expect
     .element(screen.getByRole("tab", { name: "Conversation", exact: true }))
@@ -62,10 +86,17 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   );
   expect(screen.container.querySelectorAll('[data-workspace-panel] [role="tab"]')).toHaveLength(0);
   expect(input).toBe(screen.getByRole("textbox", { name: "draft" }).element());
+  expect(chatControls.closest("[data-workspace-window]")).toBe(
+    input.closest("[data-workspace-window]"),
+  );
   expect(mount).toHaveBeenCalledTimes(1);
   expect(dispose).not.toHaveBeenCalled();
   expect(frame.contentDocument).toBe(frameDocument);
-  await userEvent.click(screen.getByRole("button", { name: "Window actions" }));
+  await userEvent.click(
+    page
+      .elementLocator(input.closest("[data-workspace-window]")!)
+      .getByRole("button", { name: "Window actions" }),
+  );
   await userEvent.click(page.getByRole("menuitem", { name: "Split vertically" }));
   await expect.element(screen.getByText("File content", { exact: true })).toBeVisible();
   expect(
@@ -85,7 +116,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   expect(
     screen.container.querySelectorAll("[data-workspace-titlebar] button[aria-pressed]"),
   ).toHaveLength(2);
-  await userEvent.click(screen.getByRole("button", { name: "Window actions" }));
+  await userEvent.click(screen.getByRole("button", { name: "T3 Code" }));
   await userEvent.click(page.getByRole("menuitem", { name: "Reset layout" }));
   await vi.waitFor(() =>
     expect(input.closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel")).toBe(
