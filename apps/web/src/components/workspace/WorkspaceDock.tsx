@@ -761,7 +761,7 @@ function DockFrame({
       data-workspace-dock=""
     >
       <header
-        className="drag-region relative grid h-[30px] min-h-[30px] shrink-0 items-center gap-2 border-b border-border/40 bg-(--workspace-board) px-2 wco:pr-(--workspace-native-controls-inset)"
+        className="drag-region relative grid h-[30px] min-h-[30px] shrink-0 items-center gap-2 bg-(--workspace-board) px-2 wco:pr-(--workspace-native-controls-inset)"
         style={{
           gridTemplateColumns: `${left ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr)${right ? ` ${layout.sizes.right}px` : ""}`,
         }}
