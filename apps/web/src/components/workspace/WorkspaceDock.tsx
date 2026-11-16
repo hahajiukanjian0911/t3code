@@ -725,16 +725,24 @@ function DockFrame({
               <Tooltip key={key}>
                 <TooltipTrigger
                   render={
-                    <Button
-                      size="icon-xs"
-                      variant={panelVisible(key) ? "secondary" : "ghost-muted"}
+                    <button
+                      type="button"
+                      className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:bg-accent aria-pressed:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
                       aria-label={`Toggle ${panelLabels[key]}`}
                       aria-pressed={panelVisible(key)}
                       onClick={() => store.togglePanel(key)}
                     />
                   }
                 >
-                  <Icon className="size-3.5" />
+                  <Icon className="size-3.5" aria-hidden>
+                    <path
+                      d={key === "left" ? "m16 15-3-3 3-3" : "m8 9 3 3-3 3"}
+                      className={cn(
+                        "opacity-0 transition-[opacity,translate] duration-150 ease-(--ease-drawer) group-aria-pressed/panel-toggle:translate-x-0 group-aria-pressed/panel-toggle:opacity-100 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0",
+                        key === "left" ? "translate-x-1" : "-translate-x-1",
+                      )}
+                    />
+                  </Icon>
                 </TooltipTrigger>
                 <TooltipPopup>
                   {panelLabels[key]}
