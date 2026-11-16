@@ -71,12 +71,20 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   expect(
     screen.container.querySelectorAll('[data-workspace-panel="right"] [data-workspace-group]'),
   ).toHaveLength(2);
-  await userEvent.click(screen.getByRole("button", { name: "T3 Code" }));
-  await userEvent.click(page.getByRole("menuitemcheckbox", { name: "Right panel" }));
+  await userEvent.click(screen.getByRole("button", { name: "Toggle Right panel" }));
   expect(input.checkVisibility()).toBe(false);
+  await expect
+    .element(screen.getByRole("button", { name: "Toggle Right panel" }))
+    .toHaveAttribute("aria-pressed", "false");
   await userEvent.click(screen.getByRole("button", { name: "T3 Code" }));
   await userEvent.click(page.getByRole("menuitemcheckbox", { name: "Right panel" }));
   await expect.element(screen.getByRole("textbox", { name: "draft" })).toHaveValue("unsent draft");
+  await expect
+    .element(screen.getByRole("button", { name: "Toggle Right panel" }))
+    .toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.container.querySelectorAll("[data-workspace-titlebar] button[aria-pressed]"),
+  ).toHaveLength(2);
   await userEvent.click(screen.getByRole("button", { name: "Window actions" }));
   await userEvent.click(page.getByRole("menuitem", { name: "Reset layout" }));
   await vi.waitFor(() =>

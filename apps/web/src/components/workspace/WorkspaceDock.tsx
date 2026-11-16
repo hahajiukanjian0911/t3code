@@ -9,6 +9,9 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { useAtomValue } from "@effect/atom-react";
+import { primaryServerKeybindingsAtom } from "../../state/server";
+import { shortcutLabelForCommand } from "../../keybindings";
 import {
   Columns2Icon,
   EllipsisIcon,
@@ -456,6 +459,7 @@ function DockFrame({
   controls?: ReactNode;
 }) {
   const panelLabels = workspacePanelLabel();
+  const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { layout } = snapshot;
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync, react/exhaustive-effect-dependencies -- repositions native browser layers after docking changes that do not resize their content
@@ -680,6 +684,35 @@ function DockFrame({
         <div className="flex shrink-0 items-center gap-1 pl-3">
           <PortalMount node={store.actionsContainer} className="flex h-full items-center" />
           <DockMenu store={store} snapshot={snapshot} />
+          {(
+            [
+              ["left", PanelLeftIcon, "sidebar.toggle"],
+              ["right", PanelRightIcon, "rightPanel.toggle"],
+            ] as const
+          ).map(([key, Icon, command]) => {
+            const shortcut = shortcutLabelForCommand(keybindings, command);
+            return (
+              <Tooltip key={key}>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="icon-xs"
+                      variant={panelVisible(key) ? "secondary" : "ghost-muted"}
+                      aria-label={`Toggle ${panelLabels[key]}`}
+                      aria-pressed={panelVisible(key)}
+                      onClick={() => store.togglePanel(key)}
+                    />
+                  }
+                >
+                  <Icon className="size-3.5" />
+                </TooltipTrigger>
+                <TooltipPopup>
+                  {panelLabels[key]}
+                  {shortcut ? ` (${shortcut})` : ""}
+                </TooltipPopup>
+              </Tooltip>
+            );
+          })}
         </div>
       </header>
       {controls}
