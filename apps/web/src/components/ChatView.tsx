@@ -378,6 +378,7 @@ import { ChatTerminalDrawers } from "./chat/ChatTerminalDrawers";
 import {
   WorkspaceWindow,
   WorkspaceActions,
+  WorkspacePanelActions,
   useWorkspaceDockEnabled,
 } from "./workspace/WorkspaceDock";
 import { rightPanelSurfaceTitle } from "./RightPanelTabs";
@@ -3334,14 +3335,16 @@ export default function ChatView(props: ChatViewProps) {
       className={cn(
         "relative [[data-panel-animations=true]_&]:motion-safe:transition-[padding-left] [[data-panel-animations=true]_&]:motion-safe:duration-(--panel-animation-duration) [[data-panel-animations=true]_&]:motion-safe:ease-out",
         !workspaceDock && "bg-background",
-        isElectron
-          ? cn(
-              "drag-region flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center px-3 sm:px-5",
-              reserveTitleBarControlInset &&
-                !inlineRightPanelOwnsTitleBar &&
-                "wco:pr-(--workspace-native-controls-inset)",
-            )
-          : "flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center pl-(--workspace-gutter-start) pr-(--workspace-gutter-end)",
+        workspaceDock
+          ? "flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center"
+          : isElectron
+            ? cn(
+                "drag-region flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center px-3 sm:px-5",
+                reserveTitleBarControlInset &&
+                  !inlineRightPanelOwnsTitleBar &&
+                  "wco:pr-(--workspace-native-controls-inset)",
+              )
+            : "flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center pl-(--workspace-gutter-start) pr-(--workspace-gutter-end)",
         !workspaceDock && COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS,
       )}
     >
@@ -4090,6 +4093,7 @@ export default function ChatView(props: ChatViewProps) {
 
       {workspaceDock && activeThreadRef ? (
         <>
+          <WorkspacePanelActions>{rightPanelShell}</WorkspacePanelActions>
           <WorkspaceActions
             windowId={`chat:${activeThreadKey}`}
             anchorRef={threadPanelPopoverAnchorRef}
@@ -4098,7 +4102,6 @@ export default function ChatView(props: ChatViewProps) {
               rightPanelState.surfaces.length === 0 ? addFilesSurfaceStable : toggleRightPanelStable
             }
           >
-            {rightPanelShell}
             <PanelLayoutControls
               {...panelToggleControlProps}
               showTerminalControl={false}

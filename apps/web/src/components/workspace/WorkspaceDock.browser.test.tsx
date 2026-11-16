@@ -5,7 +5,12 @@ import { page, userEvent } from "vite-plus/test/browser";
 import { act, render } from "../../../test/render";
 import { BrowserSurfaceSlot } from "../../browser/BrowserSurfaceSlot";
 import { useBrowserSurfaceStore } from "../../browser/browserSurfaceStore";
-import { WorkspaceActions, WorkspaceRoot, WorkspaceWindow } from "./WorkspaceDock";
+import {
+  WorkspaceActions,
+  WorkspacePanelActions,
+  WorkspaceRoot,
+  WorkspaceWindow,
+} from "./WorkspaceDock";
 
 function isolatedLayout() {
   const key = "t3code:workspace-layout:v1",
@@ -63,7 +68,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
     screen.container.querySelector("[data-workspace-titlebar] [data-workspace-window-controls]"),
   ).toBeNull();
   await userEvent.fill(screen.getByRole("textbox", { name: "draft" }), "unsent draft");
-  expect(screen.container.querySelectorAll('[role="tab"]')).toHaveLength(0);
+  await expect.element(screen.getByRole("tab", { name: "README", exact: true })).toBeVisible();
   await userEvent.click(screen.getByRole("textbox", { name: "draft" }));
   await userEvent.click(screen.getByText("File content", { exact: true }));
   await userEvent.click(
@@ -98,6 +103,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   ).toHaveLength(2);
   await userEvent.click(screen.getByRole("button", { name: "Toggle Right panel" }));
   expect(input.checkVisibility()).toBe(false);
+  expect(screen.getByRole("tab", { name: "Conversation", exact: true }).all()).toHaveLength(0);
   await expect
     .element(screen.getByRole("button", { name: "Toggle Right panel" }))
     .toHaveAttribute("aria-pressed", "false");
@@ -229,6 +235,9 @@ it("restores a hidden panel without an initially selected resource reopening it"
         <WorkspaceWindow id="threads" title="Threads" panel="left" fixed>
           <p>Pinned threads</p>
         </WorkspaceWindow>
+        <WorkspacePanelActions>
+          <button>Add resource</button>
+        </WorkspacePanelActions>
         <WorkspaceWindow id="file" title="README" panel="right" selected>
           <p>Saved file</p>
         </WorkspaceWindow>
@@ -248,8 +257,10 @@ it("restores a hidden panel without an initially selected resource reopening it"
   await userEvent.click(bottomToggle);
   await expect.element(screen.getByText("Terminal content", { exact: true })).toBeVisible();
   await expect.element(bottomToggle).toHaveAttribute("aria-pressed", "true");
+  await expect.element(screen.getByRole("tab", { name: "Terminal", exact: true })).toBeVisible();
   await userEvent.click(bottomToggle);
   await expect.element(bottomToggle).toHaveAttribute("aria-pressed", "false");
+  expect(screen.getByRole("tab", { name: "Terminal", exact: true }).all()).toHaveLength(0);
   const sidebar = screen.getByText("Pinned threads").element().closest("[data-workspace-window]")!;
   expect(sidebar.closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel")).toBe(
     "left",
@@ -264,4 +275,11 @@ it("restores a hidden panel without an initially selected resource reopening it"
     .toHaveAttribute("aria-pressed", "false");
   await userEvent.click(screen.getByRole("button", { name: "Toggle Right panel" }));
   await expect.element(screen.getByText("Saved file", { exact: true })).toBeVisible();
+  expect(
+    screen
+      .getByRole("button", { name: "Add resource" })
+      .element()
+      .closest("[data-workspace-panel]")
+      ?.getAttribute("data-workspace-panel"),
+  ).toBe("right");
 });

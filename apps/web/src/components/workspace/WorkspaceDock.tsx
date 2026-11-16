@@ -414,6 +414,11 @@ function moveContainer(parent: HTMLElement, node: HTMLElement) {
     parent.moveBefore(node, null);
   else parent.append(node);
 }
+export function WorkspacePanelActions({ children }: { children: ReactNode }) {
+  const store = use(DockContext);
+  return store ? createPortal(children, store.getActionsContainer("panel:right")) : children;
+}
+
 export function WorkspaceActions({
   windowId,
   anchorRef,
@@ -604,6 +609,14 @@ function DockFrame({
             </div>
           ))}
         </div>
+        {key === "right" ? (
+          <div
+            data-workspace-panel-actions="right"
+            className="absolute top-1 right-8 z-40 rounded-md bg-background/95 opacity-0 hover:opacity-100 focus-within:opacity-100 [&:has([data-popup-open])]:opacity-100"
+          >
+            <PortalMount node={store.getActionsContainer("panel:right")} />
+          </div>
+        ) : null}
         {key === "left" || key === "right" || key === "bottom" ? (
           <PanelResize store={store} panel={key} />
         ) : null}
@@ -612,7 +625,8 @@ function DockFrame({
   };
   const headerWindows = workspacePanels.flatMap((key) => {
     const members = groups[key].flatMap((group) => group.windows);
-    if (!panelVisible(key) || members.length < 2) return [];
+    if (!panelVisible(key) || (members.length < 2 && key !== "right" && key !== "bottom"))
+      return [];
     return members.map((id) => ({ id, group: layout.placements[id]!.group, key }));
   });
   const renderTabs = (tabs: typeof headerWindows) =>
@@ -729,9 +743,9 @@ function DockFrame({
       data-workspace-dock=""
     >
       <header
-        className="drag-region grid h-[30px] min-h-[30px] shrink-0 items-center border-b border-border/40 bg-(--workspace-board) pr-2 wco:pr-(--workspace-native-controls-inset)"
+        className="drag-region relative grid h-[30px] min-h-[30px] shrink-0 items-center gap-2 border-b border-border/40 bg-(--workspace-board) px-2 wco:pr-(--workspace-native-controls-inset)"
         style={{
-          gridTemplateColumns: `${left ? `calc(${layout.sizes.left}px + var(--spacing) * 4)` : "max-content"} minmax(0,1fr) auto`,
+          gridTemplateColumns: `${left ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr)${right ? ` ${layout.sizes.right}px` : ""}`,
         }}
         data-workspace-titlebar=""
       >
@@ -747,23 +761,34 @@ function DockFrame({
           ) : null}
         </div>
         <div
-          className="flex h-full min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]"
+          className={cn(
+            "flex h-full min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]",
+            !right && "pr-16",
+          )}
           data-workspace-titlebar-content=""
         >
           {renderTabs(headerWindows.filter((window) => window.key === "main"))}
 
           {mainWindow ? (
             mainWindow.hasTitlebar ? (
-              <PortalMount node={mainWindow.titleContainer} className="min-w-0 flex-1" />
+              <PortalMount node={mainWindow.titleContainer} className="min-w-0" />
             ) : mainWindow.id === "route" && mainWindow.title === "T3 Code" ? null : (
-              <span className="truncate px-2 text-xs">{mainWindow.title}</span>
+              <span className="truncate text-xs">{mainWindow.title}</span>
             )
           ) : null}
           {renderTabs(
-            headerWindows.filter((window) => window.key !== "left" && window.key !== "main"),
+            headerWindows.filter((window) => window.key === "bottom" || window.key === "floating"),
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-1 pl-3">
+        {right ? (
+          <div
+            className="flex h-full min-w-0 items-center overflow-x-auto pr-16 [scrollbar-width:none]"
+            data-workspace-titlebar-right=""
+          >
+            {renderTabs(headerWindows.filter((window) => window.key === "right"))}
+          </div>
+        ) : null}
+        <div className="absolute right-2 top-0 flex h-full shrink-0 items-center gap-1 bg-(--workspace-board)">
           {renderPanelToggle("bottom")}
           {renderPanelToggle("right")}
         </div>
