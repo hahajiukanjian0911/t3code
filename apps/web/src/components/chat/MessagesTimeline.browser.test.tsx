@@ -1299,6 +1299,27 @@ describe("MessagesTimeline citations", () => {
     expect(onCite).not.toHaveBeenCalled();
   });
 
+  it("offers Cite for text an agent sent with send_to_user", async () => {
+    const text = "The draft the next question refers to";
+    await using screen = await renderTimeline(
+      [
+        {
+          id: "sent",
+          kind: "sent-message",
+          createdAt: CREATED_AT,
+          runId: RunId.make("run-sent"),
+          text,
+        },
+      ],
+      { onCiteAssistantText: () => true },
+    );
+    await expect.element(screen.getByText(text)).toHaveStyle({ pointerEvents: "auto" });
+    await userEvent.tripleClick(screen.getByText(text));
+    await userEvent.click(screen.getByText(text), { button: "right" });
+    await expect.element(page.getByRole("menuitem", { name: "Cite", exact: true })).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+  });
+
   it("lands a citation present at mount under StrictMode", async () => {
     await using _screen = await renderElement(
       <StrictMode>

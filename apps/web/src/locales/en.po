@@ -337,7 +337,6 @@ msgstr "Close (Esc)"
 
 #: src/components/AppSidebarLayout.tsx
 #: src/components/AppSidebarLayout.tsx
-#: src/components/AppSidebarLayout.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 msgid "Toggle main sidebar"
 msgstr "Toggle main sidebar"
@@ -1123,6 +1122,7 @@ msgstr "Confirm"
 #. 0: image.name
 #. 0: image.name
 #. 0: file.name
+#. 0: thumbnail.name
 #. 0: label
 #. 0: image.name
 #. 0: label
@@ -1133,6 +1133,7 @@ msgstr "Confirm"
 #: src/components/chat/ComposerAttachmentStrip.tsx
 #: src/components/chat/GuestMessageAttachments.tsx
 #: src/components/chat/GuestMessageAttachments.tsx
+#: src/components/chat/QueuedRunsControl.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
@@ -4436,11 +4437,6 @@ msgid "Show extracted text"
 msgstr "Show extracted text"
 
 #. 0: mediaLabel
-#: src/components/chat/ExpandedImageDialog.tsx
-msgid "Close {0} preview"
-msgstr "Close {0} preview"
-
-#. 0: mediaLabel
 #. 0: title
 #: src/components/chat/ExpandedImageDialog.tsx
 #: src/components/chat/HtmlRenderDialog.tsx
@@ -4721,6 +4717,7 @@ msgstr "Expand diagram"
 #: src/components/onboarding/WelcomePage.tsx
 #: src/components/pullRequest/PullRequestCodeTab.tsx
 #: src/components/pullRequest/PullRequestCodeTab.tsx
+#: src/components/pullRequest/PullRequestCodeTab.tsx
 #: src/components/pullRequest/PullRequestsPage.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/DeviceSourcesSettings.tsx
@@ -4868,7 +4865,6 @@ msgid "Open in {0}"
 msgstr "Open in {0}"
 
 #: src/components/chat/OpenInPicker.tsx
-#: src/components/chat/ThreadActivityBanners.tsx
 #: src/components/device/DevicePanel.tsx
 #: src/components/device/DevicePanel.tsx
 #: src/components/pullRequest/PullRequestReviewAnnotation.tsx
@@ -5100,7 +5096,6 @@ msgstr "Sent by T3 Code"
 
 #: src/components/ThreadContextChip.tsx
 #: src/components/ThreadNotificationCoordinator.tsx
-#: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/QueuedRunsControl.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
@@ -6008,18 +6003,6 @@ msgstr "Back to archive"
 msgid "Parent folder"
 msgstr "Parent folder"
 
-#. 0: archive.entries.length.toLocaleString(); 1: sizeBytes !== null ? ` · ${formatAttachmentSize(sizeBytes)}` \\: ""
-#: src/components/files/BinaryViewer.tsx
-msgid "{0} entries {1}"
-msgstr "{0} entries {1}"
-
-#. 0: table.name; 1: table.count.toLocaleString()
-#. 0: item.name; 1: item.count.toLocaleString()
-#: src/components/files/BinaryViewer.tsx
-#: src/components/files/BinaryViewer.tsx
-msgid "{0} ({1} rows)"
-msgstr "{0} ({1} rows)"
-
 #: src/components/files/BinaryViewer.tsx
 msgid "Table"
 msgstr "Table"
@@ -6031,11 +6014,6 @@ msgstr "Previous rows"
 #: src/components/files/BinaryViewer.tsx
 msgid "Next rows"
 msgstr "Next rows"
-
-#. 0: table.count.toLocaleString(); 1: rows?.columns.length ?? "…"; 2: sizeBytes !== null ? ` · ${formatAttachmentSize(sizeBytes)}` \\: ""
-#: src/components/files/BinaryViewer.tsx
-msgid "{0} rows · {1} columns {2}"
-msgstr "{0} rows · {1} columns {2}"
 
 #: src/components/files/BinaryViewer.tsx
 msgid "Read-only. Up to 50 columns and 1,024 characters per cell. Blob contents are omitted."
@@ -6366,11 +6344,6 @@ msgstr "This notebook is empty."
 #: src/components/files/NotebookPreview.tsx
 msgid "Show more cells ({0} remaining)"
 msgstr "Show more cells ({0} remaining)"
-
-#. 0: props.notebook.cells.length.toLocaleString(); 1: props.notebook.language; 2: props.sizeBytes !== undefined ? ` · ${props.sizeBytes === 0 ? "0 bytes" \\: formatAttachmentSize(props.sizeBytes)}` \\: ""
-#: src/components/files/NotebookPreview.tsx
-msgid "{0} cells · {1} {2}"
-msgstr "{0} cells · {1} {2}"
 
 #: src/components/files/NotebookPreview.tsx
 msgid "Saved outputs only. Code is never executed."
@@ -7864,11 +7837,13 @@ msgstr "Model"
 
 #: src/components/usage/UsagePage.tsx
 #: src/components/usage/UsagePage.tsx
+#: src/components/usage/UsageProviderChart.tsx
 msgid "Hour"
 msgstr "Hour"
 
 #: src/components/usage/UsagePage.tsx
 #: src/components/usage/UsagePage.tsx
+#: src/components/usage/UsageProviderChart.tsx
 msgid "Day"
 msgstr "Day"
 
@@ -8015,6 +7990,7 @@ msgstr "Blank cache rates use the input price. Enter 0 for free tokens. A mapped
 
 #: src/components/pullRequest/PullRequestChangeBreakdownStat.tsx
 #: src/components/usage/UsagePage.tsx
+#: src/components/usage/UsageProviderChart.tsx
 #: src/components/usage/UsageProviderChart.tsx
 msgid "Total"
 msgstr "Total"
@@ -10768,7 +10744,7 @@ msgstr "Failures"
 msgid "Slow Spans"
 msgstr "Slow Spans"
 
-#. 0: formatDuration(data.slowSpanThresholdMs)
+#. 0: formatDiagnosticsDuration(data.slowSpanThresholdMs)
 #: src/components/settings/DiagnosticsSettings.tsx
 msgid "Spans with a duration of {0} or longer."
 msgstr "Spans with a duration of {0} or longer."
@@ -10976,22 +10952,12 @@ msgid "{0} Check account"
 msgstr "{0} Check account"
 
 #: src/components/settings/EasDeviceHostEditor.tsx
-#: src/components/settings/EasDeviceHostEditor.tsx
-msgid "EAS project"
-msgstr "EAS project"
-
-#: src/components/settings/EasDeviceHostEditor.tsx
 msgid "From the thread's project"
 msgstr "From the thread's project"
 
 #: src/components/settings/EasDeviceHostEditor.tsx
 msgid "Sessions bill the project's Expo account. \"From the thread's project\" reads extra.eas.projectId from the project's app config."
 msgstr "Sessions bill the project's Expo account. \"From the thread's project\" reads extra.eas.projectId from the project's app config."
-
-#. 0: props.isNew ? null \\: " Saving restarts this host, which stops its running sessions."
-#: src/components/settings/EasDeviceHostEditor.tsx
-msgid "Expo allows sessions of up to 40 minutes on free accounts and 115 on paid ones, and ends one after the idle minutes without activity, so idle minutes must be smaller than session minutes. {0}"
-msgstr "Expo allows sessions of up to 40 minutes on free accounts and 115 on paid ones, and ends one after the idle minutes without activity, so idle minutes must be smaller than session minutes. {0}"
 
 #: src/components/settings/InterfaceLanguageSetting.tsx
 msgid "Choose the interface language for this client. Conversations and code stay unchanged."
@@ -12495,11 +12461,6 @@ msgstr "T3 system footprint"
 #: src/components/settings/ResourceTelemetryDiagnostics.tsx
 msgid "Live native counters for the server, providers, terminals, desktop processes, and the monitor itself."
 msgstr "Live native counters for the server, providers, terminals, desktop processes, and the monitor itself."
-
-#. 0: snapshot ? formatSampleInterval(snapshot.sampleIntervalMs) \\: "..."
-#: src/components/settings/ResourceTelemetryDiagnostics.tsx
-msgid "<0/> Sampling every {0}"
-msgstr "<0/> Sampling every {0}"
 
 #: src/components/settings/ResourceTelemetryDiagnostics.tsx
 msgid "Current CPU"
@@ -15438,11 +15399,6 @@ msgstr "This connection cannot read host files."
 msgid "No entries from this folder are available in the partial workspace index."
 msgstr "No entries from this folder are available in the partial workspace index."
 
-#. 0: current + 1; 1: pdf.numPages
-#: src/components/files/PdfViewer.tsx
-msgid "{0} / {1} pages"
-msgstr "{0} / {1} pages"
-
 #: src/components/files/PdfViewer.tsx
 msgid "Searching…"
 msgstr "Searching…"
@@ -15723,6 +15679,7 @@ msgstr "Widen the state, involvement or project filter to see more."
 msgid "Pull requests from every project in this workspace appear here."
 msgstr "Pull requests from every project in this workspace appear here."
 
+#: src/components/pullRequest/PullRequestCodeTab.tsx
 #: src/components/pullRequest/PullRequestListEmptyState.tsx
 #: src/components/pullRequest/PullRequestReviewAnnotation.tsx
 msgid "Loading..."
@@ -16204,6 +16161,7 @@ msgstr "Merge this conversation back into its source"
 msgid "<0/> Disconnect agent session"
 msgstr "<0/> Disconnect agent session"
 
+#: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/TimelineWorkEntryRow.tsx
 msgid "Open subagent"
 msgstr "Open subagent"
@@ -16572,14 +16530,6 @@ msgstr "Checking diagnostics access…"
 #: src/components/settings/DiagnosticsSettings.tsx
 msgid "Some trace files could not be read, so diagnostics may be incomplete. {0}"
 msgstr "Some trace files could not be read, so diagnostics may be incomplete. {0}"
-
-#: src/components/settings/EasDeviceHostEditor.tsx
-msgid "Add EAS host"
-msgstr "Add EAS host"
-
-#: src/components/settings/EasDeviceHostEditor.tsx
-msgid "Edit EAS host"
-msgstr "Edit EAS host"
 
 #. 0: account.account.signedInAs; 1: CREDENTIAL_SOURCES[account.account.credentialSource]
 #: src/components/settings/EasDeviceHostEditor.tsx
@@ -18396,10 +18346,6 @@ msgstr "{0} Test connection"
 #: src/components/settings/DeviceSourcesSettings.tsx
 msgid "Test connection"
 msgstr "Test connection"
-
-#: src/components/settings/DeviceSourcesSettings.tsx
-msgid "EAS Simulator"
-msgstr "EAS Simulator"
 
 #: src/components/settings/DeviceSourcesSettings.tsx
 msgid "Simlock pool (alpha)"
@@ -21284,10 +21230,6 @@ msgstr "Window actions"
 msgid "Move to {0}"
 msgstr "Move to {0}"
 
-#: src/components/workspace/WorkspaceDock.tsx
-msgid "Reset layout"
-msgstr "Reset layout"
-
 #. 0: panelLabels[panel]
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Resize {0}"
@@ -21309,3 +21251,63 @@ msgstr "Split horizontally"
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Split vertically"
 msgstr "Split vertically"
+
+#. 0: current + 1; 1: pdf.numPages; 2: pdf.numPages === 1 ? "" \\: "s"
+#: src/components/files/PdfViewer.tsx
+msgid "{0} / {1} page{2}"
+msgstr "{0} / {1} page{2}"
+
+#. 0: mediaLabel
+#: src/components/chat/ExpandedImageDialog.tsx
+msgid "Back, close {0} preview"
+msgstr "Back, close {0} preview"
+
+#: src/components/chat/ExpandedImageDialog.tsx
+msgid "<0/> Back"
+msgstr "<0/> Back"
+
+#: src/components/chat/ThreadActivityBanners.tsx
+msgid "Goal objective"
+msgstr "Goal objective"
+
+#: src/components/pullRequest/PullRequestCodeTab.tsx
+msgid "Couldn't load this diff."
+msgstr "Couldn't load this diff."
+
+#: src/components/pullRequest/PullRequestCodeTab.tsx
+msgid "No text diff for this file."
+msgstr "No text diff for this file."
+
+#: src/components/pullRequest/PullRequestCodeTab.tsx
+msgid "Diff too large to display."
+msgstr "Diff too large to display."
+
+#: src/components/pullRequest/PullRequestCodeTab.tsx
+msgid "Load diff"
+msgstr "Load diff"
+
+#: src/components/settings/DeviceSourcesSettings.tsx
+msgid "Expo Simulators"
+msgstr "Expo Simulators"
+
+#: src/components/settings/EasDeviceHostEditor.tsx
+msgid "Add Expo host"
+msgstr "Add Expo host"
+
+#: src/components/settings/EasDeviceHostEditor.tsx
+msgid "Edit Expo host"
+msgstr "Edit Expo host"
+
+#: src/components/settings/EasDeviceHostEditor.tsx
+#: src/components/settings/EasDeviceHostEditor.tsx
+msgid "Expo project"
+msgstr "Expo project"
+
+#. 0: props.isNew ? null \\: " Saving restarts this host and stops its running sessions."
+#: src/components/settings/EasDeviceHostEditor.tsx
+msgid "Expo Simulators needs a paid Expo account. A session runs for up to 115 minutes and stops early when it is idle for the idle minutes, so idle minutes must be less than session minutes. {0}"
+msgstr "Expo Simulators needs a paid Expo account. A session runs for up to 115 minutes and stops early when it is idle for the idle minutes, so idle minutes must be less than session minutes. {0}"
+
+#: src/components/settings/ResourceTelemetryDiagnostics.tsx
+msgid "Sampling every ..."
+msgstr "Sampling every ..."

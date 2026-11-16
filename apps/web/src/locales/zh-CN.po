@@ -337,7 +337,6 @@ msgstr "关闭 (Esc)"
 
 #: src/components/AppSidebarLayout.tsx
 #: src/components/AppSidebarLayout.tsx
-#: src/components/AppSidebarLayout.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 msgid "Toggle main sidebar"
 msgstr "切换主侧栏"
@@ -1123,6 +1122,7 @@ msgstr "确认"
 #. 0: image.name
 #. 0: image.name
 #. 0: file.name
+#. 0: thumbnail.name
 #. 0: label
 #. 0: image.name
 #. 0: label
@@ -1133,6 +1133,7 @@ msgstr "确认"
 #: src/components/chat/ComposerAttachmentStrip.tsx
 #: src/components/chat/GuestMessageAttachments.tsx
 #: src/components/chat/GuestMessageAttachments.tsx
+#: src/components/chat/QueuedRunsControl.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
@@ -4436,11 +4437,6 @@ msgid "Show extracted text"
 msgstr "显示提取的文本"
 
 #. 0: mediaLabel
-#: src/components/chat/ExpandedImageDialog.tsx
-msgid "Close {0} preview"
-msgstr "关闭{0}预览"
-
-#. 0: mediaLabel
 #. 0: title
 #: src/components/chat/ExpandedImageDialog.tsx
 #: src/components/chat/HtmlRenderDialog.tsx
@@ -4721,6 +4717,7 @@ msgstr "展开图表"
 #: src/components/onboarding/WelcomePage.tsx
 #: src/components/pullRequest/PullRequestCodeTab.tsx
 #: src/components/pullRequest/PullRequestCodeTab.tsx
+#: src/components/pullRequest/PullRequestCodeTab.tsx
 #: src/components/pullRequest/PullRequestsPage.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/DeviceSourcesSettings.tsx
@@ -4868,7 +4865,6 @@ msgid "Open in {0}"
 msgstr "在 {0} 中打开"
 
 #: src/components/chat/OpenInPicker.tsx
-#: src/components/chat/ThreadActivityBanners.tsx
 #: src/components/device/DevicePanel.tsx
 #: src/components/device/DevicePanel.tsx
 #: src/components/pullRequest/PullRequestReviewAnnotation.tsx
@@ -5100,7 +5096,6 @@ msgstr "由 T3 Code 发送"
 
 #: src/components/ThreadContextChip.tsx
 #: src/components/ThreadNotificationCoordinator.tsx
-#: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/QueuedRunsControl.tsx
 #: src/components/chat/TimelineUserMessageRow.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
@@ -6008,18 +6003,6 @@ msgstr "返回压缩包"
 msgid "Parent folder"
 msgstr "上级文件夹"
 
-#. 0: archive.entries.length.toLocaleString(); 1: sizeBytes !== null ? ` · ${formatAttachmentSize(sizeBytes)}` \\: ""
-#: src/components/files/BinaryViewer.tsx
-msgid "{0} entries {1}"
-msgstr "{0} 个条目 {1}"
-
-#. 0: table.name; 1: table.count.toLocaleString()
-#. 0: item.name; 1: item.count.toLocaleString()
-#: src/components/files/BinaryViewer.tsx
-#: src/components/files/BinaryViewer.tsx
-msgid "{0} ({1} rows)"
-msgstr "{0}（{1} 行）"
-
 #: src/components/files/BinaryViewer.tsx
 msgid "Table"
 msgstr "表"
@@ -6031,11 +6014,6 @@ msgstr "上一组行"
 #: src/components/files/BinaryViewer.tsx
 msgid "Next rows"
 msgstr "下一组行"
-
-#. 0: table.count.toLocaleString(); 1: rows?.columns.length ?? "…"; 2: sizeBytes !== null ? ` · ${formatAttachmentSize(sizeBytes)}` \\: ""
-#: src/components/files/BinaryViewer.tsx
-msgid "{0} rows · {1} columns {2}"
-msgstr "{0} 行 · {1} 列 {2}"
 
 #: src/components/files/BinaryViewer.tsx
 msgid "Read-only. Up to 50 columns and 1,024 characters per cell. Blob contents are omitted."
@@ -6366,11 +6344,6 @@ msgstr "此笔记本为空。"
 #: src/components/files/NotebookPreview.tsx
 msgid "Show more cells ({0} remaining)"
 msgstr "显示更多单元格（剩余 {0} 个）"
-
-#. 0: props.notebook.cells.length.toLocaleString(); 1: props.notebook.language; 2: props.sizeBytes !== undefined ? ` · ${props.sizeBytes === 0 ? "0 bytes" \\: formatAttachmentSize(props.sizeBytes)}` \\: ""
-#: src/components/files/NotebookPreview.tsx
-msgid "{0} cells · {1} {2}"
-msgstr "{0} 个单元格 · {1} {2}"
 
 #: src/components/files/NotebookPreview.tsx
 msgid "Saved outputs only. Code is never executed."
@@ -7864,11 +7837,13 @@ msgstr "模型"
 
 #: src/components/usage/UsagePage.tsx
 #: src/components/usage/UsagePage.tsx
+#: src/components/usage/UsageProviderChart.tsx
 msgid "Hour"
 msgstr "小时"
 
 #: src/components/usage/UsagePage.tsx
 #: src/components/usage/UsagePage.tsx
+#: src/components/usage/UsageProviderChart.tsx
 msgid "Day"
 msgstr "天"
 
@@ -8015,6 +7990,7 @@ msgstr "缓存费率留空时使用输入价格。免费 token 请填 0。映射
 
 #: src/components/pullRequest/PullRequestChangeBreakdownStat.tsx
 #: src/components/usage/UsagePage.tsx
+#: src/components/usage/UsageProviderChart.tsx
 #: src/components/usage/UsageProviderChart.tsx
 msgid "Total"
 msgstr "总计"
@@ -10768,7 +10744,7 @@ msgstr "失败"
 msgid "Slow Spans"
 msgstr "慢 Span"
 
-#. 0: formatDuration(data.slowSpanThresholdMs)
+#. 0: formatDiagnosticsDuration(data.slowSpanThresholdMs)
 #: src/components/settings/DiagnosticsSettings.tsx
 msgid "Spans with a duration of {0} or longer."
 msgstr "耗时达到 {0} 或更长的 Span。"
@@ -10976,22 +10952,12 @@ msgid "{0} Check account"
 msgstr "{0} 检查账号"
 
 #: src/components/settings/EasDeviceHostEditor.tsx
-#: src/components/settings/EasDeviceHostEditor.tsx
-msgid "EAS project"
-msgstr "EAS 项目"
-
-#: src/components/settings/EasDeviceHostEditor.tsx
 msgid "From the thread's project"
 msgstr "使用任务所属项目"
 
 #: src/components/settings/EasDeviceHostEditor.tsx
 msgid "Sessions bill the project's Expo account. \"From the thread's project\" reads extra.eas.projectId from the project's app config."
 msgstr "对话费用计入项目的 Expo 账户。“使用任务所属项目”会读取该项目应用配置中的 extra.eas.projectId。"
-
-#. 0: props.isNew ? null \\: " Saving restarts this host, which stops its running sessions."
-#: src/components/settings/EasDeviceHostEditor.tsx
-msgid "Expo allows sessions of up to 40 minutes on free accounts and 115 on paid ones, and ends one after the idle minutes without activity, so idle minutes must be smaller than session minutes. {0}"
-msgstr "Expo 免费账号最长会话为 40 分钟，付费账号为 115 分钟；闲置达到设定分钟数后会结束，因此闲置时长必须小于会话时长。{0}"
 
 #: src/components/settings/InterfaceLanguageSetting.tsx
 msgid "Choose the interface language for this client. Conversations and code stay unchanged."
@@ -12495,11 +12461,6 @@ msgstr "T3 系统资源占用"
 #: src/components/settings/ResourceTelemetryDiagnostics.tsx
 msgid "Live native counters for the server, providers, terminals, desktop processes, and the monitor itself."
 msgstr "实时显示服务器、服务提供方、终端、桌面进程及监控器自身的原生资源数据。"
-
-#. 0: snapshot ? formatSampleInterval(snapshot.sampleIntervalMs) \\: "..."
-#: src/components/settings/ResourceTelemetryDiagnostics.tsx
-msgid "<0/> Sampling every {0}"
-msgstr "<0/> 每 {0} 采样一次"
 
 #: src/components/settings/ResourceTelemetryDiagnostics.tsx
 msgid "Current CPU"
@@ -15438,11 +15399,6 @@ msgstr "当前连接无法读取主机文件。"
 msgid "No entries from this folder are available in the partial workspace index."
 msgstr "部分工作区索引中没有此文件夹的可用条目。"
 
-#. 0: current + 1; 1: pdf.numPages
-#: src/components/files/PdfViewer.tsx
-msgid "{0} / {1} pages"
-msgstr "{0}/{1} 页"
-
 #: src/components/files/PdfViewer.tsx
 msgid "Searching…"
 msgstr "正在搜索…"
@@ -15723,6 +15679,7 @@ msgstr "放宽状态、参与情况或项目筛选条件以查看更多结果。
 msgid "Pull requests from every project in this workspace appear here."
 msgstr "此工作区所有项目的拉取请求都会显示在这里。"
 
+#: src/components/pullRequest/PullRequestCodeTab.tsx
 #: src/components/pullRequest/PullRequestListEmptyState.tsx
 #: src/components/pullRequest/PullRequestReviewAnnotation.tsx
 msgid "Loading..."
@@ -16204,6 +16161,7 @@ msgstr "将此对话合并回来源"
 msgid "<0/> Disconnect agent session"
 msgstr "<0/> 断开 Agent 会话"
 
+#: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/TimelineWorkEntryRow.tsx
 msgid "Open subagent"
 msgstr "打开子 Agent"
@@ -16572,14 +16530,6 @@ msgstr "正在检查诊断访问权限…"
 #: src/components/settings/DiagnosticsSettings.tsx
 msgid "Some trace files could not be read, so diagnostics may be incomplete. {0}"
 msgstr "部分跟踪文件无法读取，诊断结果可能不完整。{0}"
-
-#: src/components/settings/EasDeviceHostEditor.tsx
-msgid "Add EAS host"
-msgstr "添加 EAS 主机"
-
-#: src/components/settings/EasDeviceHostEditor.tsx
-msgid "Edit EAS host"
-msgstr "编辑 EAS 主机"
 
 #. 0: account.account.signedInAs; 1: CREDENTIAL_SOURCES[account.account.credentialSource]
 #: src/components/settings/EasDeviceHostEditor.tsx
@@ -18396,10 +18346,6 @@ msgstr "{0} 测试连接"
 #: src/components/settings/DeviceSourcesSettings.tsx
 msgid "Test connection"
 msgstr "测试连接"
-
-#: src/components/settings/DeviceSourcesSettings.tsx
-msgid "EAS Simulator"
-msgstr "EAS 模拟器"
 
 #: src/components/settings/DeviceSourcesSettings.tsx
 msgid "Simlock pool (alpha)"
@@ -21284,10 +21230,6 @@ msgstr "窗口操作"
 msgid "Move to {0}"
 msgstr "移到{0}"
 
-#: src/components/workspace/WorkspaceDock.tsx
-msgid "Reset layout"
-msgstr "恢复默认布局"
-
 #. 0: panelLabels[panel]
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Resize {0}"
@@ -21309,3 +21251,63 @@ msgstr "左右分屏"
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Split vertically"
 msgstr "上下分屏"
+
+#. 0: current + 1; 1: pdf.numPages; 2: pdf.numPages === 1 ? "" \\: "s"
+#: src/components/files/PdfViewer.tsx
+msgid "{0} / {1} page{2}"
+msgstr "{0} / {1} 页{2}"
+
+#. 0: mediaLabel
+#: src/components/chat/ExpandedImageDialog.tsx
+msgid "Back, close {0} preview"
+msgstr "返回并关闭{0}预览"
+
+#: src/components/chat/ExpandedImageDialog.tsx
+msgid "<0/> Back"
+msgstr "<0/> 返回"
+
+#: src/components/chat/ThreadActivityBanners.tsx
+msgid "Goal objective"
+msgstr "目标内容"
+
+#: src/components/pullRequest/PullRequestCodeTab.tsx
+msgid "Couldn't load this diff."
+msgstr "无法加载此差异。"
+
+#: src/components/pullRequest/PullRequestCodeTab.tsx
+msgid "No text diff for this file."
+msgstr "此文件没有文本差异。"
+
+#: src/components/pullRequest/PullRequestCodeTab.tsx
+msgid "Diff too large to display."
+msgstr "差异过大，无法显示。"
+
+#: src/components/pullRequest/PullRequestCodeTab.tsx
+msgid "Load diff"
+msgstr "加载差异"
+
+#: src/components/settings/DeviceSourcesSettings.tsx
+msgid "Expo Simulators"
+msgstr "Expo 模拟器"
+
+#: src/components/settings/EasDeviceHostEditor.tsx
+msgid "Add Expo host"
+msgstr "添加 Expo 主机"
+
+#: src/components/settings/EasDeviceHostEditor.tsx
+msgid "Edit Expo host"
+msgstr "编辑 Expo 主机"
+
+#: src/components/settings/EasDeviceHostEditor.tsx
+#: src/components/settings/EasDeviceHostEditor.tsx
+msgid "Expo project"
+msgstr "Expo 项目"
+
+#. 0: props.isNew ? null \\: " Saving restarts this host and stops its running sessions."
+#: src/components/settings/EasDeviceHostEditor.tsx
+msgid "Expo Simulators needs a paid Expo account. A session runs for up to 115 minutes and stops early when it is idle for the idle minutes, so idle minutes must be less than session minutes. {0}"
+msgstr "Expo 模拟器需要付费 Expo 账号。每次会话最长运行 115 分钟，并会在达到设定的空闲时长后提前停止，因此空闲时长必须小于会话时长。{0}"
+
+#: src/components/settings/ResourceTelemetryDiagnostics.tsx
+msgid "Sampling every ..."
+msgstr "采样间隔……"
