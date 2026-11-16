@@ -569,7 +569,7 @@ function DockFrame({
             : undefined
         }
         className={cn(
-          "relative flex min-h-0 min-w-0 rounded-lg bg-background ring-1 ring-border/80",
+          "relative flex min-h-0 min-w-0 rounded-lg border border-border/80 bg-background",
           key === "floating" ? "overflow-hidden" : "overflow-visible",
           key === "floating" && "absolute z-40 max-h-full max-w-full resize shadow-2xl",
         )}
