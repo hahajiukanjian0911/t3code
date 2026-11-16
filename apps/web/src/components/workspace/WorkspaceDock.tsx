@@ -610,7 +610,7 @@ function DockFrame({
       data-workspace-dock=""
     >
       <header
-        className="drag-region grid h-[30px] min-h-[30px] shrink-0 items-center border-b border-border/40 pr-2 wco:pr-(--workspace-native-controls-inset)"
+        className="drag-region grid h-[30px] min-h-[30px] shrink-0 items-center border-b border-border/40 bg-background pr-2 wco:pr-(--workspace-native-controls-inset)"
         style={{
           gridTemplateColumns: `${left ? `calc(${layout.sizes.left}px + var(--spacing) * 4)` : "max-content"} minmax(0,1fr) auto`,
         }}
@@ -622,13 +622,13 @@ function DockFrame({
         >
           <span className="ml-8 shrink-0 text-xs font-medium">T3 Code</span>
           {leftTabs.length > 0 ? (
-            <div className="flex min-w-0 items-center gap-1 overflow-x-auto [-webkit-app-region:no-drag] [scrollbar-width:none]">
+            <div className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]">
               {renderTabs(leftTabs)}
             </div>
           ) : null}
         </div>
         <div
-          className="flex h-full min-w-0 items-center gap-1 overflow-x-auto [-webkit-app-region:no-drag] [scrollbar-width:none]"
+          className="flex h-full min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]"
           data-workspace-titlebar-content=""
         >
           {renderTabs(headerWindows.filter((window) => window.key === "main"))}
@@ -644,7 +644,7 @@ function DockFrame({
             headerWindows.filter((window) => window.key !== "left" && window.key !== "main"),
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-1 pl-3 [-webkit-app-region:no-drag]">
+        <div className="flex shrink-0 items-center gap-1 pl-3">
           <PortalMount node={store.actionsContainer} className="flex h-full items-center" />
           <DockMenu store={store} snapshot={snapshot} />
           {(
