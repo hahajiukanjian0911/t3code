@@ -15,7 +15,7 @@ import {
   PanelBottomIcon,
   PanelLeftIcon,
   PanelRightIcon,
-  PanelsTopLeftIcon,
+  ChevronDownIcon,
   Rows2Icon,
   XIcon,
 } from "lucide-react";
@@ -26,7 +26,14 @@ import { workspaceAreaProps } from "../../lib/workspaceFocus";
 import { cn } from "../../lib/utils";
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import { Button } from "../ui/button";
-import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "../ui/menu";
+import {
+  Menu,
+  MenuCheckboxItem,
+  MenuItem,
+  MenuPopup,
+  MenuSeparator,
+  MenuTrigger,
+} from "../ui/menu";
 import {
   createWorkspaceLayout,
   moveWorkspaceWindow,
@@ -493,7 +500,7 @@ function DockFrame({
             : undefined
         }
         className={cn(
-          "relative flex min-h-0 min-w-0 overflow-hidden rounded-lg bg-background ring-1 ring-border/80 focus-within:ring-ring/50",
+          "relative flex min-h-0 min-w-0 overflow-hidden rounded-lg bg-background ring-1 ring-border/80",
           layout.vertical[key] && "flex-col",
           key === "floating" && "absolute z-40 max-h-full max-w-full resize shadow-2xl",
         )}
@@ -620,7 +627,33 @@ function DockFrame({
           className="flex h-full min-w-0 items-center gap-3 overflow-hidden pr-3 pl-(--workspace-controls-left)"
           data-workspace-titlebar-leading=""
         >
-          <span className="shrink-0 text-xs font-medium">T3 Code</span>
+          <Menu>
+            <MenuTrigger render={<Button size="compact" variant="ghost-muted" />}>
+              T3 Code
+              <ChevronDownIcon className="size-3" />
+            </MenuTrigger>
+            <MenuPopup align="start">
+              {(
+                [
+                  ["left", PanelLeftIcon],
+                  ["bottom", PanelBottomIcon],
+                  ["right", PanelRightIcon],
+                ] as const
+              ).map(([key, Icon]) => (
+                <MenuCheckboxItem
+                  key={key}
+                  checked={panelVisible(key)}
+                  onCheckedChange={() => store.togglePanel(key)}
+                  closeOnClick
+                >
+                  <span className="flex items-center gap-2">
+                    <Icon className="size-4" />
+                    {panelLabels[key]}
+                  </span>
+                </MenuCheckboxItem>
+              ))}
+            </MenuPopup>
+          </Menu>
           {leftTabs.length > 0 ? (
             <div className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]">
               {renderTabs(leftTabs)}
@@ -647,26 +680,6 @@ function DockFrame({
         <div className="flex shrink-0 items-center gap-1 pl-3">
           <PortalMount node={store.actionsContainer} className="flex h-full items-center" />
           <DockMenu store={store} snapshot={snapshot} />
-          {(
-            [
-              ["left", PanelLeftIcon],
-              ["bottom", PanelBottomIcon],
-              ["right", PanelRightIcon],
-              ["floating", PanelsTopLeftIcon],
-            ] as const
-          ).map(([key, Icon]) => (
-            <Button
-              key={key}
-              size="icon-xs"
-              variant="ghost-muted"
-              aria-label={`Toggle ${panelLabels[key]}`}
-              aria-pressed={panelVisible(key)}
-              onClick={() => store.togglePanel(key)}
-              disabled={key === "floating" && groups.floating.length === 0}
-            >
-              <Icon className="size-3.5" />
-            </Button>
-          ))}
         </div>
       </header>
       {controls}
