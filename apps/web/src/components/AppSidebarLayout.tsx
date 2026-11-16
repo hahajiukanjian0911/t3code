@@ -536,6 +536,7 @@ function DockableSidebar(props: ComponentProps<typeof Sidebar>) {
   return (
     <WorkspaceWindow
       id="threads"
+      fixed
       title="Threads"
       panel="left"
       available={visible}

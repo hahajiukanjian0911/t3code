@@ -52,9 +52,6 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   const frame = screen.container.querySelector("iframe")!;
   await vi.waitFor(() => expect(frame.contentDocument?.body.textContent).toBe("ready"));
   const frameDocument = frame.contentDocument;
-  await page.screenshot({
-    path: "/Users/hahajiukanjian/Development/tools/t3code/outputs/workspace-window-controls/overview.png",
-  });
   const chatControls = screen
     .getByRole("button", { name: "Conversation details" })
     .element()
@@ -74,9 +71,6 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
       .elementLocator(input.closest("[data-workspace-window]")!)
       .getByRole("button", { name: "Window actions" }),
   );
-  await page.screenshot({
-    path: "/Users/hahajiukanjian/Development/tools/t3code/outputs/workspace-window-controls/menu.png",
-  });
   await userEvent.click(page.getByRole("menuitem", { name: "Move to Right panel" }));
   await expect
     .element(screen.getByRole("tab", { name: "Conversation", exact: true }))
@@ -107,8 +101,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   await expect
     .element(screen.getByRole("button", { name: "Toggle Right panel" }))
     .toHaveAttribute("aria-pressed", "false");
-  await userEvent.click(screen.getByRole("button", { name: "T3 Code" }));
-  await userEvent.click(page.getByRole("menuitemcheckbox", { name: "Right panel" }));
+  await userEvent.click(screen.getByRole("button", { name: "Toggle Right panel" }));
   await expect.element(screen.getByRole("textbox", { name: "draft" })).toHaveValue("unsent draft");
   await expect
     .element(screen.getByRole("button", { name: "Toggle Right panel" }))
@@ -116,8 +109,12 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   expect(
     screen.container.querySelectorAll("[data-workspace-titlebar] button[aria-pressed]"),
   ).toHaveLength(2);
-  await userEvent.click(screen.getByRole("button", { name: "T3 Code" }));
-  await userEvent.click(page.getByRole("menuitem", { name: "Reset layout" }));
+  await userEvent.click(
+    page
+      .elementLocator(input.closest("[data-workspace-window]")!)
+      .getByRole("button", { name: "Window actions" }),
+  );
+  await userEvent.click(page.getByRole("menuitem", { name: "Move to Main panel" }));
   await vi.waitFor(() =>
     expect(input.closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel")).toBe(
       "main",
@@ -214,7 +211,10 @@ it("restores a hidden panel without an initially selected resource reopening it"
   localStorage.setItem(
     "t3code:workspace-layout:v1",
     JSON.stringify({
-      placements: { file: { panel: "right", group: "right" } },
+      placements: {
+        file: { panel: "right", group: "right" },
+        threads: { panel: "floating", group: "floating" },
+      },
       hidden: { right: true },
       active: { right: "file" },
     }),
@@ -222,17 +222,27 @@ it("restores a hidden panel without an initially selected resource reopening it"
   await using screen = await render(
     <div className="h-screen w-screen">
       <WorkspaceRoot>
+        <WorkspaceWindow id="threads" title="Threads" panel="left" fixed>
+          <p>Pinned threads</p>
+        </WorkspaceWindow>
         <WorkspaceWindow id="file" title="README" panel="right" selected>
           <p>Saved file</p>
         </WorkspaceWindow>
       </WorkspaceRoot>
     </div>,
   );
-  await userEvent.click(screen.getByRole("button", { name: "T3 Code" }));
+  const sidebar = screen.getByText("Pinned threads").element().closest("[data-workspace-window]")!;
+  expect(sidebar.closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel")).toBe(
+    "left",
+  );
+  expect(sidebar.querySelector("[data-workspace-window-controls]")).toBeNull();
+  expect(sidebar.querySelector("button")).toBeNull();
+  expect(
+    screen.container.querySelector('[data-workspace-titlebar] [aria-haspopup="menu"]'),
+  ).toBeNull();
   await expect
-    .element(page.getByRole("menuitemcheckbox", { name: "Right panel" }))
-    .toHaveAttribute("aria-checked", "false");
-  expect(page.getByRole("menuitemcheckbox").all()).toHaveLength(3);
-  await userEvent.click(page.getByRole("menuitemcheckbox", { name: "Right panel" }));
+    .element(screen.getByRole("button", { name: "Toggle Right panel" }))
+    .toHaveAttribute("aria-pressed", "false");
+  await userEvent.click(screen.getByRole("button", { name: "Toggle Right panel" }));
   await expect.element(screen.getByText("Saved file", { exact: true })).toBeVisible();
 });

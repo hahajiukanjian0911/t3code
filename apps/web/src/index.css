@@ -2642,3 +2642,11 @@ code {
 .messages-timeline-scroll:focus-visible {
   outline: none;
 }
+
+.messages-timeline-scroll {
+  scrollbar-color: transparent transparent;
+}
+
+.messages-timeline-scroll:is(:hover, :focus-visible) {
+  scrollbar-color: var(--app-scrollbar-thumb) transparent;
+}

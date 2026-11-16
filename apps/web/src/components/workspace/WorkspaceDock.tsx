@@ -15,10 +15,8 @@ import { shortcutLabelForCommand } from "../../keybindings";
 import {
   Columns2Icon,
   EllipsisIcon,
-  PanelBottomIcon,
   PanelLeftIcon,
   PanelRightIcon,
-  ChevronDownIcon,
   Rows2Icon,
   XIcon,
 } from "lucide-react";
@@ -29,14 +27,7 @@ import { workspaceAreaProps } from "../../lib/workspaceFocus";
 import { cn } from "../../lib/utils";
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import { Button } from "../ui/button";
-import {
-  Menu,
-  MenuCheckboxItem,
-  MenuItem,
-  MenuPopup,
-  MenuSeparator,
-  MenuTrigger,
-} from "../ui/menu";
+import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "../ui/menu";
 import {
   createWorkspaceLayout,
   moveWorkspaceWindow,
@@ -53,6 +44,7 @@ const storageKey = "t3code:workspace-layout:v1";
 interface DockWindow {
   id: string;
   defaultPanel: WorkspacePanel;
+  fixed: boolean;
   title: string;
   available: boolean;
   selected: boolean;
@@ -105,7 +97,19 @@ function createDockStore() {
     }
     for (const listener of listeners) listener();
   };
-  const updateLayout = (next: WorkspaceLayout, save = true) => {
+  const updateLayout = (input: WorkspaceLayout, save = true) => {
+    let next = input;
+    for (const window of Object.values(snapshot.windows)) {
+      const placement = next.placements[window.id];
+      if (
+        window.fixed &&
+        (placement?.panel !== window.defaultPanel || placement.group !== window.defaultPanel)
+      )
+        next = moveWorkspaceWindow(next, window.id, {
+          panel: window.defaultPanel,
+          group: window.defaultPanel,
+        });
+    }
     for (const id of Object.keys(snapshot.windows)) {
       const previous = snapshot.layout.placements[id],
         placement = next.placements[id];
@@ -162,15 +166,6 @@ function createDockStore() {
         activate(window.id);
       } else openers[panel]?.();
     },
-    reset() {
-      let next = createWorkspaceLayout();
-      for (const window of Object.values(snapshot.windows))
-        next = moveWorkspaceWindow(next, window.id, {
-          panel: window.defaultPanel,
-          group: window.defaultPanel,
-        });
-      updateLayout(next);
-    },
     subscribe: (listener: () => void) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -179,7 +174,8 @@ function createDockStore() {
       const previous = snapshot.windows[window.id];
       const restored = !previous && snapshot.layout.placements[window.id] !== undefined;
       let next = snapshot.layout;
-      if (!next.placements[window.id])
+      const placement = next.placements[window.id];
+      if (!placement || (window.fixed && (placement.panel !== panel || placement.group !== panel)))
         next = moveWorkspaceWindow(next, window.id, { panel, group: panel });
       if (
         window.available &&
@@ -212,10 +208,12 @@ function createDockStore() {
     },
     close(id: string) {
       const window = snapshot.windows[id];
+      if (window?.fixed) return;
       if (window?.onClose) window.onClose();
       else updateLayout({ ...snapshot.layout, dismissed: [...snapshot.layout.dismissed, id] });
     },
     move(id: string, target: WindowPlacement, edge?: WorkspaceEdge) {
+      if (snapshot.windows[id]?.fixed) return;
       updateLayout(moveWorkspaceWindow(snapshot.layout, id, target, edge));
       activate(id);
     },
@@ -259,6 +257,7 @@ export function WorkspaceWindow(props: {
   enabled?: boolean;
   available?: boolean;
   selected?: boolean;
+  fixed?: boolean;
   activation?: unknown;
   onActivate?: (() => void) | undefined;
   onClose?: (() => void) | undefined;
@@ -291,6 +290,7 @@ function RegisteredWindow({
       {
         id: props.id,
         defaultPanel: props.panel,
+        fixed: props.fixed ?? false,
         title: props.title,
         container,
         titleContainer,
@@ -309,6 +309,7 @@ function RegisteredWindow({
     props.title,
     props.available,
     props.selected,
+    props.fixed,
     props.activation,
     props.panel,
     hasTitlebar,
@@ -324,7 +325,12 @@ function RegisteredWindow({
     <>
       {createPortal(
         <WindowContext value={props.id}>
-          <WindowContents store={store} id={props.id} title={props.title}>
+          <WindowContents
+            store={store}
+            id={props.id}
+            title={props.title}
+            fixed={props.fixed ?? false}
+          >
             {props.children}
           </WindowContents>
         </WindowContext>,
@@ -335,6 +341,7 @@ function RegisteredWindow({
   );
 }
 function WindowContents({
+  fixed,
   store,
   id,
   title,
@@ -343,6 +350,7 @@ function WindowContents({
   store: DockStore;
   id: string;
   title: string;
+  fixed: boolean;
   children: ReactNode;
 }) {
   const visible = useSyncExternalStore(store.subscribe, () =>
@@ -365,13 +373,13 @@ function WindowContents({
       onFocusCapture={activate}
       onPointerDownCapture={activate}
     >
-      {id === "route" && !visible ? null : (
+      {fixed || (id === "route" && !visible) ? null : (
         <>
           <WindowGrab store={store} id={id} title={title} />
           <div
             role="toolbar"
             aria-label={title}
-            className="relative z-10 flex h-7 shrink-0 items-center justify-end gap-1 px-1 [-webkit-app-region:no-drag]"
+            className="absolute top-1 right-1 z-30 flex items-center gap-1 rounded-md bg-background/95 opacity-0 hover:opacity-100 focus-within:opacity-100 [&:has([data-popup-open])]:opacity-100 [-webkit-app-region:no-drag]"
             data-workspace-window-controls=""
           >
             <PortalMount node={store.getActionsContainer(id)} className="flex items-center" />
@@ -615,7 +623,7 @@ function DockFrame({
           layout.active[group] === id || groups[key].some((value) => value.active === id)
         }
         aria-label={snapshot.windows[id]!.title}
-        draggable
+        draggable={!snapshot.windows[id]!.fixed}
         onDragStart={(event) => event.dataTransfer.setData("application/x-t3-window", id)}
         onDragOver={(event) => {
           if (event.dataTransfer.types.includes("application/x-t3-window")) event.preventDefault();
@@ -638,25 +646,27 @@ function DockFrame({
         )}
       >
         <span className="truncate">{snapshot.windows[id]!.title}</span>
-        <span
-          role="button"
-          aria-label={`Close ${snapshot.windows[id]!.title}`}
-          tabIndex={0}
-          className="opacity-0 group-hover:opacity-100 focus:opacity-100"
-          onClick={(event) => {
-            event.stopPropagation();
-            store.close(id);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
+        {snapshot.windows[id]!.fixed ? null : (
+          <span
+            role="button"
+            aria-label={`Close ${snapshot.windows[id]!.title}`}
+            tabIndex={0}
+            className="opacity-0 group-hover:opacity-100 focus:opacity-100"
+            onClick={(event) => {
               event.stopPropagation();
               store.close(id);
-            }
-          }}
-        >
-          <XIcon className="size-3" />
-        </span>
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.stopPropagation();
+                store.close(id);
+              }
+            }}
+          >
+            <XIcon className="size-3" />
+          </span>
+        )}
       </button>
     ));
   const leftTabs = headerWindows.filter((window) => window.key === "left");
@@ -679,49 +689,7 @@ function DockFrame({
           className="flex h-full min-w-0 items-center gap-3 overflow-hidden pr-3 pl-(--workspace-controls-left)"
           data-workspace-titlebar-leading=""
         >
-          <Menu>
-            <MenuTrigger render={<Button size="compact" variant="ghost-muted" />}>
-              T3 Code
-              <ChevronDownIcon className="size-3" />
-            </MenuTrigger>
-            <MenuPopup align="start">
-              {(
-                [
-                  ["left", PanelLeftIcon],
-                  ["bottom", PanelBottomIcon],
-                  ["right", PanelRightIcon],
-                ] as const
-              ).map(([key, Icon]) => (
-                <MenuCheckboxItem
-                  key={key}
-                  checked={panelVisible(key)}
-                  onCheckedChange={() => store.togglePanel(key)}
-                  closeOnClick
-                >
-                  <span className="flex items-center gap-2">
-                    <Icon className="size-4" />
-                    {panelLabels[key]}
-                  </span>
-                </MenuCheckboxItem>
-              ))}
-              <MenuSeparator />
-              {Object.values(snapshot.windows)
-                .filter(
-                  (window) =>
-                    window.available &&
-                    (window.id !== "route" ||
-                      !Object.values(snapshot.windows).some(
-                        (value) => value.available && value.id.startsWith("chat:"),
-                      )),
-                )
-                .map((window) => (
-                  <MenuItem key={window.id} onClick={() => store.activate(window.id)}>
-                    {window.title}
-                  </MenuItem>
-                ))}
-              <MenuItem onClick={() => store.reset()}>Reset layout</MenuItem>
-            </MenuPopup>
-          </Menu>
+          <span className="shrink-0 text-xs font-medium">T3 Code</span>
           {leftTabs.length > 0 ? (
             <div className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]">
               {renderTabs(leftTabs)}
@@ -780,7 +748,7 @@ function DockFrame({
       {controls}
       <div
         ref={(node) => store.setBody(node)}
-        className="relative grid min-h-0 flex-1 gap-2 overflow-hidden p-2"
+        className="relative grid min-h-0 flex-1 gap-2 overflow-hidden px-2 pb-2"
         style={{
           gridTemplateColumns: [
             left ? `${layout.sizes.left}px` : null,
@@ -899,7 +867,7 @@ function PanelResize({ store, panel }: { store: DockStore; panel: "left" | "righ
       <span
         aria-hidden
         className={cn(
-          "pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/20 group-hover/resize:bg-foreground/40 group-active/resize:bg-foreground/40",
+          "pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/40 opacity-0 group-hover/resize:opacity-100 group-active/resize:opacity-100",
           panel === "bottom" ? "h-0.5 w-8" : "h-8 w-0.5",
         )}
       />
