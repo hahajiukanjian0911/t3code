@@ -21,6 +21,16 @@ Android uses **Material You Layout** by default unless you have turned it off in
 It changes shapes, spacing, and controls independently
 of the selected theme.
 
+## Fonts
+
+On web and desktop, **Settings → Appearance → Typography** separates interface text from
+conversation text. **Interface font** controls sidebars, search fields, buttons, and menus;
+**Conversation font size** controls user messages and agent replies. Sizes are in pixels.
+
+The prompt follows the conversation size by default. Turn on **Separate fonts** under
+**Advanced** to choose a different prompt font or size, or select **Follow conversation**
+to link its size again. Code and terminal fonts have their own settings.
+
 ## Composer context
 
 Git-backed projects show branch and worktree controls below the composer while you create a thread.

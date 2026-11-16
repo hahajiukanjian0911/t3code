@@ -102,6 +102,7 @@ function startClientAppearance(): void {
       previous.fontFamilyCode !== settings.fontFamilyCode ||
       previous.fontFamilyComposer !== settings.fontFamilyComposer ||
       previous.fontSizeInterface !== settings.fontSizeInterface ||
+      previous.fontSizeChat !== settings.fontSizeChat ||
       previous.fontSizePrompt !== settings.fontSizePrompt ||
       previous.fontSizeCode !== settings.fontSizeCode ||
       previous.fontSmoothing !== settings.fontSmoothing ||
@@ -112,6 +113,7 @@ function startClientAppearance(): void {
         code: settings.fontFamilyCode,
         composer: settings.fontFamilyComposer,
         sizeInterface: settings.fontSizeInterface,
+        sizeChat: settings.fontSizeChat,
         sizePrompt: settings.fontSizePrompt,
         sizeCode: settings.fontSizeCode,
         smoothing: settings.fontSmoothing,

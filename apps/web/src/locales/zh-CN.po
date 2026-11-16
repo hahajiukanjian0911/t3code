@@ -14441,9 +14441,8 @@ msgstr "选择对话详情卡片的显示内容，也可右键点击卡片。"
 msgid "Thread details: {0} of {1} on"
 msgstr "对话详情：已开启 {0}/{1} 项"
 
-#: src/components/settings/TypographySettings.tsx
-msgid "Everything outside code blocks and the terminal."
-msgstr "应用于代码块和终端之外的所有界面。"
+#~ msgid "Everything outside code blocks and the terminal."
+#~ msgstr "应用于代码块和终端之外的所有界面。"
 
 #: src/components/settings/TypographySettings.tsx
 msgid "Interface font size"
@@ -21311,3 +21310,22 @@ msgstr "Expo 模拟器需要付费 Expo 账号。每次会话最长运行 115 �
 #: src/components/settings/ResourceTelemetryDiagnostics.tsx
 msgid "Sampling every ..."
 msgstr "采样间隔……"
+
+#: src/components/settings/TypographySettings.tsx
+#: src/components/settings/TypographySettings.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Conversation font size"
+msgstr "对话字号"
+
+#: src/components/settings/TypographySettings.tsx
+msgid "Sidebars, search fields, buttons, menus, and settings."
+msgstr "侧栏、搜索框、按钮、菜单和设置。"
+
+#: src/components/settings/TypographySettings.tsx
+msgid "User messages, agent replies, and the prompt by default."
+msgstr "用于用户消息和 Agent 回复，输入框默认跟随此字号。"
+
+#: src/components/settings/TypographySettings.tsx
+#: src/components/settings/TypographySettings.tsx
+msgid "Follow conversation"
+msgstr "跟随对话"

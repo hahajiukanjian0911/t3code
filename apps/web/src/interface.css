@@ -328,7 +328,7 @@ p > [data-draft-project-trigger] {
 
 .chat-markdown {
   letter-spacing: -0.002em;
-  font-size: var(--text-sm) !important;
+  font-size: var(--font-size-chat, 16px) !important;
   line-height: 1.55 !important;
   & p {
     margin: 0px 0px 0.75em !important;
@@ -337,17 +337,17 @@ p > [data-draft-project-trigger] {
     }
   }
   & h1 {
-    font-size: 1.25rem !important;
+    font-size: 1.428571em !important;
     font-weight: 600 !important;
     margin: 1.1em 0px 0.5em !important;
   }
   & h2 {
-    font-size: 1.09375rem !important;
+    font-size: 1.25em !important;
     font-weight: 600 !important;
     margin: 1.1em 0px 0.45em !important;
   }
   & :is(h3, h4) {
-    font-size: 0.96875rem !important;
+    font-size: 1.107143em !important;
     font-weight: 600 !important;
     margin: 1em 0px 0.4em !important;
   }
@@ -396,7 +396,7 @@ p > [data-draft-project-trigger] {
     padding-left: 12px !important;
   }
   & table {
-    font-size: var(--text-sm);
+    font-size: inherit;
   }
   & hr {
     border-color: rgba(127, 127, 127, 0.18) !important;
@@ -424,7 +424,7 @@ p > [data-draft-project-trigger] {
 [data-user-message-bubble] {
   border-radius: 14px !important;
   padding: 10px 16px !important;
-  font-size: var(--text-sm) !important;
+  font-size: var(--font-size-chat, 16px) !important;
   line-height: 1.5 !important;
   box-shadow: none !important;
   border-width: medium !important;

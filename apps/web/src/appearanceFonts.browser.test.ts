@@ -6,12 +6,13 @@ import { applyAppearanceFontVariables } from "./appearanceFonts";
 function renderedFontSize(
   style: (probe: HTMLElement) => void,
   property: "fontSize" | "fontFamily" = "fontSize",
+  selector?: string,
 ): string {
   const probe = document.createElement("div");
   style(probe);
   document.body.append(probe);
   try {
-    return getComputedStyle(probe)[property];
+    return getComputedStyle(selector ? probe.querySelector(selector)! : probe)[property];
   } finally {
     probe.remove();
   }
@@ -34,25 +35,61 @@ const composerFontFamily = () =>
   }, "fontFamily");
 
 describe("applyAppearanceFontVariables", () => {
-  it("sizes the composer from the interface size until fonts are set separately", () => {
+  it("keeps conversation and prompt sizes independent from interface controls", () => {
     const root = document.documentElement;
     const style = root.getAttribute("style");
     const preferences = {
       sans: "serif",
       code: "",
       composer: "monospace",
-      sizeInterface: 20,
-      sizePrompt: 14,
+      sizeInterface: 14,
+      sizeChat: 18,
+      sizePrompt: null,
       sizeCode: 13,
       smoothing: true,
     };
     try {
       applyAppearanceFontVariables(root, { ...preferences, separate: false });
-      expect(composerFontSize()).toBe("17.5px");
+      expect(composerFontSize()).toBe("18px");
+      expect(
+        renderedFontSize((probe) => {
+          probe.className = "text-sm";
+        }),
+      ).toBe("14px");
+      expect(
+        renderedFontSize((probe) => {
+          probe.className = "chat-markdown";
+        }),
+      ).toBe("18px");
+      expect(
+        renderedFontSize((probe) => {
+          probe.dataset.userMessageBubble = "";
+        }),
+      ).toBe("18px");
       expect(composerFontFamily()).toContain("serif");
-      expect(touchComposerFontSize()).toBe("17.5px");
+      expect(
+        renderedFontSize(
+          (probe) => {
+            probe.className = "chat-markdown";
+            probe.innerHTML = "<table><tbody><tr><td>Message</td></tr></tbody></table>";
+          },
+          "fontSize",
+          "table",
+        ),
+      ).toBe("18px");
+      expect(touchComposerFontSize()).toBe("18px");
+
+      applyAppearanceFontVariables(root, { ...preferences, sizeInterface: 20, separate: false });
+      expect(composerFontSize()).toBe("18px");
+      expect(
+        renderedFontSize((probe) => {
+          probe.className = "chat-markdown";
+        }),
+      ).toBe("18px");
 
       applyAppearanceFontVariables(root, { ...preferences, separate: true });
+      expect(composerFontSize()).toBe("18px");
+      applyAppearanceFontVariables(root, { ...preferences, sizePrompt: 14, separate: true });
       expect(composerFontSize()).toBe("14px");
       expect(composerFontFamily()).toMatch(/^monospace/);
       // iOS zooms into inputs under 16px.
@@ -71,7 +108,8 @@ describe("applyAppearanceFontVariables", () => {
         sans,
         code: "",
         composer: "",
-        sizeInterface: 16,
+        sizeInterface: 14,
+        sizeChat: 14,
         sizePrompt: 14,
         sizeCode: 13,
         smoothing: true,

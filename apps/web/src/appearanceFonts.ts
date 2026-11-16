@@ -1,11 +1,14 @@
 import {
   DEFAULT_CODE_FONT_SIZE,
+  DEFAULT_CHAT_FONT_SIZE,
   DEFAULT_INTERFACE_FONT_SIZE,
   DEFAULT_PROMPT_FONT_SIZE,
   MAX_CODE_FONT_SIZE,
+  MAX_CHAT_FONT_SIZE,
   MAX_INTERFACE_FONT_SIZE,
   MAX_PROMPT_FONT_SIZE,
   MIN_CODE_FONT_SIZE,
+  MIN_CHAT_FONT_SIZE,
   MIN_INTERFACE_FONT_SIZE,
   MIN_PROMPT_FONT_SIZE,
 } from "@t3tools/contracts";
@@ -63,13 +66,14 @@ export interface AppearanceFontPreferences {
   readonly code: string;
   readonly composer: string;
   readonly sizeInterface: number;
-  readonly sizePrompt: number;
+  readonly sizeChat: number;
+  readonly sizePrompt: number | null;
   readonly sizeCode: number;
   readonly smoothing: boolean;
   readonly separate: boolean;
 }
 
-/** Interface size sets the root; prompt and code use pixels to avoid double scaling. */
+/** text-sm is 0.875rem; the selected interface size is its actual pixel size. */
 export function applyAppearanceFontVariables(
   root: HTMLElement,
   preferences: AppearanceFontPreferences,
@@ -98,10 +102,19 @@ export function applyAppearanceFontVariables(
     root.style.setProperty("--list-marker-sans", `${(markerWidth / PROBE_FONT_SIZE).toFixed(3)}em`);
   }
 
-  root.style.fontSize = `${clampInterfaceFontSize(preferences.sizeInterface)}px`;
+  root.style.fontSize = `${clampInterfaceFontSize(preferences.sizeInterface) / 0.875}px`;
+  const chat = clampFontSize(
+    preferences.sizeChat,
+    MIN_CHAT_FONT_SIZE,
+    MAX_CHAT_FONT_SIZE,
+    DEFAULT_CHAT_FONT_SIZE,
+  );
+  root.style.setProperty("--font-size-chat", `${chat}px`);
   root.style.setProperty(
     "--font-size-prompt",
-    preferences.separate ? `${clampPromptFontSize(preferences.sizePrompt)}px` : "var(--text-sm)",
+    preferences.separate && preferences.sizePrompt !== null
+      ? `${clampPromptFontSize(preferences.sizePrompt)}px`
+      : "var(--font-size-chat)",
   );
   const code = clampCodeFontSize(preferences.sizeCode);
   root.style.setProperty("--font-size-code", `${code}px`);

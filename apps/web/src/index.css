@@ -132,7 +132,8 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --chat-content-max-width: 46rem;
   --thread-details-panel-width: 17.5rem;
   /* The prompt on phones: iOS zooms into any input under 16px on focus. */
-  --font-size-prompt-touch: max(var(--font-size-prompt, 1rem), 16px);
+  --font-size-chat: 16px;
+  --font-size-prompt-touch: max(var(--font-size-prompt, var(--font-size-chat)), 16px);
   /* Horizontal gutter shared by the page header and the chat column, clear of
      the device's safe area. */
   --workspace-gutter: 0.75rem;
@@ -1904,21 +1905,21 @@ code {
 }
 
 :is(.chat-markdown, .composer-tiptap) h1 {
-  font-size: 1.25rem;
+  font-size: 1.428571em;
 }
 
 :is(.chat-markdown, .composer-tiptap) h2 {
-  font-size: 1.125rem;
+  font-size: 1.25em;
 }
 
 :is(.chat-markdown, .composer-tiptap) h3 {
-  font-size: 1rem;
+  font-size: 1.107143em;
 }
 
 :is(.chat-markdown, .composer-tiptap) h4,
 :is(.chat-markdown, .composer-tiptap) h5,
 :is(.chat-markdown, .composer-tiptap) h6 {
-  font-size: 0.875rem;
+  font-size: 1em;
 }
 
 :is(.chat-markdown, .composer-tiptap) h6 {
@@ -2266,8 +2267,7 @@ code {
   border-collapse: collapse;
   overflow-wrap: normal;
   word-break: normal;
-  /* One step under 15px prose. */
-  font-size: 0.875rem;
+  font-size: inherit;
 }
 
 /* Top-aligned so wrapped rows share a first line, and the outer columns sit

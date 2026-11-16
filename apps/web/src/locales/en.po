@@ -14441,9 +14441,8 @@ msgstr "Choose what the thread details card shows. You can also right-click the 
 msgid "Thread details: {0} of {1} on"
 msgstr "Thread details: {0} of {1} on"
 
-#: src/components/settings/TypographySettings.tsx
-msgid "Everything outside code blocks and the terminal."
-msgstr "Everything outside code blocks and the terminal."
+#~ msgid "Everything outside code blocks and the terminal."
+#~ msgstr "Everything outside code blocks and the terminal."
 
 #: src/components/settings/TypographySettings.tsx
 msgid "Interface font size"
@@ -21311,3 +21310,22 @@ msgstr "Expo Simulators needs a paid Expo account. A session runs for up to 115 
 #: src/components/settings/ResourceTelemetryDiagnostics.tsx
 msgid "Sampling every ..."
 msgstr "Sampling every ..."
+
+#: src/components/settings/TypographySettings.tsx
+#: src/components/settings/TypographySettings.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Conversation font size"
+msgstr "Conversation font size"
+
+#: src/components/settings/TypographySettings.tsx
+msgid "Sidebars, search fields, buttons, menus, and settings."
+msgstr "Sidebars, search fields, buttons, menus, and settings."
+
+#: src/components/settings/TypographySettings.tsx
+msgid "User messages, agent replies, and the prompt by default."
+msgstr "User messages, agent replies, and the prompt by default."
+
+#: src/components/settings/TypographySettings.tsx
+#: src/components/settings/TypographySettings.tsx
+msgid "Follow conversation"
+msgstr "Follow conversation"

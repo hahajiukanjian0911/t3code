@@ -43,6 +43,21 @@ const encodeServerSettings = Schema.encodeSync(ServerSettings);
 const encodeServerSettingsPatch = Schema.encodeSync(ServerSettingsPatch);
 const decodeClaudeSettings = Schema.decodeUnknownSync(ClaudeSettings);
 
+it("defaults new typography fields without losing existing independent font preferences", () => {
+  expect(decodeClientSettings({})).toMatchObject({
+    fontSizeInterface: 14,
+    fontSizeChat: 16,
+    fontSizePrompt: null,
+  });
+  const legacy = decodeClientSettings({ fontSizeInterface: 18, fontSizePrompt: 17 });
+  expect(legacy).toMatchObject({ fontSizeInterface: 18, fontSizeChat: 16, fontSizePrompt: 17 });
+  expect(decodeClientSettings(encodeClientSettings(legacy))).toEqual(legacy);
+  expect(decodeClientSettingsPatch({ fontSizeChat: 18, fontSizePrompt: null })).toEqual({
+    fontSizeChat: 18,
+    fontSizePrompt: null,
+  });
+});
+
 it("drops theme defaults from a client's settings patch", () => {
   expect(
     decodeClientServerSettingsPatch({

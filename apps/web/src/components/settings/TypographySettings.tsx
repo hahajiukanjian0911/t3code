@@ -3,10 +3,12 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   DEFAULT_UNIFIED_SETTINGS,
   MAX_CODE_FONT_SIZE,
+  MAX_CHAT_FONT_SIZE,
   MAX_INTERFACE_FONT_SIZE,
   MAX_PROMPT_FONT_SIZE,
   MAX_TERMINAL_FONT_SIZE,
   MIN_CODE_FONT_SIZE,
+  MIN_CHAT_FONT_SIZE,
   MIN_INTERFACE_FONT_SIZE,
   MIN_PROMPT_FONT_SIZE,
   MIN_TERMINAL_FONT_SIZE,
@@ -65,14 +67,14 @@ function useFontDefaultFamilies() {
   };
 }
 
-function InterfaceFontRow({ preview }: { preview?: ReactNode }) {
+function InterfaceFontRow() {
   const settings = useScopedSettings();
   const updateSettings = useUpdateScopedSettings();
   const defaults = useFontDefaultFamilies();
   return (
     <FontFamilySettingsRow
       {...searchableSetting("interface-font")}
-      description="Everything outside code blocks and the terminal."
+      description="Sidebars, search fields, buttons, menus, and settings."
       defaultFamily={defaults.sans}
       defaultValue={DEFAULT_UNIFIED_SETTINGS.fontFamilySans}
       value={settings.fontFamilySans}
@@ -91,8 +93,40 @@ function InterfaceFontRow({ preview }: { preview?: ReactNode }) {
         defaultValue: DEFAULT_UNIFIED_SETTINGS.fontSizeInterface,
         onChange: (fontSizeInterface) => updateSettings({ fontSizeInterface }),
       }}
-      {...(preview !== undefined ? { preview } : {})}
     />
+  );
+}
+
+function ConversationFontRow({ preview = false }: { preview?: boolean }) {
+  const settings = useScopedSettings();
+  const updateSettings = useUpdateScopedSettings();
+  return (
+    <SettingsRow
+      {...searchableSetting("chat-font-size")}
+      description="User messages, agent replies, and the prompt by default."
+      resetAction={
+        settings.fontSizeChat !== DEFAULT_UNIFIED_SETTINGS.fontSizeChat ? (
+          <SettingResetButton
+            label="Conversation font size"
+            onClick={() => updateSettings({ fontSizeChat: DEFAULT_UNIFIED_SETTINGS.fontSizeChat })}
+          />
+        ) : null
+      }
+      control={
+        <FontSizeControl
+          size={{
+            label: "Conversation font size",
+            min: MIN_CHAT_FONT_SIZE,
+            max: MAX_CHAT_FONT_SIZE,
+            value: settings.fontSizeChat,
+            defaultValue: DEFAULT_UNIFIED_SETTINGS.fontSizeChat,
+            onChange: (fontSizeChat) => updateSettings({ fontSizeChat }),
+          }}
+        />
+      }
+    >
+      {preview ? <PromptFontPreview /> : null}
+    </SettingsRow>
   );
 }
 
@@ -121,6 +155,7 @@ function PromptFontRow() {
         value: settings.fontSizePrompt,
         defaultValue: DEFAULT_UNIFIED_SETTINGS.fontSizePrompt,
         onChange: (fontSizePrompt) => updateSettings({ fontSizePrompt }),
+        onFollow: () => updateSettings({ fontSizePrompt: null }),
       }}
       preview={<PromptFontPreview />}
     />
@@ -268,6 +303,7 @@ function FontSettingsGroup() {
   return (
     <>
       <InterfaceFontRow />
+      <ConversationFontRow />
       <PromptFontRow />
       <CodeFontRow />
       <TerminalFontRow />
@@ -301,7 +337,8 @@ function SimpleFontRows() {
   const settings = useScopedSettings();
   return (
     <>
-      <InterfaceFontRow preview={<PromptFontPreview />} />
+      <InterfaceFontRow />
+      <ConversationFontRow preview />
       <CodeFontRow
         title="Monospace font"
         description="Code blocks, diffs, file previews, and the terminal."
@@ -380,14 +417,7 @@ function FontFamilySettingsRow({
   onValueChange: (value: string) => void;
   onReset: () => void;
   requireMonospace?: boolean;
-  size: {
-    label: string;
-    min: number;
-    max: number;
-    value: number;
-    defaultValue: number;
-    onChange: (v: number) => void;
-  };
+  size: FontSizeSettings;
 }) {
   const trimmed = value.trim();
   const [draft, setDraft] = useState(value);
@@ -504,29 +534,7 @@ function FontFamilySettingsRow({
   const control = (
     <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto @min-[32rem]/settings-row:flex-nowrap">
       <div className="min-w-36 flex-1 sm:w-44 sm:flex-none">{familyControl}</div>
-      <Select
-        value={String(size.value)}
-        onValueChange={(next) => {
-          if (typeof next !== "string") return;
-          const parsed = Number(next);
-          if (Number.isInteger(parsed) && parsed >= size.min && parsed <= size.max) {
-            size.onChange(parsed);
-          }
-        }}
-      >
-        <SelectTrigger size="sm" className="w-22 shrink-0" aria-label={size.label}>
-          <SelectValue>{size.value} px</SelectValue>
-        </SelectTrigger>
-        <SelectPopup align="end" alignItemWithTrigger={false}>
-          {Array.from({ length: size.max - size.min + 1 }, (_, index) => size.min + index).map(
-            (px) => (
-              <SelectItem hideIndicator key={px} value={String(px)}>
-                {px} px
-              </SelectItem>
-            ),
-          )}
-        </SelectPopup>
-      </Select>
+      <FontSizeControl size={size} />
     </div>
   );
   return (
@@ -539,5 +547,57 @@ function FontFamilySettingsRow({
     >
       {preview}
     </SettingsRow>
+  );
+}
+
+interface FontSizeSettings {
+  label: string;
+  min: number;
+  max: number;
+  value: number | null;
+  defaultValue: number | null;
+  onChange: (value: number) => void;
+  onFollow?: () => void;
+}
+
+function FontSizeControl({ size }: { size: FontSizeSettings }) {
+  return (
+    <Select
+      value={size.value === null ? "follow" : String(size.value)}
+      onValueChange={(next) => {
+        if (next === "follow" && size.onFollow) {
+          size.onFollow();
+          return;
+        }
+        if (typeof next !== "string") return;
+        const parsed = Number(next);
+        if (Number.isInteger(parsed) && parsed >= size.min && parsed <= size.max)
+          size.onChange(parsed);
+      }}
+    >
+      <SelectTrigger
+        size="sm"
+        className={size.onFollow ? "w-44 shrink-0" : "w-22 shrink-0"}
+        aria-label={size.label}
+      >
+        <SelectValue>
+          {size.value === null ? "Follow conversation" : `${size.value} px`}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectPopup align="end" alignItemWithTrigger={false}>
+        {size.onFollow ? (
+          <SelectItem hideIndicator value="follow">
+            Follow conversation
+          </SelectItem>
+        ) : null}
+        {Array.from({ length: size.max - size.min + 1 }, (_, index) => size.min + index).map(
+          (px) => (
+            <SelectItem hideIndicator key={px} value={String(px)}>
+              {px} px
+            </SelectItem>
+          ),
+        )}
+      </SelectPopup>
+    </Select>
   );
 }
