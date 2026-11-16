@@ -3,12 +3,15 @@ import { describe, expect, it } from "vite-plus/test";
 import "~/index.css";
 import { applyAppearanceFontVariables } from "./appearanceFonts";
 
-function renderedFontSize(style: (probe: HTMLElement) => void): string {
+function renderedFontSize(
+  style: (probe: HTMLElement) => void,
+  property: "fontSize" | "fontFamily" = "fontSize",
+): string {
   const probe = document.createElement("div");
   style(probe);
   document.body.append(probe);
   try {
-    return getComputedStyle(probe).fontSize;
+    return getComputedStyle(probe)[property];
   } finally {
     probe.remove();
   }
@@ -17,7 +20,7 @@ function renderedFontSize(style: (probe: HTMLElement) => void): string {
 const composerFontSize = () =>
   renderedFontSize((probe) => {
     // The composer editor's own size class.
-    probe.className = "text-(length:--font-size-prompt,var(--text-sm))";
+    probe.className = "composer-tiptap text-(length:--font-size-prompt,var(--text-sm))";
   });
 
 const touchComposerFontSize = () =>
@@ -25,14 +28,19 @@ const touchComposerFontSize = () =>
     probe.style.fontSize = "var(--font-size-prompt-touch)";
   });
 
+const composerFontFamily = () =>
+  renderedFontSize((probe) => {
+    probe.className = "composer-tiptap font-(family-name:--font-composer,var(--font-sans))";
+  }, "fontFamily");
+
 describe("applyAppearanceFontVariables", () => {
   it("sizes the composer from the interface size until fonts are set separately", () => {
     const root = document.documentElement;
     const style = root.getAttribute("style");
     const preferences = {
-      sans: "",
+      sans: "serif",
       code: "",
-      composer: "",
+      composer: "monospace",
       sizeInterface: 20,
       sizePrompt: 14,
       sizeCode: 13,
@@ -41,10 +49,12 @@ describe("applyAppearanceFontVariables", () => {
     try {
       applyAppearanceFontVariables(root, { ...preferences, separate: false });
       expect(composerFontSize()).toBe("17.5px");
+      expect(composerFontFamily()).toContain("serif");
       expect(touchComposerFontSize()).toBe("17.5px");
 
       applyAppearanceFontVariables(root, { ...preferences, separate: true });
       expect(composerFontSize()).toBe("14px");
+      expect(composerFontFamily()).toMatch(/^monospace/);
       // iOS zooms into inputs under 16px.
       expect(touchComposerFontSize()).toBe("16px");
     } finally {

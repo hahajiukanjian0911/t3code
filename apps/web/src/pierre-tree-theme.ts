@@ -7,7 +7,7 @@ export const PIERRE_TREE_UNSAFE_CSS = `
     --trees-hover-bg-override: color-mix(in srgb, currentColor 7%, transparent);
     --trees-border-color-override: color-mix(in srgb, currentColor 14%, transparent);
     --trees-font-family-override: var(--font-sans);
-    --trees-font-size-override: 0.75rem;
+    --trees-font-size-override: var(--text-sm);
   }
   [data-truncate-content='visible'] { overflow: hidden; text-overflow: ellipsis; }
   [data-truncate-marker] { display: none; }

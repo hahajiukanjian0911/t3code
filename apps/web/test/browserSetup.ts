@@ -14,6 +14,8 @@ declare module "vite-plus/test/browser" {
 // that mount without it are covered too. Before each test, not after: a timed-out test keeps
 // running and can move the mouse after its own afterEach.
 beforeEach(async () => {
+  // Dock visibility persists across app mounts; each fixture starts with an untouched layout.
+  localStorage.removeItem("t3code:workspace-layout:v1");
   await applyInterfaceLocale("en");
   await commands.resetPointer();
 });
