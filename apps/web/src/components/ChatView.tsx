@@ -384,6 +384,7 @@ import {
   WorkspaceActions,
   WorkspacePanelActions,
   useWorkspaceDockEnabled,
+  useWorkspacePanel,
 } from "./workspace/WorkspaceDock";
 import { rightPanelSurfaceTitle, RightPanelSurfaceIcon } from "./RightPanelTabs";
 import type { RightPanelSurface } from "../rightPanelStore";
@@ -447,6 +448,20 @@ type ChatViewProps =
 const DismissedFallbackWindowSchema = Schema.NullOr(Schema.String);
 
 const ignoreComposerFocus = () => {};
+
+function RightPanelWorkspaceWindow({
+  surface,
+  environmentId,
+  ...props
+}: Parameters<typeof WorkspaceWindow>[0] & {
+  surface: RightPanelSurface;
+  environmentId: EnvironmentId;
+}) {
+  const sideChat = useQuietThreadShell(
+    surface.kind === "side-chat" ? scopeThreadRef(environmentId, surface.threadId) : null,
+  );
+  return <WorkspaceWindow {...props} title={sideChat?.title ?? props.title} />;
+}
 
 export default function ChatView(props: ChatViewProps) {
   const {
@@ -739,6 +754,7 @@ export default function ChatView(props: ChatViewProps) {
   const prefersPlanSidebarSheet = useMediaQuery(RIGHT_PANEL_INLINE_LAYOUT_MEDIA_QUERY);
   const isMobileViewport = useMediaQuery("max-sm");
   const workspaceDock = useWorkspaceDockEnabled() && !embedded;
+  const workspaceRightPanel = useWorkspacePanel("right");
   // Focusing the composer without a tap raises the on-screen keyboard on touch devices.
   const isCoarsePointer = useMediaQuery({ pointer: "coarse" });
   const [workspaceLayoutElement, setWorkspaceLayoutElement] = useState<HTMLDivElement | null>(null);
@@ -2729,7 +2745,7 @@ export default function ChatView(props: ChatViewProps) {
     terminalOpen: Boolean(terminalUiState.terminalOpen),
     previewFocus: isPreviewFocused(),
     previewOpen: previewPanelOpen,
-    rightPanelOpen,
+    rightPanelOpen: workspaceDock ? workspaceRightPanel?.visible === true : rightPanelOpen,
     editableFocus: isEditableFocused(eventTarget),
     modelPickerOpen: composerRef.current?.isModelPickerOpen() ?? false,
     composerFocus:
@@ -3390,7 +3406,7 @@ export default function ChatView(props: ChatViewProps) {
       widthStorageKey={`t3code:preview-panel-width:${activeThreadKey}`}
       sheetAnimationDurationMs={panelAnimationsActive ? panelAnimationDurationMs : 0}
       onCloseSheet={closePreviewPanelStable}
-      open={rightPanelOpen}
+      open={workspaceDock ? workspaceRightPanel?.visible === true : rightPanelOpen}
       keybindings={keybindings}
       getShortcutContext={getShortcutContextStable}
       maximized={rightPanelMaximized}
@@ -4111,7 +4127,9 @@ export default function ChatView(props: ChatViewProps) {
             />
           </WorkspaceActions>
           {rightPanelState.surfaces.map((surface) => (
-            <WorkspaceWindow
+            <RightPanelWorkspaceWindow
+              surface={surface}
+              environmentId={activeThreadRef.environmentId}
               key={surface.id}
               icon={
                 <RightPanelSurfaceIcon
@@ -4136,7 +4154,7 @@ export default function ChatView(props: ChatViewProps) {
               onClose={() => closeRightPanelSurfaceStable(surface)}
             >
               {renderRightPanelContent(surface)}
-            </WorkspaceWindow>
+            </RightPanelWorkspaceWindow>
           ))}
         </>
       ) : rightPanelPresent && activeThreadRef && !embedded ? (

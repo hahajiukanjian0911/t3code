@@ -12,8 +12,17 @@ vi.mock(import("../state/server"), async (original) => {
   ]);
   return { ...actual, primaryServerKeybindingsAtom: Atom.make(keybindings) };
 });
-// The thread list needs live environments; the shortcut lives in the shell around it.
-vi.mock(import("./Sidebar"), () => ({ default: (() => null) as never }));
+// The list needs live environments; keep its dock window to exercise the shell's shortcut.
+vi.mock(import("./Sidebar"), async () => {
+  const { WorkspaceWindow } = await import("./workspace/WorkspaceDock");
+  return {
+    default: (() => (
+      <WorkspaceWindow id="threads" title="Threads" panel="left" fixed>
+        <p>Threads</p>
+      </WorkspaceWindow>
+    )) as never,
+  };
+});
 
 import { AppSidebarLayout } from "./AppSidebarLayout";
 
@@ -29,14 +38,14 @@ describe("sidebar toggle shortcut", () => {
         <button type="button">Outside</button>
       </AppSidebarLayout>,
     );
-    const wrapper = screen.container.querySelector('[data-slot="sidebar-wrapper"]')!;
+    const toggle = screen.getByRole("button", { name: "Toggle Left panel", exact: true });
 
     await userEvent.click(screen.getByRole("textbox", { name: "Terminal input" }));
     await userEvent.keyboard("{Control>}b{/Control}");
-    expect(wrapper.getAttribute("data-sidebar-state")).toBe("expanded");
+    await expect.element(toggle).toHaveAttribute("aria-pressed", "true");
 
     await userEvent.click(screen.getByRole("button", { name: "Outside" }));
     await userEvent.keyboard("{Control>}b{/Control}");
-    await vi.waitFor(() => expect(wrapper.getAttribute("data-sidebar-state")).toBe("collapsed"));
+    await expect.element(toggle).toHaveAttribute("aria-pressed", "false");
   });
 });

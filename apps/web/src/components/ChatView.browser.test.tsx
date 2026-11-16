@@ -605,14 +605,22 @@ it("a shortcut conditioned on rightPanelOpen sees the thread's open right panel"
     router: false,
   });
   const composer = page.getByTestId("composer-editor");
-  const toggle = page.getByRole("button", { name: "Toggle right panel", exact: true });
+  await expect.element(composer).toBeVisible();
+  const toggle = page.getByRole("button", { name: "Toggle Right panel", exact: true });
   await expect.element(toggle).toHaveAttribute("aria-pressed", "false");
   await toggle.click();
-  await page.getByRole("button", { name: /^Files/ }).click();
+  await expect.element(page.getByRole("tab", { name: "Files", exact: true })).toBeVisible();
   await composer.click();
   await userEvent.keyboard("{Control>}t{/Control}");
   await expect.element(page.getByRole("menuitem", { name: /Files/ })).toBeVisible();
   await expect.element(toggle).toHaveAttribute("aria-pressed", "true");
+  await userEvent.keyboard("{Escape}");
+  await toggle.click();
+  await expect.element(toggle).toHaveAttribute("aria-pressed", "false");
+  await composer.click();
+  await userEvent.keyboard("{Control>}t{/Control}");
+  await expect.element(toggle).toHaveAttribute("aria-pressed", "true");
+  await expect.element(page.getByRole("menuitem", { name: /Files/ })).not.toBeInTheDocument();
 });
 
 it("selecting a side-chat tab focuses that side chat's composer", async () => {
@@ -649,7 +657,7 @@ it("selecting a side-chat tab focuses that side chat's composer", async () => {
   await userEvent.click(mainEditor);
   await userEvent.keyboard("main draft");
 
-  await userEvent.click(screen.getByRole("button", { name: otherSide.title, exact: true }));
+  await userEvent.click(screen.getByRole("tab", { name: otherSide.title, exact: true }));
   const otherEditor = screen.getByRole("textbox", {
     name: `Message ${otherSide.title}`,
     exact: true,
@@ -658,7 +666,7 @@ it("selecting a side-chat tab focuses that side chat's composer", async () => {
   await userEvent.keyboard("other draft");
   await expect.element(otherEditor).toHaveTextContent("other draft");
 
-  await userEvent.click(screen.getByRole("button", { name: side.title, exact: true }));
+  await userEvent.click(screen.getByRole("tab", { name: side.title, exact: true }));
   await expect.element(sideEditor).toHaveFocus();
   await expect.element(mainEditor).toHaveTextContent("main draft");
 });
