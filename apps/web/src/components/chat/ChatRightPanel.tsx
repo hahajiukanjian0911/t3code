@@ -31,6 +31,8 @@ export function ChatRightPanel(props: ChatRightPanelProps) {
     container: workspaceLayoutElement,
     widthStorageKey,
   });
+  if (props.workspaceToolbar)
+    return <RightPanelTabs {...tabs} mode="sheet" workspaceToolbar open />;
   if (!sheet) {
     return <RightPanelTabs {...tabs} mode="inline" maximized={maximized} inlineSize={inlineSize} />;
   }

@@ -1,3 +1,4 @@
+import { useWorkspaceDockEnabled } from "./workspace/WorkspaceDock";
 import { attachSidebarTree } from "../lib/sidebarTree";
 import {
   type ContextMenuItem,
@@ -904,6 +905,7 @@ function readRouteThreadKey(router: AnyRouter): string | null {
 }
 
 export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReveal }) {
+  const workspaceDock = useWorkspaceDockEnabled();
   const {
     projects,
     serverConfigs,
@@ -2972,6 +2974,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
     <SidebarFolderDrop>
       <SidebarChromeHeader isElectron={isElectron} />
       <SidebarContent
+        scrollFade={!workspaceDock}
         ref={sidebarContentRef}
         className="min-h-full"
         fixedHeader={

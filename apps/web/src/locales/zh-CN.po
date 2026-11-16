@@ -337,10 +337,12 @@ msgstr "关闭 (Esc)"
 
 #: src/components/AppSidebarLayout.tsx
 #: src/components/AppSidebarLayout.tsx
+#: src/components/AppSidebarLayout.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 msgid "Toggle main sidebar"
 msgstr "切换主侧栏"
 
+#: src/components/AppSidebarLayout.tsx
 #: src/components/AppSidebarLayout.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Threads"
@@ -1811,6 +1813,7 @@ msgstr "静音标签页"
 msgid "Browser"
 msgstr "浏览器"
 
+#: src/components/PersistentThreadTerminals.tsx
 #: src/components/RightPanelTabs.tsx
 #: src/components/RightPanelTabs.tsx
 #: src/components/ThreadTerminalDrawer.tsx
@@ -1874,6 +1877,7 @@ msgstr "使用浏览器配置文件打开"
 msgid "Open a surface"
 msgstr "打开面板"
 
+#: src/components/AppSidebarLayout.tsx
 #: src/components/RightPanelTabs.tsx
 #: src/components/pullRequest/PullRequestsColumn.tsx
 #: src/components/pullRequest/PullRequestsColumn.tsx
@@ -1890,9 +1894,11 @@ msgstr "空闲"
 #. 0: title
 #. 0: terminology.singular
 #. 0: terminology.singular
+#. 0: snapshot.windows[id]!.title
 #: src/components/RightPanelTabs.tsx
 #: src/components/pullRequest/PullRequestActionsMenu.tsx
 #: src/components/pullRequest/PullRequestActionsMenu.tsx
+#: src/components/workspace/WorkspaceDock.tsx
 msgid "Close {0}"
 msgstr "关闭 {0}"
 
@@ -2130,7 +2136,6 @@ msgstr "稍后提醒 ({0})"
 #: src/components/Sidebar.tsx
 #: src/components/settings/CustomModelEditor.tsx
 #: src/components/settings/CustomModelEditor.tsx
-#: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Custom…"
 msgstr "自定义…"
 
@@ -3342,6 +3347,7 @@ msgstr "恢复此设备的默认设置"
 msgid "Reconnect {0} to change its settings."
 msgstr "重新连接 {0} 后才能更改其设置。"
 
+#: src/components/AppSidebarLayout.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 #: src/i18n/staticUiLabels.ts
 #: src/routes/_chat.settings.tsx
@@ -5595,6 +5601,7 @@ msgstr "用户消息"
 msgid "Jump to message: {0}"
 msgstr "跳转到消息：{0}"
 
+#: src/components/AppSidebarLayout.tsx
 #: src/components/chat/TimelineAssistantRows.tsx
 #: src/components/chat/TimelineAssistantRows.tsx
 #: src/components/sidebar/UpdateEverythingDialog.tsx
@@ -7392,6 +7399,7 @@ msgstr "这会将拉取请求的代码放入新工作树，并运行项目的设
 msgid "T3 Code home"
 msgstr "T3 Code 首页"
 
+#: src/components/AppSidebarLayout.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 #: src/components/usage/UsagePage.tsx
 #: src/components/usage/UsagePage.tsx
@@ -7450,15 +7458,6 @@ msgstr "当前检出的是另一个分支。"
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Handed off from {0}"
 msgstr "由 {0} 交接"
-
-#: src/components/sidebar/SidebarThreadRow.tsx
-#: src/components/sidebar/SidebarThreadRow.tsx
-msgid "Snooze thread"
-msgstr "稍后提醒对话"
-
-#: src/components/sidebar/SidebarThreadRow.tsx
-msgid "<0/> Settle"
-msgstr "<0/> 归档处理"
 
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Goal"
@@ -21250,3 +21249,63 @@ msgstr "版本 {0} 已准备好，点击以重新启动并安装。"
 #: src/components/sidebar/SidebarUpdateReleaseNotes.tsx
 msgid "Update ready to install"
 msgstr "更新已准备好"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Left panel"
+msgstr "左面板"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Main panel"
+msgstr "主面板"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Right panel"
+msgstr "右面板"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Bottom panel"
+msgstr "下面板"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Floating panel"
+msgstr "浮动面板"
+
+#. 0: panelLabels[key]
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Toggle {0}"
+msgstr "切换{0}"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Window actions"
+msgstr "窗口操作"
+
+#. 0: panelLabels[panel]
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Move to {0}"
+msgstr "移到{0}"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Reset layout"
+msgstr "恢复默认布局"
+
+#. 0: panelLabels[panel]
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Resize {0}"
+msgstr "调整{0}尺寸"
+
+#. 0: title
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Drag {0}"
+msgstr "拖动 {0}"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Drag window; Option to float, Esc to cancel"
+msgstr "拖动窗口；Option 自由悬浮，Esc 取消"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Split horizontally"
+msgstr "左右分屏"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Split vertically"
+msgstr "上下分屏"

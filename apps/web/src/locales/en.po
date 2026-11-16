@@ -337,10 +337,12 @@ msgstr "Close (Esc)"
 
 #: src/components/AppSidebarLayout.tsx
 #: src/components/AppSidebarLayout.tsx
+#: src/components/AppSidebarLayout.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 msgid "Toggle main sidebar"
 msgstr "Toggle main sidebar"
 
+#: src/components/AppSidebarLayout.tsx
 #: src/components/AppSidebarLayout.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Threads"
@@ -1811,6 +1813,7 @@ msgstr "Mute tab"
 msgid "Browser"
 msgstr "Browser"
 
+#: src/components/PersistentThreadTerminals.tsx
 #: src/components/RightPanelTabs.tsx
 #: src/components/RightPanelTabs.tsx
 #: src/components/ThreadTerminalDrawer.tsx
@@ -1874,6 +1877,7 @@ msgstr "Open browser in a profile"
 msgid "Open a surface"
 msgstr "Open a surface"
 
+#: src/components/AppSidebarLayout.tsx
 #: src/components/RightPanelTabs.tsx
 #: src/components/pullRequest/PullRequestsColumn.tsx
 #: src/components/pullRequest/PullRequestsColumn.tsx
@@ -1890,9 +1894,11 @@ msgstr "Idle"
 #. 0: title
 #. 0: terminology.singular
 #. 0: terminology.singular
+#. 0: snapshot.windows[id]!.title
 #: src/components/RightPanelTabs.tsx
 #: src/components/pullRequest/PullRequestActionsMenu.tsx
 #: src/components/pullRequest/PullRequestActionsMenu.tsx
+#: src/components/workspace/WorkspaceDock.tsx
 msgid "Close {0}"
 msgstr "Close {0}"
 
@@ -2130,7 +2136,6 @@ msgstr "Snooze ({0})"
 #: src/components/Sidebar.tsx
 #: src/components/settings/CustomModelEditor.tsx
 #: src/components/settings/CustomModelEditor.tsx
-#: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Custom…"
 msgstr "Custom…"
 
@@ -3342,6 +3347,7 @@ msgstr "Restore device defaults"
 msgid "Reconnect {0} to change its settings."
 msgstr "Reconnect {0} to change its settings."
 
+#: src/components/AppSidebarLayout.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 #: src/i18n/staticUiLabels.ts
 #: src/routes/_chat.settings.tsx
@@ -5595,6 +5601,7 @@ msgstr "User message"
 msgid "Jump to message: {0}"
 msgstr "Jump to message: {0}"
 
+#: src/components/AppSidebarLayout.tsx
 #: src/components/chat/TimelineAssistantRows.tsx
 #: src/components/chat/TimelineAssistantRows.tsx
 #: src/components/sidebar/UpdateEverythingDialog.tsx
@@ -7392,6 +7399,7 @@ msgstr "This puts the pull request's code in a new worktree and runs your projec
 msgid "T3 Code home"
 msgstr "T3 Code home"
 
+#: src/components/AppSidebarLayout.tsx
 #: src/components/sidebar/SidebarChrome.tsx
 #: src/components/usage/UsagePage.tsx
 #: src/components/usage/UsagePage.tsx
@@ -7450,15 +7458,6 @@ msgstr "You're currently checked out on another branch."
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Handed off from {0}"
 msgstr "Handed off from {0}"
-
-#: src/components/sidebar/SidebarThreadRow.tsx
-#: src/components/sidebar/SidebarThreadRow.tsx
-msgid "Snooze thread"
-msgstr "Snooze thread"
-
-#: src/components/sidebar/SidebarThreadRow.tsx
-msgid "<0/> Settle"
-msgstr "<0/> Settle"
 
 #: src/components/sidebar/SidebarThreadRow.tsx
 msgid "Goal"
@@ -21250,3 +21249,63 @@ msgstr "Update {0} is ready. Click to restart and install."
 #: src/components/sidebar/SidebarUpdateReleaseNotes.tsx
 msgid "Update ready to install"
 msgstr "Update ready to install"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Left panel"
+msgstr "Left panel"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Main panel"
+msgstr "Main panel"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Right panel"
+msgstr "Right panel"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Bottom panel"
+msgstr "Bottom panel"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Floating panel"
+msgstr "Floating panel"
+
+#. 0: panelLabels[key]
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Toggle {0}"
+msgstr "Toggle {0}"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Window actions"
+msgstr "Window actions"
+
+#. 0: panelLabels[panel]
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Move to {0}"
+msgstr "Move to {0}"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Reset layout"
+msgstr "Reset layout"
+
+#. 0: panelLabels[panel]
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Resize {0}"
+msgstr "Resize {0}"
+
+#. 0: title
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Drag {0}"
+msgstr "Drag {0}"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Drag window; Option to float, Esc to cancel"
+msgstr "Drag window; Option to float, Esc to cancel"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Split horizontally"
+msgstr "Split horizontally"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Split vertically"
+msgstr "Split vertically"

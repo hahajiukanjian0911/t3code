@@ -1392,6 +1392,8 @@ function TerminalSidebarGroup({
   );
 }
 
+import { useWorkspaceWindowVisible } from "./workspace/WorkspaceDock";
+
 export default function ThreadTerminalDrawer({
   mode = "drawer",
   threadRef,
@@ -1399,7 +1401,7 @@ export default function ThreadTerminalDrawer({
   cwd,
   worktreePath,
   runtimeEnv,
-  visible = true,
+  visible: requestedVisible = true,
   height,
   composerHeight = 0,
   terminalIds,
@@ -1423,6 +1425,8 @@ export default function ThreadTerminalDrawer({
 }: ThreadTerminalDrawerProps) {
   const canOperateTerminal = useEnvironmentScope(threadRef.environmentId, AuthTerminalOperateScope);
   const terminalArea = workspaceAreaProps("terminal", 5, "Terminal");
+  const dockVisible = useWorkspaceWindowVisible();
+  const visible = dockVisible ?? requestedVisible;
   const isPanel = mode === "panel";
   const [advancedTypography] = useLocalStorage(
     TYPOGRAPHY_ADVANCED_STORAGE_KEY,

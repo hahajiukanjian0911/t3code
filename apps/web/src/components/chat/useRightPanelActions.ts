@@ -33,6 +33,8 @@ import { openDeviceSetupDialog } from "./ChatOverlayHosts";
 import { previewEnvironment } from "../../state/preview";
 import { useAtomCommand } from "../../state/use-atom-command";
 import type { ChatShortcutCommands } from "./useChatShortcuts";
+import { useWorkspacePanel } from "../workspace/WorkspaceDock";
+
 interface RightPanelActionsInput {
   readonly activeThreadRef: ScopedThreadRef | null;
   readonly activeProject: EnvironmentProject | null;
@@ -66,6 +68,7 @@ interface RightPanelActionsInput {
  * requests, device, and terminal tabs.
  */
 export function useRightPanelActions(input: RightPanelActionsInput) {
+  const workspacePanel = useWorkspacePanel("right");
   const {
     closeRightPanelSurface,
     activeThreadRef,
@@ -211,6 +214,10 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
   const activateRightPanelSurfaceStable = useStableCallback(activateRightPanelSurface);
   const toggleRightPanel = () => {
     if (!activeThreadRef) return;
+    if (workspacePanel && !embedded && rightPanelOpen) {
+      workspacePanel.toggle();
+      return;
+    }
     if (rightPanelOpen) {
       closePreviewPanel();
       return;

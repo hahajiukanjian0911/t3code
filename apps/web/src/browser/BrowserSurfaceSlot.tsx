@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 
 import { acquireBrowserSurface } from "./browserSurfaceStore";
+import { subscribeWorkspaceLayout } from "../lib/workspaceLayoutEvents";
 import { observeResize } from "../lib/observeResize";
 
 export function BrowserSurfaceSlot(props: {
@@ -30,6 +31,9 @@ export function BrowserSurfaceSlot(props: {
     const update = () => {
       const rect = element.getBoundingClientRect();
       const presentation = presentationRef.current;
+      const surfaceZIndex =
+        presentation.zIndex +
+        (element.closest('[data-workspace-panel="floating"], [data-workspace-dragging]') ? 100 : 0);
       const presented = lease.present(
         {
           x: Math.round(rect.x),
@@ -39,7 +43,7 @@ export function BrowserSurfaceSlot(props: {
         },
         presentation.visible && rect.width > 0 && rect.height > 0,
         presentation.cornerRadius,
-        presentation.zIndex,
+        surfaceZIndex,
       );
       if (presentation.visible && !presented) {
         lease.release();
@@ -53,7 +57,7 @@ export function BrowserSurfaceSlot(props: {
           },
           rect.width > 0 && rect.height > 0,
           presentation.cornerRadius,
-          presentation.zIndex,
+          surfaceZIndex,
         );
       }
     };
@@ -66,10 +70,12 @@ export function BrowserSurfaceSlot(props: {
     // Sidebar width changes move the slot without changing its size or column offset.
     observed.push(...document.querySelectorAll('[data-slot="sidebar-gap"]'));
     const stopObserving = observeResize(observed, update);
+    const stopWorkspaceLayout = subscribeWorkspaceLayout(update);
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
     return () => {
       stopObserving();
+      stopWorkspaceLayout();
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
       if (updateRef.current === update) updateRef.current = null;

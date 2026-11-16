@@ -1,3 +1,5 @@
+import { PanelLeftIcon } from "lucide-react";
+import { Button } from "./ui/button";
 import { useAtomValue } from "@effect/atom-react";
 import * as Schema from "effect/Schema";
 import {
@@ -5,10 +7,12 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type ComponentProps,
   type ReactNode,
 } from "react";
 import { useLocation, useRouter, type AnyRouter } from "@tanstack/react-router";
 
+import { useStableCallback } from "../hooks/useStableCallback";
 import { moveWorkspaceFocus, workspaceAreaProps } from "../lib/workspaceFocus";
 import { isCommandPaletteOpen } from "../commandPaletteBus";
 import { isElectron } from "../env";
@@ -65,6 +69,13 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
 import { appAtomRegistry } from "../rpc/atomRegistry";
 import { registerCommands, registerMenuAction } from "../shortcuts/dispatcher";
 import { resolveThreadRouteRef } from "../threadRoutes";
+
+import {
+  WorkspaceRoot,
+  WorkspaceWindow,
+  useWorkspaceDockEnabled,
+  useWorkspacePanel,
+} from "./workspace/WorkspaceDock";
 
 const MACOS_TRAFFIC_LIGHTS_LEFT_INSET = "var(--desktop-window-controls-inset, 90px)";
 
@@ -295,9 +306,14 @@ function registerThreadUndoCommands(
 function registerAppShellCommands(router: AnyRouter, shellElement: Element): () => void {
   // The provider mirrors the visibility it renders onto its wrapper, so the
   // committed state is readable when a key arrives.
-  const readSidebarVisible = () =>
-    shellElement.closest('[data-slot="sidebar-wrapper"]')?.getAttribute("data-sidebar-state") ===
-    "expanded";
+  const readSidebarVisible = () => {
+    const dock = shellElement.closest("[data-workspace-dock]");
+    return dock
+      ? dock.querySelector<HTMLElement>("[data-app-sidebar]")?.checkVisibility() === true
+      : shellElement
+          .closest('[data-slot="sidebar-wrapper"]')
+          ?.getAttribute("data-sidebar-state") === "expanded";
+  };
   const disposers = [
     registerThreadUndoCommands(router, readSidebarVisible),
     registerNavigationHistoryCommands(router),
@@ -317,9 +333,15 @@ function SidebarControl({ showSidebar }: { readonly showSidebar: boolean }) {
   const router = useRouter();
   const usagePageOpen = useLocation({ select: (location) => location.pathname === "/usage" });
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
-  const { toggleSidebar, peek } = useSidebar();
+  const { toggleSidebar: toggleLegacySidebar, peek } = useSidebar();
+  const dockPanel = useWorkspacePanel("left");
+  const toggleSidebar = useStableCallback(() =>
+    dockPanel ? dockPanel.toggle() : toggleLegacySidebar(),
+  );
   const mobileSidebarSheetMounted = useMobileSidebarSheetMounted();
-  const isSidebarVisible = useSidebarVisibility();
+  const dock = useWorkspaceDockEnabled();
+  const legacySidebarVisible = useSidebarVisibility();
+  const isSidebarVisible = dockPanel?.visible ?? legacySidebarVisible;
   const environmentIdentificationMode = useEnvironmentIdentificationMode();
   const stageBackdropVariant = useSidebarStageBackdropVariant(environmentIdentificationMode);
   const shortcutLabel = shortcutLabelForCommand(keybindings, "sidebar.toggle", {
@@ -388,14 +410,32 @@ function SidebarControl({ showSidebar }: { readonly showSidebar: boolean }) {
         <Tooltip>
           <TooltipTrigger
             render={
-              <SidebarTrigger
-                variant={isSidebarVisible && stageBackdropVariant ? "media-navigation" : "ghost"}
-                className={cn(
-                  "pointer-events-auto",
-                  isSidebarVisible && stageBackdropVariant && "relative top-auto translate-y-0",
-                )}
-                aria-label={peek ? "Pin main sidebar" : "Toggle main sidebar"}
-              />
+              dockPanel ? (
+                <Button
+                  className="pointer-events-auto"
+                  size="icon-xs"
+                  variant="ghost"
+                  aria-label="Toggle main sidebar"
+                  aria-pressed={isSidebarVisible}
+                  onClick={toggleSidebar}
+                >
+                  <PanelLeftIcon className="size-4" />
+                </Button>
+              ) : (
+                <SidebarTrigger
+                  variant={
+                    !dock && isSidebarVisible && stageBackdropVariant ? "media-navigation" : "ghost"
+                  }
+                  className={cn(
+                    "pointer-events-auto",
+                    !dock &&
+                      isSidebarVisible &&
+                      stageBackdropVariant &&
+                      "relative top-auto translate-y-0",
+                  )}
+                  aria-label={peek ? "Pin main sidebar" : "Toggle main sidebar"}
+                />
+              )
             }
           />
           <TooltipPopup side="bottom">
@@ -423,6 +463,13 @@ export function AppSidebarLayout({
   const { active: panelAnimationsActive, durationMs: panelAnimationDurationMs } =
     usePanelAnimationSettings();
   const pathname = useLocation({ select: (location) => location.pathname });
+  const routeTitle = pathname.startsWith("/settings")
+    ? "Settings"
+    : pathname === "/usage"
+      ? "Usage"
+      : pathname === "/pull-requests"
+        ? "Pull requests"
+        : "T3 Code";
   const panelAnimationsSuppressed = usePanelNavigationSuppression(pathname);
   const routePanelAnimationsActive = panelAnimationsActive && !panelAnimationsSuppressed;
   const isMacosDesktop = isElectron && isMacPlatform(navigator.platform);
@@ -464,37 +511,65 @@ export function AppSidebarLayout({
         hoverReveal={showSidebar}
         style={sidebarProviderStyle}
       >
-        {showSidebar ? (
-          <>
-            <SidebarBrandWidthProbe isElectron={isElectron} onWidthChange={setBrandWidth} />
-            <Sidebar
-              side="left"
-              collapsible="offcanvas"
-              data-app-sidebar=""
-              {...sidebarArea}
-              role="navigation"
-              aria-label="Threads"
-              resizable={{
-                maxWidth: sidebarMaximumWidth,
-                minWidth: sidebarMinimumWidth,
-                shouldAcceptWidth: ({ currentWidth, nextWidth, wrapper }) =>
-                  nextWidth <= currentWidth ||
-                  wrapper.clientWidth - nextWidth >= THREAD_MAIN_CONTENT_MIN_WIDTH,
-                storageKey: THREAD_SIDEBAR_WIDTH_STORAGE_KEY,
-                onResize: setSidebarWidth,
-              }}
-              style={windowControlsInsetStyle}
-            >
-              <ThreadSidebar routeReveal={sidebarRouteReveal} />
-              <SidebarRail onDoubleClick={resetSidebarWidth} />
-            </Sidebar>
-          </>
-        ) : null}
-        {children}
+        <WorkspaceRoot controls={<SidebarControl showSidebar={showSidebar} />}>
+          {showSidebar ? (
+            <>
+              <SidebarBrandWidthProbe isElectron={isElectron} onWidthChange={setBrandWidth} />
+              <DockableSidebar
+                side="left"
+                collapsible="offcanvas"
+                data-app-sidebar=""
+                {...sidebarArea}
+                role="navigation"
+                aria-label="Threads"
+                resizable={{
+                  maxWidth: sidebarMaximumWidth,
+                  minWidth: sidebarMinimumWidth,
+                  shouldAcceptWidth: ({ currentWidth, nextWidth, wrapper }) =>
+                    nextWidth <= currentWidth ||
+                    wrapper.clientWidth - nextWidth >= THREAD_MAIN_CONTENT_MIN_WIDTH,
+                  storageKey: THREAD_SIDEBAR_WIDTH_STORAGE_KEY,
+                  onResize: setSidebarWidth,
+                }}
+                style={windowControlsInsetStyle}
+              >
+                <ThreadSidebar routeReveal={sidebarRouteReveal} />
+                <LegacySidebarRail onDoubleClick={resetSidebarWidth} />
+              </DockableSidebar>
+            </>
+          ) : null}
+          <WorkspaceWindow id="route" title={routeTitle} panel="main">
+            {children}
+          </WorkspaceWindow>
+        </WorkspaceRoot>
         <BackgroundThreadAnnouncer />
-        <SidebarControl showSidebar={showSidebar} />
         {isElectron ? <HistorySwipeNavigation /> : null}
       </SidebarProvider>
     </PanelAnimationSuppressionProvider>
   );
+}
+
+function DockableSidebar(props: ComponentProps<typeof Sidebar>) {
+  const dock = useWorkspaceDockEnabled();
+  const visible = useSidebarVisibility();
+  const { setOpen } = useSidebar();
+  return (
+    <WorkspaceWindow
+      id="threads"
+      title="Threads"
+      panel="left"
+      available={visible}
+      onActivate={() => setOpen(true)}
+    >
+      <Sidebar
+        {...props}
+        collapsible={dock ? "none" : (props.collapsible ?? "offcanvas")}
+        className={dock ? "w-full" : undefined}
+      />
+    </WorkspaceWindow>
+  );
+}
+
+function LegacySidebarRail(props: ComponentProps<typeof SidebarRail>) {
+  return useWorkspaceDockEnabled() ? null : <SidebarRail {...props} />;
 }

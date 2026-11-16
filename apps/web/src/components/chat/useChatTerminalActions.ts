@@ -1,3 +1,4 @@
+import { scopedThreadKey } from "@t3tools/client-runtime/environment";
 import type {
   EnvironmentProject,
   EnvironmentThreadShell,
@@ -51,6 +52,8 @@ import { previewEnvironment } from "../../state/preview";
 import { readEnvironmentScope } from "../../state/session";
 import { useAtomCommand } from "../../state/use-atom-command";
 import type { ChatShortcutCommands } from "./useChatShortcuts";
+import { useWorkspaceWindowToggle } from "../workspace/WorkspaceDock";
+
 const SCRIPT_TERMINAL_COLS = 120;
 const SCRIPT_TERMINAL_ROWS = 30;
 
@@ -84,6 +87,7 @@ interface ChatTerminalActionsInput {
  * code blocks, which run in a reused or new drawer terminal.
  */
 export function useChatTerminalActions(input: ChatTerminalActionsInput) {
+  const toggleWorkspaceWindow = useWorkspaceWindowToggle();
   const {
     environmentId,
     composerRef,
@@ -142,6 +146,7 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
   const setTerminalOpenStable = useStableCallback(setTerminalOpen);
   const toggleTerminalVisibility = () => {
     if (!activeThreadRef) return;
+    if (toggleWorkspaceWindow(`drawer:${scopedThreadKey(activeThreadRef)}`)) return;
     const nextOpen = !terminalUiState.terminalOpen;
     if (
       nextOpen &&

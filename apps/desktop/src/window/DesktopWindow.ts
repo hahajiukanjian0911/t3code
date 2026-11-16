@@ -43,7 +43,7 @@ import * as DesktopRendererHistory from "../telemetry/DesktopRendererHistory.ts"
 import { makeQuitShortcutHandler } from "./QuitHold.ts";
 import { copyContextMenuImage } from "./ContextMenuImage.ts";
 
-const TITLEBAR_HEIGHT = 40;
+const TITLEBAR_HEIGHT = 30;
 
 class ContextMenuImageCopyError extends Schema.TaggedError<ContextMenuImageCopyError>()(
   "ContextMenuImageCopyError",
@@ -53,8 +53,8 @@ class ContextMenuImageCopyError extends Schema.TaggedError<ContextMenuImageCopyE
     return "Could not copy the context-menu image.";
   }
 }
-// Match --workspace-topbar-height in apps/web/src/index.css; native macOS buttons stay 14 points at any zoom.
-const MACOS_WORKSPACE_TOPBAR_HEIGHT = 52;
+// Match the 30px workspace titlebar; native macOS buttons stay 14 points at any zoom.
+const MACOS_WORKSPACE_TOPBAR_HEIGHT = 30;
 const MACOS_WINDOW_BUTTON_RADIUS = 7;
 
 function parseMailtoAddress(rawUrl: string): Option.Option<string> {

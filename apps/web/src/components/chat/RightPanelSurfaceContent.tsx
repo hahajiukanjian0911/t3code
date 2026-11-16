@@ -25,6 +25,8 @@ import { PullRequestDetailGhost } from "../pullRequest/PullRequestGhosts";
 import { PullRequestsUnavailableState } from "../pullRequest/PullRequestsUnavailableState";
 import { ThreadPullRequestsPanel } from "../pullRequest/ThreadPullRequestsPanel";
 
+import { useWorkspaceWindowVisible } from "../workspace/WorkspaceDock";
+
 const PreviewPanel = lazy(() =>
   import("../preview/PreviewPanel").then((module) => ({ default: module.PreviewPanel })),
 );
@@ -80,7 +82,8 @@ export function RightPanelSurfaceContent(props: {
   readonly files: RightPanelFileProps;
   readonly sideChatParentPanel: SideChatParentPanel;
 }) {
-  const { surface, threadRef, visible, onCloseSurface } = props;
+  const { surface, threadRef, onCloseSurface } = props;
+  const visible = useWorkspaceWindowVisible() ?? props.visible;
   if (surface === null) return null;
   switch (surface.kind) {
     case "preview":
