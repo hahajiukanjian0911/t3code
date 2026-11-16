@@ -2,12 +2,14 @@
 import type { Root } from "mdast";
 import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
+import remarkCjkFriendly from "remark-cjk-friendly/parseOnly";
 import remarkGfm from "remark-gfm";
 import { unified } from "unified";
 
 const mathParser = unified()
   .use(remarkParse)
   .use(remarkGfm)
+  .use(remarkCjkFriendly)
   .use(remarkMath, { singleDollarTextMath: true })
   .freeze();
 

@@ -872,3 +872,24 @@ describe("ChatMarkdown host media", () => {
     expect(screen.container.textContent).not.toContain("Retry video");
   });
 });
+
+it("renders CJK bold beside punctuation through streaming and completion", async () => {
+  const lead = "如果你说的是土区 Google 账号，我建议现在先不买。";
+  const source = `**${lead}**买到土区空号，也还要解决付款问题。`;
+  const ui = (text: string, isStreaming: boolean) => (
+    <ChatMarkdown cwd={undefined} text={text} isStreaming={isStreaming} />
+  );
+  await using screen = await render(ui(source.slice(0, 15), true));
+  await screen.rerender(ui(source, true));
+  await vi.waitFor(() => expect(screen.container.querySelector("strong")?.textContent).toBe(lead));
+  const complete =
+    source +
+    "\n\n**GPT 暂时继续用日本区 Google Play。**先把流程验证成功。\n\n`**代码中的星号。**后文`";
+  await screen.rerender(ui(complete, false));
+  await vi.waitFor(() =>
+    expect(
+      [...screen.container.querySelectorAll("strong")].map((node) => node.textContent),
+    ).toEqual([lead, "GPT 暂时继续用日本区 Google Play。"]),
+  );
+  expect(screen.container.querySelector("code")?.textContent).toBe("**代码中的星号。**后文");
+});

@@ -712,3 +712,25 @@ it("links complete absolute paths in prose and skips shortened ones", () => {
   expect(links(`[notes](${path}) and \`${path}\``)).toEqual([path]);
   expect(links(`\`\`\`\n${path}\n\`\`\``)).toEqual([]);
 });
+
+it.each([
+  [
+    "**如果你说的是土区 Google 账号，我建议现在先不买。**买到土区空号，也还要解决付款问题。",
+    ["strong", "text"],
+  ],
+  ["**购买渠道也有影响。**官网、Google Play 可能不同。", ["strong", "text"]],
+  ["**GPT 暂时继续用日本区 Google Play。**先把购买流程验证成功。", ["strong", "text"]],
+  ["**[资料](https://example.com)。**后文", ["strong", "text"]],
+  ["`**保留代码。**后文`", ["inlineCode"]],
+  [String.raw`\*\*保留星号。\*\*后文`, ["text"]],
+  ["**未闭合的加粗。", ["text"]],
+] as const)("parses CJK emphasis without rewriting literal syntax: %s", (source, types) => {
+  for (const plugins of [CHAT_MARKDOWN_REMARK_PLUGINS, CHAT_MARKDOWN_REMARK_PLUGINS_WITH_BREAKS]) {
+    const processor = unified().use(remarkParse).use(plugins);
+    const tree = processor.runSync(processor.parse(source), source) as Root;
+    const paragraph = tree.children[0];
+    expect(paragraph?.type).toBe("paragraph");
+    if (paragraph?.type === "paragraph")
+      expect(paragraph.children.map((child) => child.type)).toEqual(types);
+  }
+});

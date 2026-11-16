@@ -720,7 +720,7 @@ function DockFrame({
           render={
             <button
               type="button"
-              className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:bg-accent aria-pressed:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
+              className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
               aria-label={`Toggle ${panelLabels[key]}`}
               aria-pressed={panelVisible(key)}
               onClick={() => store.togglePanel(key)}
