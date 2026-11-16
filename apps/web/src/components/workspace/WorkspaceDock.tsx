@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useStableCallback } from "../../hooks/useStableCallback";
+import { isElectron } from "../../env";
 import { notifyWorkspaceLayout } from "../../lib/workspaceLayoutEvents";
 import { workspaceAreaProps } from "../../lib/workspaceFocus";
 import { cn } from "../../lib/utils";
@@ -183,7 +184,7 @@ function createDockStore() {
         window.available &&
         window.selected &&
         !restored &&
-        (!previous?.selected || !previous.available || previous.activation !== window.activation)
+        (!previous?.selected || previous.activation !== window.activation)
       ) {
         const placement = next.placements[window.id]!;
         next = {
@@ -481,7 +482,7 @@ export function WorkspaceRoot({
 }) {
   const wide = useMediaQuery("(min-width: 768px)");
   const [store] = useState(createDockStore);
-  if (!wide)
+  if (!wide && !isElectron)
     return (
       <>
         {controls}

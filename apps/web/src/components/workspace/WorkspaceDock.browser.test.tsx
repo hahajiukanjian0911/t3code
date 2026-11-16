@@ -2,7 +2,7 @@ import "~/index.css";
 import { useEffect } from "react";
 import { expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
-import { act, render } from "../../../test/render";
+import { act, render, stubGlobal } from "../../../test/render";
 import { BrowserSurfaceSlot } from "../../browser/BrowserSurfaceSlot";
 import { useBrowserSurfaceStore } from "../../browser/browserSurfaceStore";
 import {
@@ -10,7 +10,13 @@ import {
   WorkspacePanelActions,
   WorkspaceRoot,
   WorkspaceWindow,
+  useWorkspaceWindowToggle,
 } from "./WorkspaceDock";
+
+vi.mock(import("../../env"), async (original) => ({
+  ...(await original()),
+  isElectron: true,
+}));
 
 function isolatedLayout() {
   const key = "t3code:workspace-layout:v1",
@@ -282,4 +288,84 @@ it("restores a hidden panel without an initially selected resource reopening it"
       .closest("[data-workspace-panel]")
       ?.getAttribute("data-workspace-panel"),
   ).toBe("right");
+});
+
+function TerminalToggle() {
+  const toggle = useWorkspaceWindowToggle();
+  return <button onClick={() => toggle("drawer:test")}>Toggle terminal window</button>;
+}
+it.each(["panel", "window"])(
+  "preserves a closed terminal after switching threads (%s)",
+  async (mode) => {
+    await page.viewport(1280, 800);
+    using _layout = isolatedLayout();
+    const ui = (active: boolean) => (
+      <div className="h-screen w-screen">
+        <WorkspaceRoot>
+          <WorkspaceWindow id="chat:test" title="Conversation" panel="main">
+            <TerminalToggle />
+          </WorkspaceWindow>
+          <WorkspaceWindow
+            id="drawer:test"
+            title="Terminal"
+            panel="bottom"
+            available={active}
+            selected
+            activation={true}
+          >
+            <input aria-label="terminal draft" defaultValue="preserved" />
+          </WorkspaceWindow>
+        </WorkspaceRoot>
+      </div>
+    );
+    await using screen = await render(ui(true));
+    await expect.element(screen.getByRole("textbox", { name: "terminal draft" })).toBeVisible();
+    const input = screen.getByRole("textbox", { name: "terminal draft" }).element();
+    const control = () =>
+      mode === "panel"
+        ? screen.getByRole("button", { name: "Toggle Bottom panel" })
+        : screen.getByRole("button", { name: "Toggle terminal window" });
+    await userEvent.click(control());
+    await screen.rerender(ui(false));
+    await screen.rerender(ui(true));
+    expect(input.checkVisibility()).toBe(false);
+    await userEvent.click(control());
+    await expect
+      .element(screen.getByRole("textbox", { name: "terminal draft" }))
+      .toHaveValue("preserved");
+    await expect.element(screen.getByRole("textbox", { name: "terminal draft" })).toBeVisible();
+  },
+);
+
+it("preserves desktop docking across the narrow breakpoint", async () => {
+  await page.viewport(1000, 800);
+  using _layout = isolatedLayout();
+  using _bridge = stubGlobal("desktopBridge", {});
+  const dispose = vi.fn(),
+    mount = vi.fn(() => dispose);
+  await using screen = await render(
+    <div className="h-screen w-screen">
+      <WorkspaceRoot>
+        <WorkspaceWindow id="chat:zoom" title="Conversation" panel="main">
+          <Content mount={mount} />
+        </WorkspaceWindow>
+        <WorkspaceWindow id="terminal:zoom" title="Terminal" panel="bottom">
+          <p>Zoom terminal</p>
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    </div>,
+  );
+  await expect.element(screen.getByRole("textbox", { name: "draft" })).toBeVisible();
+  const input = screen.getByRole("textbox", { name: "draft" }).element();
+  await userEvent.fill(screen.getByRole("textbox", { name: "draft" }), "unsent zoom draft");
+  await page.viewport(700, 600);
+  await expect.element(screen.getByRole("button", { name: "Toggle Bottom panel" })).toBeVisible();
+  expect(mount).toHaveBeenCalledTimes(1);
+  expect(dispose).not.toHaveBeenCalled();
+  expect(screen.getByRole("textbox", { name: "draft" }).element()).toBe(input);
+  await page.viewport(1000, 800);
+  await expect
+    .element(screen.getByRole("textbox", { name: "draft" }))
+    .toHaveValue("unsent zoom draft");
+  expect(mount).toHaveBeenCalledTimes(1);
 });

@@ -246,7 +246,8 @@ export const PersistentThreadTerminalDrawer = memo(function PersistentThreadTerm
       title="Terminal"
       panel="bottom"
       available={visible}
-      selected={visible}
+      selected={terminalUiState.terminalOpen}
+      activation={terminalUiState.terminalOpen}
       onClose={() => useTerminalUiStateStore.getState().setTerminalOpen(threadRef, false)}
     >
       <div
