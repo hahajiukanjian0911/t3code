@@ -162,7 +162,7 @@ function createDockStore() {
         return;
       }
       const window = Object.values(snapshot.windows).find(
-        (value) => value.defaultPanel === panel && value.id !== "route",
+        (value) => value.available && value.defaultPanel === panel && value.id !== "route",
       );
       if (window) {
         updateLayout(moveWorkspaceWindow(snapshot.layout, window.id, { panel, group: panel }));
@@ -202,7 +202,15 @@ function createDockStore() {
       publish({ ...snapshot, windows });
     },
     activate,
-    toggleWindow(id: string) {
+    toggleWindow(id: string, panel?: WorkspacePanel) {
+      const window = snapshot.windows[id];
+      const placement = snapshot.layout.placements[id];
+      if (panel && placement && (!window?.available || placement.panel !== panel)) {
+        updateLayout(moveWorkspaceWindow(snapshot.layout, id, { panel, group: panel }));
+        if (!window?.available) return false;
+        activate(id);
+        return true;
+      }
       if (!snapshot.windows[id]?.available) return false;
       if (visibleWindow(snapshot, id))
         updateLayout({ ...snapshot.layout, dismissed: [...snapshot.layout.dismissed, id] });
@@ -459,7 +467,7 @@ export function WorkspaceActions({
 }
 export function useWorkspaceWindowToggle() {
   const store = use(DockContext);
-  return (id: string) => store?.toggleWindow(id) ?? false;
+  return (id: string, panel?: WorkspacePanel) => store?.toggleWindow(id, panel) ?? false;
 }
 export function useWorkspacePanel(panel: WorkspacePanel) {
   const store = use(DockContext);

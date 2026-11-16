@@ -1,5 +1,5 @@
 import "~/index.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
 import { act, render, stubGlobal } from "../../../test/render";
@@ -290,9 +290,17 @@ it("restores a hidden panel without an initially selected resource reopening it"
   ).toBe("right");
 });
 
-function TerminalToggle() {
+function TerminalToggle({ bottom = false, onOpen }: { bottom?: boolean; onOpen?: () => void }) {
   const toggle = useWorkspaceWindowToggle();
-  return <button onClick={() => toggle("drawer:test")}>Toggle terminal window</button>;
+  return (
+    <button
+      onClick={() => {
+        if (!toggle("drawer:test", bottom ? "bottom" : undefined)) onOpen?.();
+      }}
+    >
+      Toggle terminal window
+    </button>
+  );
 }
 it.each(["panel", "window"])(
   "preserves a closed terminal after switching threads (%s)",
@@ -337,6 +345,45 @@ it.each(["panel", "window"])(
   },
 );
 
+function ActiveTerminal({ initiallyOpen = false }: { initiallyOpen?: boolean }) {
+  const [open, setOpen] = useState(initiallyOpen);
+  return (
+    <>
+      <WorkspaceWindow id="chat:current" title="Conversation" panel="main">
+        <TerminalToggle bottom onOpen={() => setOpen(true)} />
+      </WorkspaceWindow>
+      <WorkspaceActions
+        windowId="chat:current"
+        onOpenBottom={() => setOpen(true)}
+        onOpenRight={() => {}}
+      >
+        <span />
+      </WorkspaceActions>
+      {open && (
+        <WorkspaceWindow id="drawer:test" title="Terminal" panel="bottom" selected>
+          <input aria-label="active terminal" defaultValue="preserved" />
+        </WorkspaceWindow>
+      )}
+    </>
+  );
+}
+it("opens the active thread's bottom panel instead of an unavailable thread's terminal", async () => {
+  await page.viewport(1280, 800);
+  using _layout = isolatedLayout();
+  await using screen = await render(
+    <div className="h-screen w-screen">
+      <WorkspaceRoot>
+        <WorkspaceWindow id="drawer:other" title="Other terminal" panel="bottom" available={false}>
+          <p>Other shell</p>
+        </WorkspaceWindow>
+        <ActiveTerminal />
+      </WorkspaceRoot>
+    </div>,
+  );
+  await userEvent.click(screen.getByRole("button", { name: "Toggle Bottom panel" }));
+  await expect.element(screen.getByRole("textbox", { name: "active terminal" })).toBeVisible();
+});
+
 it("preserves desktop docking across the narrow breakpoint", async () => {
   await page.viewport(1000, 800);
   using _layout = isolatedLayout();
@@ -369,3 +416,34 @@ it("preserves desktop docking across the narrow breakpoint", async () => {
     .toHaveValue("unsent zoom draft");
   expect(mount).toHaveBeenCalledTimes(1);
 });
+
+it.each([true, false])(
+  "returns a moved terminal to the bottom when explicitly toggling the drawer (mounted: %s)",
+  async (initiallyOpen) => {
+    await page.viewport(1280, 800);
+    using _layout = isolatedLayout();
+    localStorage.setItem(
+      "t3code:workspace-layout:v1",
+      JSON.stringify({
+        placements: { "drawer:test": { panel: "right", group: "right" } },
+        hidden: { right: true, bottom: true },
+      }),
+    );
+    await using screen = await render(
+      <div className="h-screen w-screen">
+        <WorkspaceRoot>
+          <ActiveTerminal initiallyOpen={initiallyOpen} />
+        </WorkspaceRoot>
+      </div>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Toggle terminal window" }));
+    await expect.element(screen.getByRole("textbox", { name: "active terminal" })).toBeVisible();
+    expect(
+      screen
+        .getByRole("textbox", { name: "active terminal" })
+        .element()
+        .closest("[data-workspace-panel]")
+        ?.getAttribute("data-workspace-panel"),
+    ).toBe("bottom");
+  },
+);

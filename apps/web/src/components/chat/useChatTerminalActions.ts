@@ -146,7 +146,7 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
   const setTerminalOpenStable = useStableCallback(setTerminalOpen);
   const toggleTerminalVisibility = () => {
     if (!activeThreadRef) return;
-    if (toggleWorkspaceWindow(`drawer:${scopedThreadKey(activeThreadRef)}`)) return;
+    if (toggleWorkspaceWindow(`drawer:${scopedThreadKey(activeThreadRef)}`, "bottom")) return;
     const nextOpen = !terminalUiState.terminalOpen;
     if (
       nextOpen &&
