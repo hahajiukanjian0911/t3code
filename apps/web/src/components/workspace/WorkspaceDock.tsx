@@ -493,7 +493,7 @@ function DockFrame({
             : undefined
         }
         className={cn(
-          "relative flex min-h-0 min-w-0 overflow-hidden rounded-lg bg-background",
+          "relative flex min-h-0 min-w-0 overflow-hidden rounded-lg bg-background ring-1 ring-border/80 focus-within:ring-ring/50",
           layout.vertical[key] && "flex-col",
           key === "floating" && "absolute z-40 max-h-full max-w-full resize shadow-2xl",
         )}
@@ -606,11 +606,11 @@ function DockFrame({
   const panels = workspacePanels.map(panel);
   return (
     <div
-      className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-muted/50 [--workspace-topbar-height:30px]"
+      className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-(--workspace-board) [--workspace-board:color-mix(in_oklab,var(--background),var(--foreground)_4%)] [--workspace-topbar-height:30px]"
       data-workspace-dock=""
     >
       <header
-        className="drag-region grid h-[30px] min-h-[30px] shrink-0 items-center border-b border-border/40 bg-background pr-2 wco:pr-(--workspace-native-controls-inset)"
+        className="drag-region grid h-[30px] min-h-[30px] shrink-0 items-center border-b border-border/40 bg-(--workspace-board) pr-2 wco:pr-(--workspace-native-controls-inset)"
         style={{
           gridTemplateColumns: `${left ? `calc(${layout.sizes.left}px + var(--spacing) * 4)` : "max-content"} minmax(0,1fr) auto`,
         }}
@@ -620,7 +620,7 @@ function DockFrame({
           className="flex h-full min-w-0 items-center gap-3 overflow-hidden pr-3 pl-(--workspace-controls-left)"
           data-workspace-titlebar-leading=""
         >
-          <span className="ml-8 shrink-0 text-xs font-medium">T3 Code</span>
+          <span className="shrink-0 text-xs font-medium">T3 Code</span>
           {leftTabs.length > 0 ? (
             <div className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]">
               {renderTabs(leftTabs)}

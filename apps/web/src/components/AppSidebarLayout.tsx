@@ -1,5 +1,3 @@
-import { PanelLeftIcon } from "lucide-react";
-import { Button } from "./ui/button";
 import { useAtomValue } from "@effect/atom-react";
 import * as Schema from "effect/Schema";
 import {
@@ -406,36 +404,18 @@ function SidebarControl({ showSidebar }: { readonly showSidebar: boolean }) {
       )}
       data-sidebar-control=""
     >
-      {showSidebar ? (
+      {showSidebar && !dock ? (
         <Tooltip>
           <TooltipTrigger
             render={
-              dockPanel ? (
-                <Button
-                  className="pointer-events-auto"
-                  size="icon-xs"
-                  variant="ghost"
-                  aria-label="Toggle main sidebar"
-                  aria-pressed={isSidebarVisible}
-                  onClick={toggleSidebar}
-                >
-                  <PanelLeftIcon className="size-4" />
-                </Button>
-              ) : (
-                <SidebarTrigger
-                  variant={
-                    !dock && isSidebarVisible && stageBackdropVariant ? "media-navigation" : "ghost"
-                  }
-                  className={cn(
-                    "pointer-events-auto",
-                    !dock &&
-                      isSidebarVisible &&
-                      stageBackdropVariant &&
-                      "relative top-auto translate-y-0",
-                  )}
-                  aria-label={peek ? "Pin main sidebar" : "Toggle main sidebar"}
-                />
-              )
+              <SidebarTrigger
+                variant={isSidebarVisible && stageBackdropVariant ? "media-navigation" : "ghost"}
+                className={cn(
+                  "pointer-events-auto",
+                  isSidebarVisible && stageBackdropVariant && "relative top-auto translate-y-0",
+                )}
+                aria-label={peek ? "Pin main sidebar" : "Toggle main sidebar"}
+              />
             }
           />
           <TooltipPopup side="bottom">
