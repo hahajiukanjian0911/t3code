@@ -542,8 +542,8 @@ function DockFrame({
             : undefined
         }
         className={cn(
-          "relative flex min-h-0 min-w-0 overflow-hidden rounded-lg bg-background ring-1 ring-border/80",
-          layout.vertical[key] && "flex-col",
+          "relative flex min-h-0 min-w-0 rounded-lg bg-background ring-1 ring-border/80",
+          key === "floating" ? "overflow-hidden" : "overflow-visible",
           key === "floating" && "absolute z-40 max-h-full max-w-full resize shadow-2xl",
         )}
         style={
@@ -557,34 +557,44 @@ function DockFrame({
             : { gridArea: key }
         }
       >
-        {groups[key].map((group, index) => (
-          <div
-            key={group.id}
-            data-workspace-group={group.id}
-            data-workspace-owner={key}
-            className={cn(
-              "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-              index > 0 &&
-                (layout.vertical[key] ? "border-t border-border" : "border-l border-border"),
-            )}
-          >
-            {group.windows.map((id) => {
-              const window = snapshot.windows[id]!;
-              mounted.add(id);
-              const active = group.active === id;
-              return (
-                <div
-                  key={id}
-                  hidden={!active}
-                  inert={!active}
-                  className="relative flex h-full min-h-0 min-w-0 flex-col"
-                >
-                  <PortalMount node={window.container} className="h-full min-h-0 min-w-0 flex-1" />
-                </div>
-              );
-            })}
-          </div>
-        ))}
+        <div
+          className={cn(
+            "relative flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit]",
+            layout.vertical[key] && "flex-col",
+          )}
+        >
+          {groups[key].map((group, index) => (
+            <div
+              key={group.id}
+              data-workspace-group={group.id}
+              data-workspace-owner={key}
+              className={cn(
+                "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+                index > 0 &&
+                  (layout.vertical[key] ? "border-t border-border" : "border-l border-border"),
+              )}
+            >
+              {group.windows.map((id) => {
+                const window = snapshot.windows[id]!;
+                mounted.add(id);
+                const active = group.active === id;
+                return (
+                  <div
+                    key={id}
+                    hidden={!active}
+                    inert={!active}
+                    className="relative flex h-full min-h-0 min-w-0 flex-col"
+                  >
+                    <PortalMount
+                      node={window.container}
+                      className="h-full min-h-0 min-w-0 flex-1"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
         {key === "left" || key === "right" || key === "bottom" ? (
           <PanelResize store={store} panel={key} />
         ) : null}
@@ -852,12 +862,13 @@ function PanelResize({ store, panel }: { store: DockStore; panel: "left" | "righ
     <div
       role="separator"
       aria-label={`Resize ${panelLabels[panel]}`}
+      aria-orientation={panel === "bottom" ? "horizontal" : "vertical"}
       className={cn(
-        "absolute z-20 touch-none",
+        "group/resize absolute z-20 touch-none",
         panel === "bottom"
-          ? "inset-x-0 top-0 h-1 cursor-row-resize"
-          : "inset-y-0 w-1 cursor-col-resize",
-        panel === "left" ? "right-0" : panel === "right" ? "left-0" : "",
+          ? "inset-x-0 -top-2 h-2 cursor-row-resize"
+          : "inset-y-0 w-2 cursor-col-resize",
+        panel === "left" ? "-right-2" : panel === "right" ? "-left-2" : "",
       )}
       onPointerDown={(event) => {
         event.preventDefault();
@@ -884,7 +895,15 @@ function PanelResize({ store, panel }: { store: DockStore; panel: "left" | "righ
         node.addEventListener("pointerup", stop);
         node.addEventListener("pointercancel", stop);
       }}
-    />
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/20 group-hover/resize:bg-foreground/40 group-active/resize:bg-foreground/40",
+          panel === "bottom" ? "h-0.5 w-8" : "h-8 w-0.5",
+        )}
+      />
+    </div>
   );
 }
 function WindowGrab({ store, id, title }: { store: DockStore; id: string; title: string }) {
