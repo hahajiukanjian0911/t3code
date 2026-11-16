@@ -15,6 +15,7 @@ import { shortcutLabelForCommand } from "../../keybindings";
 import {
   Columns2Icon,
   EllipsisIcon,
+  PanelBottomIcon,
   PanelLeftIcon,
   PanelRightIcon,
   Rows2Icon,
@@ -672,6 +673,55 @@ function DockFrame({
   const leftTabs = headerWindows.filter((window) => window.key === "left");
   const singleMain = groups.main.flatMap((group) => group.windows);
   const mainWindow = singleMain.length === 1 ? snapshot.windows[singleMain[0]!] : undefined;
+  const renderPanelToggle = (key: "left" | "bottom" | "right") => {
+    const [Icon, command] = (
+      {
+        left: [PanelLeftIcon, "sidebar.toggle"],
+        bottom: [PanelBottomIcon, "terminal.toggle"],
+        right: [PanelRightIcon, "rightPanel.toggle"],
+      } as const
+    )[key];
+    const shortcut = shortcutLabelForCommand(keybindings, command);
+    return (
+      <Tooltip key={key}>
+        <TooltipTrigger
+          render={
+            <button
+              type="button"
+              className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:bg-accent aria-pressed:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
+              aria-label={`Toggle ${panelLabels[key]}`}
+              aria-pressed={panelVisible(key)}
+              onClick={() => store.togglePanel(key)}
+            />
+          }
+        >
+          <Icon className="size-3.5" aria-hidden>
+            <path
+              d={
+                key === "bottom"
+                  ? "m9 7 3 3 3-3"
+                  : key === "left"
+                    ? "m16 15-3-3 3-3"
+                    : "m8 9 3 3-3 3"
+              }
+              className={cn(
+                "opacity-0 transition-[opacity,translate] duration-150 ease-(--ease-drawer) group-aria-pressed/panel-toggle:translate-x-0 group-aria-pressed/panel-toggle:translate-y-0 group-aria-pressed/panel-toggle:opacity-100 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0",
+                key === "bottom"
+                  ? "-translate-y-1"
+                  : key === "left"
+                    ? "translate-x-1"
+                    : "-translate-x-1",
+              )}
+            />
+          </Icon>
+        </TooltipTrigger>
+        <TooltipPopup>
+          {panelLabels[key]}
+          {shortcut ? ` (${shortcut})` : ""}
+        </TooltipPopup>
+      </Tooltip>
+    );
+  };
   const panels = workspacePanels.map(panel);
   return (
     <div
@@ -689,7 +739,7 @@ function DockFrame({
           className="flex h-full min-w-0 items-center gap-3 overflow-hidden pr-3 pl-(--workspace-controls-left)"
           data-workspace-titlebar-leading=""
         >
-          <span className="shrink-0 text-xs font-medium">T3 Code</span>
+          {renderPanelToggle("left")}
           {leftTabs.length > 0 ? (
             <div className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]">
               {renderTabs(leftTabs)}
@@ -714,43 +764,8 @@ function DockFrame({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1 pl-3">
-          {(
-            [
-              ["left", PanelLeftIcon, "sidebar.toggle"],
-              ["right", PanelRightIcon, "rightPanel.toggle"],
-            ] as const
-          ).map(([key, Icon, command]) => {
-            const shortcut = shortcutLabelForCommand(keybindings, command);
-            return (
-              <Tooltip key={key}>
-                <TooltipTrigger
-                  render={
-                    <button
-                      type="button"
-                      className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:bg-accent aria-pressed:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
-                      aria-label={`Toggle ${panelLabels[key]}`}
-                      aria-pressed={panelVisible(key)}
-                      onClick={() => store.togglePanel(key)}
-                    />
-                  }
-                >
-                  <Icon className="size-3.5" aria-hidden>
-                    <path
-                      d={key === "left" ? "m16 15-3-3 3-3" : "m8 9 3 3-3 3"}
-                      className={cn(
-                        "opacity-0 transition-[opacity,translate] duration-150 ease-(--ease-drawer) group-aria-pressed/panel-toggle:translate-x-0 group-aria-pressed/panel-toggle:opacity-100 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0",
-                        key === "left" ? "translate-x-1" : "-translate-x-1",
-                      )}
-                    />
-                  </Icon>
-                </TooltipTrigger>
-                <TooltipPopup>
-                  {panelLabels[key]}
-                  {shortcut ? ` (${shortcut})` : ""}
-                </TooltipPopup>
-              </Tooltip>
-            );
-          })}
+          {renderPanelToggle("bottom")}
+          {renderPanelToggle("right")}
         </div>
       </header>
       {controls}

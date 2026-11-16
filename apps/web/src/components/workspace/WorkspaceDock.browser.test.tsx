@@ -108,7 +108,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
     .toHaveAttribute("aria-pressed", "true");
   expect(
     screen.container.querySelectorAll("[data-workspace-titlebar] button[aria-pressed]"),
-  ).toHaveLength(2);
+  ).toHaveLength(3);
   await userEvent.click(
     page
       .elementLocator(input.closest("[data-workspace-window]")!)
@@ -214,14 +214,18 @@ it("restores a hidden panel without an initially selected resource reopening it"
       placements: {
         file: { panel: "right", group: "right" },
         threads: { panel: "floating", group: "floating" },
+        terminal: { panel: "bottom", group: "bottom" },
       },
-      hidden: { right: true },
+      hidden: { right: true, bottom: true },
       active: { right: "file" },
     }),
   );
   await using screen = await render(
     <div className="h-screen w-screen">
       <WorkspaceRoot>
+        <WorkspaceWindow id="terminal" title="Terminal" panel="bottom">
+          <p>Terminal content</p>
+        </WorkspaceWindow>
         <WorkspaceWindow id="threads" title="Threads" panel="left" fixed>
           <p>Pinned threads</p>
         </WorkspaceWindow>
@@ -231,6 +235,21 @@ it("restores a hidden panel without an initially selected resource reopening it"
       </WorkspaceRoot>
     </div>,
   );
+  const titlebar = screen.container.querySelector("[data-workspace-titlebar]")!;
+  expect(titlebar.textContent).not.toContain("T3 Code");
+  expect(
+    screen
+      .getByRole("button", { name: "Toggle Left panel" })
+      .element()
+      .closest("[data-workspace-titlebar-leading]"),
+  ).not.toBeNull();
+  const bottomToggle = screen.getByRole("button", { name: "Toggle Bottom panel" });
+  await expect.element(bottomToggle).toHaveAttribute("aria-pressed", "false");
+  await userEvent.click(bottomToggle);
+  await expect.element(screen.getByText("Terminal content", { exact: true })).toBeVisible();
+  await expect.element(bottomToggle).toHaveAttribute("aria-pressed", "true");
+  await userEvent.click(bottomToggle);
+  await expect.element(bottomToggle).toHaveAttribute("aria-pressed", "false");
   const sidebar = screen.getByText("Pinned threads").element().closest("[data-workspace-window]")!;
   expect(sidebar.closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel")).toBe(
     "left",
