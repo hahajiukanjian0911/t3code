@@ -501,9 +501,25 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 }
 
 @utility workspace-window-surface-floating {
-  background-color: var(--workspace-floating-surface, var(--popover));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  background-color: var(--workspace-floating-surface, var(--background));
+  border-color: color-mix(in oklab, var(--border) 88%, transparent);
+  box-shadow:
+    0 24px 64px -16px rgb(0 0 0 / 20%),
+    0 4px 16px -4px rgb(0 0 0 / 8%),
+    inset 0 0.5px 0 rgb(255 255 255 / 70%);
+
+  @variant dark {
+    border-color: color-mix(in srgb, var(--color-white) 10%, transparent);
+    box-shadow:
+      0 24px 72px -16px rgb(0 0 0 / 78%),
+      0 4px 20px -4px rgb(0 0 0 / 45%),
+      inset 0 0.5px 0 rgb(255 255 255 / 12%);
+  }
+}
+
+[data-workspace-dock]:has([data-workspace-dragging]) [data-workspace-floating-overlay] {
+  pointer-events: none;
+  opacity: 0.25;
 }
 
 @utility workspace-titlebar-tabs-fade {
@@ -1836,6 +1852,7 @@ body {
 /* Transparent slot unwrapping when a chat window splits into Conversation + docked Details. */
 [data-workspace-group]:has(> :not([hidden]) [data-inline-details-docked]) {
   background-color: transparent;
+  border-width: 0;
   border-color: transparent;
   box-shadow: none;
   overflow: visible;
@@ -1891,7 +1908,7 @@ body {
     );
     --workspace-floating-surface: color-mix(
       in oklab,
-      var(--popover) calc(60% + (var(--glass-opacity) - 40%) * 0.55),
+      var(--background) calc(92% + (var(--glass-opacity) - 40%) * 0.12),
       transparent
     );
   }

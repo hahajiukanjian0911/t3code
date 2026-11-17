@@ -196,7 +196,7 @@ export function ChatCanvas({
         data-preview-overlaps-chat={layout.overlapsChat || undefined}
         className={cn(
           "relative flex min-h-0 min-w-0 flex-1",
-          dockedInlineDetails ? "flex-row gap-1.5" : "flex-col",
+          dockedInlineDetails ? "flex-row gap-(--workspace-seam,6px)" : "flex-col",
         )}
         style={
           {

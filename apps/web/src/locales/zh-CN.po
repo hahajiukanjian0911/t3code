@@ -332,6 +332,7 @@ msgid "Close"
 msgstr "关闭"
 
 #: src/components/AppRouteModal.tsx
+#: src/components/workspace/WorkspaceDock.tsx
 msgid "Close (Esc)"
 msgstr "关闭 (Esc)"
 
@@ -1883,7 +1884,6 @@ msgstr "打开面板"
 #: src/components/pullRequest/PullRequestsColumn.tsx
 #: src/components/pullRequest/PullRequestsColumn.tsx
 #: src/components/settings/SettingsPanels.tsx
-#: src/components/sidebar/SidebarChrome.tsx
 msgid "Pull requests"
 msgstr "拉取请求"
 
@@ -1896,9 +1896,11 @@ msgstr "空闲"
 #. 0: terminology.singular
 #. 0: terminology.singular
 #. 0: snapshot.windows[id]!.title
+#. 0: panelLabels.floating
 #: src/components/RightPanelTabs.tsx
 #: src/components/pullRequest/PullRequestActionsMenu.tsx
 #: src/components/pullRequest/PullRequestActionsMenu.tsx
+#: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Close {0}"
 msgstr "关闭 {0}"
@@ -21205,6 +21207,8 @@ msgid "Floating panel"
 msgstr "浮动面板"
 
 #. 0: panelLabels[key]
+#. 0: panelLabels.floating
+#: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Toggle {0}"
 msgstr "切换{0}"
@@ -21213,7 +21217,11 @@ msgstr "切换{0}"
 msgid "Window actions"
 msgstr "窗口操作"
 
+#. 0: panelLabels[dockTargetPanel]
+#. 0: panelLabels[dockTargetPanel]
 #. 0: panelLabels[panel]
+#: src/components/workspace/WorkspaceDock.tsx
+#: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Move to {0}"
 msgstr "移到{0}"

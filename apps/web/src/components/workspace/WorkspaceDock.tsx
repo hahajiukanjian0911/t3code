@@ -15,6 +15,8 @@ import { shortcutLabelForCommand } from "../../keybindings";
 import {
   Columns2Icon,
   EllipsisIcon,
+  LayersIcon,
+  Minimize2Icon,
   PanelBottomIcon,
   PanelLeftIcon,
   PanelRightIcon,
@@ -169,6 +171,13 @@ function createDockStore() {
         updateLayout(moveWorkspaceWindow(snapshot.layout, window.id, { panel, group: panel }));
         activate(window.id);
       } else openers[panel]?.();
+    },
+    hidePanel(panel: WorkspacePanel) {
+      if (snapshot.layout.hidden[panel]) return;
+      updateLayout({
+        ...snapshot.layout,
+        hidden: { ...snapshot.layout.hidden, [panel]: true },
+      });
     },
     subscribe: (listener: () => void) => {
       listeners.add(listener);
@@ -544,11 +553,40 @@ function DockFrame({
     !layout.hidden[panel] && (panel === "main" || groups[panel].length > 0);
   const left = panelVisible("left"),
     right = panelVisible("right"),
-    bottom = panelVisible("bottom");
+    bottom = panelVisible("bottom"),
+    floatingVisible = panelVisible("floating");
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- subscribes to document Escape key while floating modal is visible
+  useEffect(() => {
+    if (!floatingVisible) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest("[role='dialog'], [role='menu'], [data-workspace-dragging]")) return;
+      event.preventDefault();
+      store.hidePanel("floating");
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [floatingVisible, store]);
   const mounted = new Set<string>();
-  const panel = (key: WorkspacePanel) => {
+  const renderGroupWindows = (group: (typeof groups)["main"][number]) =>
+    group.windows.map((id) => {
+      const window = snapshot.windows[id]!;
+      mounted.add(id);
+      const active = group.active === id;
+      return (
+        <div
+          key={id}
+          hidden={!active}
+          inert={!active}
+          className="relative flex h-full min-h-0 min-w-0 flex-col"
+        >
+          <PortalMount node={window.container} className="h-full min-h-0 min-w-0 flex-1" />
+        </div>
+      );
+    });
+  const panel = (key: Exclude<WorkspacePanel, "floating">) => {
     if (groups[key].length === 0 && key !== "main") return null;
-    const isFloating = key === "floating";
     return (
       <section
         key={key}
@@ -558,46 +596,17 @@ function DockFrame({
         data-workspace-panel={key}
         data-workspace-group={key === "main" && groups.main.length === 0 ? "main" : undefined}
         data-workspace-owner={key === "main" && groups.main.length === 0 ? "main" : undefined}
-        onPointerUp={
-          isFloating
-            ? (event) => {
-                const bounds = event.currentTarget.getBoundingClientRect(),
-                  current = store.getSnapshot().layout;
-                if (
-                  bounds.width !== current.floating.width ||
-                  bounds.height !== current.floating.height
-                )
-                  store.updateLayout({
-                    ...current,
-                    floating: { ...current.floating, width: bounds.width, height: bounds.height },
-                  });
-              }
-            : undefined
-        }
         className={cn(
-          "relative flex min-h-0 min-w-0",
-          isFloating
-            ? "absolute z-40 max-h-full max-w-full resize overflow-hidden workspace-window-card workspace-window-surface-floating shadow-2xl"
-            : "overflow-visible",
+          "relative flex min-h-0 min-w-0 overflow-visible",
           key === "main" &&
             groups.main.length === 0 &&
             "workspace-window-card workspace-window-surface-main",
         )}
-        style={
-          isFloating
-            ? {
-                left: `clamp(0px, ${layout.floating.x}px, max(0px, 100% - ${layout.floating.width}px))`,
-                top: `clamp(0px, ${layout.floating.y}px, max(0px, 100% - ${layout.floating.height}px))`,
-                width: layout.floating.width,
-                height: layout.floating.height,
-              }
-            : { gridArea: key }
-        }
+        style={{ gridArea: key }}
       >
         <div
           className={cn(
-            "relative flex min-h-0 min-w-0 flex-1",
-            isFloating ? "overflow-hidden rounded-[inherit]" : "gap-1.5",
+            "relative flex min-h-0 min-w-0 flex-1 gap-(--workspace-seam)",
             layout.vertical[key] && "flex-col",
           )}
         >
@@ -607,34 +616,15 @@ function DockFrame({
               data-workspace-group={group.id}
               data-workspace-owner={key}
               className={cn(
-                "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-                !isFloating && "workspace-window-card",
-                !isFloating &&
-                  (key === "left"
-                    ? "workspace-window-surface-left"
-                    : key === "right"
-                      ? "workspace-window-surface-right"
-                      : "workspace-window-surface-main"),
+                "workspace-window-card relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+                key === "left"
+                  ? "workspace-window-surface-left"
+                  : key === "right"
+                    ? "workspace-window-surface-right"
+                    : "workspace-window-surface-main",
               )}
             >
-              {group.windows.map((id) => {
-                const window = snapshot.windows[id]!;
-                mounted.add(id);
-                const active = group.active === id;
-                return (
-                  <div
-                    key={id}
-                    hidden={!active}
-                    inert={!active}
-                    className="relative flex h-full min-h-0 min-w-0 flex-col"
-                  >
-                    <PortalMount
-                      node={window.container}
-                      className="h-full min-h-0 min-w-0 flex-1"
-                    />
-                  </div>
-                );
-              })}
+              {renderGroupWindows(group)}
             </div>
           ))}
         </div>
@@ -771,14 +761,115 @@ function DockFrame({
       </Tooltip>
     );
   };
-  const panels = workspacePanels.map(panel);
+  const panels = (["left", "main", "right", "bottom"] as const).map(panel);
+  const floatingTabs = groups.floating.flatMap((group) =>
+    group.windows.map((id) => ({ id, group: group.id, key: "floating" as const })),
+  );
+  const activeFloatingId =
+    groups.floating.find((group) => group.active)?.active ?? floatingTabs[0]?.id;
+  const activeFloatingWindow = activeFloatingId ? snapshot.windows[activeFloatingId] : undefined;
+  const dockTargetPanel =
+    activeFloatingWindow && activeFloatingWindow.defaultPanel !== "floating"
+      ? activeFloatingWindow.defaultPanel
+      : "right";
+  const floatingOverlay =
+    groups.floating.length > 0 ? (
+      <div
+        data-workspace-floating-overlay=""
+        hidden={!floatingVisible}
+        inert={!floatingVisible}
+        className="absolute inset-0 z-40 flex items-center justify-center p-5 transition-opacity duration-150 sm:p-8 [-webkit-app-region:no-drag]"
+      >
+        <div
+          aria-hidden
+          data-workspace-floating-backdrop=""
+          className="dialog-backdrop absolute inset-0"
+          onClick={() => store.hidePanel("floating")}
+        />
+        <section
+          aria-label={panelLabels.floating}
+          data-workspace-panel="floating"
+          className="workspace-window-surface-floating relative z-10 flex h-full max-h-[820px] w-full max-w-[1060px] min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border"
+        >
+          <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-border/60 px-3.5">
+            <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
+              {floatingTabs.length > 1 ? (
+                renderTabs(floatingTabs)
+              ) : activeFloatingWindow ? (
+                <div className="flex min-w-0 items-center gap-2 text-foreground">
+                  {activeFloatingWindow.icon ? (
+                    <span aria-hidden className="flex shrink-0 items-center text-muted-foreground">
+                      {activeFloatingWindow.icon}
+                    </span>
+                  ) : null}
+                  <span className="workspace-window-label truncate text-foreground">
+                    {activeFloatingWindow.title}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              {activeFloatingWindow && !activeFloatingWindow.fixed ? (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        size="icon-xs"
+                        variant="ghost-muted"
+                        aria-label={`Move to ${panelLabels[dockTargetPanel]}`}
+                        onClick={() =>
+                          store.move(activeFloatingWindow.id, {
+                            panel: dockTargetPanel,
+                            group: dockTargetPanel,
+                          })
+                        }
+                      />
+                    }
+                  >
+                    <Minimize2Icon className="size-3.5" />
+                  </TooltipTrigger>
+                  <TooltipPopup>Move to {panelLabels[dockTargetPanel]}</TooltipPopup>
+                </Tooltip>
+              ) : null}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="icon-xs"
+                      variant="ghost-muted"
+                      aria-label={`Close ${panelLabels.floating}`}
+                      onClick={() => store.hidePanel("floating")}
+                    />
+                  }
+                >
+                  <XIcon className="size-3.5" />
+                </TooltipTrigger>
+                <TooltipPopup>Close (Esc)</TooltipPopup>
+              </Tooltip>
+            </div>
+          </div>
+          <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+            {groups.floating.map((group) => (
+              <div
+                key={group.id}
+                data-workspace-group={group.id}
+                data-workspace-owner="floating"
+                className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+              >
+                {renderGroupWindows(group)}
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    ) : null;
   return (
     <div
-      className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-(--workspace-board) [--workspace-board:color-mix(in_oklab,var(--background),var(--foreground)_4%)] [--workspace-topbar-height:34px]"
+      className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-(--workspace-board) [--workspace-board:color-mix(in_oklab,var(--background),var(--foreground)_4%)] [--workspace-seam:6px] [--workspace-topbar-height:34px]"
       data-workspace-dock=""
     >
       <header
-        className="drag-region relative grid h-[34px] min-h-[34px] shrink-0 items-center gap-1.5 px-1.5 wco:pr-(--workspace-native-controls-inset)"
+        className="drag-region relative grid h-[34px] min-h-[34px] shrink-0 items-center gap-(--workspace-seam) px-(--workspace-seam) wco:pr-(--workspace-native-controls-inset)"
         style={{
           gridTemplateColumns: `${left ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr)${right ? ` ${layout.sizes.right}px` : ""}`,
         }}
@@ -811,9 +902,7 @@ function DockFrame({
               <span className="workspace-window-label truncate">{mainWindow.title}</span>
             )
           ) : null}
-          {renderTabs(
-            headerWindows.filter((window) => window.key === "bottom" || window.key === "floating"),
-          )}
+          {renderTabs(headerWindows.filter((window) => window.key === "bottom"))}
         </div>
         {right ? (
           <div
@@ -824,6 +913,24 @@ function DockFrame({
           </div>
         ) : null}
         <div className="absolute right-2.5 top-0 flex h-full shrink-0 items-center gap-1">
+          {groups.floating.length > 0 ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
+                    aria-label={`Toggle ${panelLabels.floating}`}
+                    aria-pressed={floatingVisible}
+                    onClick={() => store.togglePanel("floating")}
+                  />
+                }
+              >
+                <LayersIcon className="size-3.5" aria-hidden />
+              </TooltipTrigger>
+              <TooltipPopup>{panelLabels.floating}</TooltipPopup>
+            </Tooltip>
+          ) : null}
           {renderPanelToggle("bottom")}
           {renderPanelToggle("right")}
         </div>
@@ -831,7 +938,7 @@ function DockFrame({
       {controls}
       <div
         ref={(node) => store.setBody(node)}
-        className="relative grid min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 pb-1.5"
+        className="relative grid min-h-0 flex-1 gap-(--workspace-seam) overflow-hidden px-(--workspace-seam) pb-(--workspace-seam)"
         style={{
           gridTemplateColumns: [
             left ? `${layout.sizes.left}px` : null,
@@ -871,6 +978,7 @@ function DockFrame({
             ))}
         </div>
       </div>
+      {floatingOverlay}
     </div>
   );
 }
@@ -915,11 +1023,15 @@ function PanelResize({ store, panel }: { store: DockStore; panel: "left" | "righ
       aria-label={`Resize ${panelLabels[panel]}`}
       aria-orientation={panel === "bottom" ? "horizontal" : "vertical"}
       className={cn(
-        "group/resize absolute z-20 touch-none",
+        "group/resize absolute z-20 flex touch-none items-center justify-center before:absolute before:-inset-1",
         panel === "bottom"
-          ? "inset-x-0 -top-1.5 h-1.5 cursor-row-resize"
-          : "inset-y-0 w-1.5 cursor-col-resize",
-        panel === "left" ? "-right-1.5" : panel === "right" ? "-left-1.5" : "",
+          ? "inset-x-0 -top-(--workspace-seam) h-(--workspace-seam) cursor-row-resize"
+          : "inset-y-0 w-(--workspace-seam) cursor-col-resize",
+        panel === "left"
+          ? "-right-(--workspace-seam)"
+          : panel === "right"
+            ? "-left-(--workspace-seam)"
+            : "",
       )}
       onPointerDown={(event) => {
         event.preventDefault();
@@ -950,8 +1062,8 @@ function PanelResize({ store, panel }: { store: DockStore; panel: "left" | "righ
       <span
         aria-hidden
         className={cn(
-          "pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/40 opacity-0 group-hover/resize:opacity-100 group-active/resize:opacity-100",
-          panel === "bottom" ? "h-0.5 w-8" : "h-8 w-0.5",
+          "pointer-events-none shrink-0 rounded-full bg-foreground/40 opacity-0 group-hover/resize:opacity-100 group-active/resize:opacity-100",
+          panel === "bottom" ? "h-[2px] w-8" : "h-8 w-[2px]",
         )}
       />
     </div>

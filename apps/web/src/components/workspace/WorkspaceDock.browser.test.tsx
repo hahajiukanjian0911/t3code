@@ -572,6 +572,32 @@ it("applies 7px concentric window cards, unmasked stratified translucency, and c
   expect(getComputedStyle(rightGroup).borderTopColor).toBe(
     getComputedStyle(leftGroup).borderTopColor,
   );
+  const leftResizeBar = screen
+    .getByRole("separator", { name: "Resize Left panel" })
+    .element()
+    .querySelector("span")!;
+  const rightResizeBar = screen
+    .getByRole("separator", { name: "Resize Right panel" })
+    .element()
+    .querySelector("span")!;
+  const leftBounds = leftGroup.getBoundingClientRect();
+  const mainBounds = conversationCard.getBoundingClientRect();
+  const dockedBounds = dockedDetailsCard.getBoundingClientRect();
+  const rightBounds = rightGroup.getBoundingClientRect();
+  const leftBarBounds = leftResizeBar.getBoundingClientRect();
+  const rightBarBounds = rightResizeBar.getBoundingClientRect();
+  expect(getComputedStyle(leftResizeBar).transform).toBe("none");
+  expect(getComputedStyle(rightResizeBar).transform).toBe("none");
+  expect(mainBounds.left - leftBounds.right).toBe(6);
+  expect(rightBounds.left - dockedBounds.right).toBe(6);
+  expect(leftBarBounds.left - leftBounds.right).toBeCloseTo(
+    mainBounds.left - leftBarBounds.right,
+    5,
+  );
+  expect(rightBarBounds.left - dockedBounds.right).toBeCloseTo(
+    rightBounds.left - rightBarBounds.right,
+    5,
+  );
 
   // Default 80% tier: Z0 < Left (~70%) < Right/Docked details (~79%) < Main conversation (100% solid).
   expect(alphaOf(dock)).toBeGreaterThan(100);
@@ -614,4 +640,64 @@ it("applies 7px concentric window cards, unmasked stratified translucency, and c
   expect(alphaOf(dock)).toBe(255);
   expect(alphaOf(leftGroup)).toBe(255);
   expect(alphaOf(rightGroup)).toBe(255);
+});
+
+it("dismisses the floating modal overlay on backdrop click or Escape, restores from titlebar, and docks back", async () => {
+  await page.viewport(1280, 800);
+  using _layout = isolatedLayout();
+  localStorage.setItem(
+    "t3code:workspace-layout:v1",
+    JSON.stringify({
+      placements: {
+        file: { panel: "floating", group: "floating" },
+      },
+      hidden: { floating: false },
+      active: { floating: "file" },
+    }),
+  );
+  await using screen = await render(
+    <div className="h-screen w-screen">
+      <WorkspaceRoot>
+        <WorkspaceWindow id="threads" title="Threads" panel="left" fixed>
+          <p>Threads</p>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="chat" title="Chat" panel="main" fixed>
+          <p>Chat</p>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="file" title="README" panel="right" selected>
+          <p>Floating file content</p>
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    </div>,
+  );
+
+  const overlay = screen.container.querySelector("[data-workspace-floating-overlay]")!;
+  const backdrop = screen.container.querySelector("[data-workspace-floating-backdrop]")!;
+  expect(overlay.hasAttribute("hidden")).toBe(false);
+
+  // Clicking the exposed backdrop edge dismisses the floating overlay.
+  await userEvent.click(backdrop, { position: { x: 8, y: 8 } });
+  await vi.waitFor(() => expect(overlay.hasAttribute("hidden")).toBe(true));
+
+  // Clicking the titlebar toggle restores it.
+  await userEvent.click(screen.getByRole("button", { name: "Toggle Floating panel" }));
+  await vi.waitFor(() => expect(overlay.hasAttribute("hidden")).toBe(false));
+
+  // Pressing Escape dismisses it again.
+  await userEvent.keyboard("{Escape}");
+  await vi.waitFor(() => expect(overlay.hasAttribute("hidden")).toBe(true));
+
+  // Restore and dock back to default right panel.
+  await userEvent.click(screen.getByRole("button", { name: "Toggle Floating panel" }));
+  await vi.waitFor(() => expect(overlay.hasAttribute("hidden")).toBe(false));
+  await userEvent.click(screen.getByRole("button", { name: "Move to Right panel" }));
+  await vi.waitFor(() =>
+    expect(
+      screen
+        .getByText("Floating file content")
+        .element()
+        .closest("[data-workspace-panel]")
+        ?.getAttribute("data-workspace-panel"),
+    ).toBe("right"),
+  );
 });
