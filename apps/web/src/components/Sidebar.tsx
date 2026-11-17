@@ -927,11 +927,12 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
     async <T extends string>(
       items: readonly ContextMenuItem<T>[],
       position: { x: number; y: number },
+      source?: ContextMenuSource,
     ) => {
       const api = readLocalApi();
       if (!api) return null;
       const release = holdOpen();
-      return api.contextMenu.show(items, position).finally(release);
+      return api.contextMenu.show(items, position, source).finally(release);
     },
   );
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
