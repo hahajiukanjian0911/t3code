@@ -37,7 +37,6 @@ import {
   CheckIcon,
   CircleAlertIcon,
   CircleCheckIcon,
-  CircleDashedIcon,
   CircleDotDashedIcon,
   GitBranchIcon,
   MessageCircleQuestionIcon,
@@ -54,6 +53,7 @@ import {
   memo,
   useRef,
   useState,
+  type AnimationEvent as ReactAnimationEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
@@ -459,7 +459,6 @@ const dropVerbBadge: Record<SidebarDropVerb, ReactNode> = {
 };
 
 const TOP_STATUS_ICONS = {
-  working: CircleDashedIcon,
   waiting: CircleDotDashedIcon,
   input: MessageCircleQuestionIcon,
   request: UserRoundIcon,
@@ -469,7 +468,28 @@ const TOP_STATUS_ICONS = {
   woke: AlarmClockIcon,
 } as const;
 
-function TopStatusIcon(props: { icon: keyof typeof TOP_STATUS_ICONS; className: string }) {
+function synchronizeStatusPulse(event: ReactAnimationEvent<HTMLElement>) {
+  if (event.animationName !== "status-pulse") return;
+  for (const animation of event.currentTarget.getAnimations()) {
+    if ("animationName" in animation && animation.animationName === "status-pulse") {
+      animation.startTime = 0;
+    }
+  }
+}
+
+function TopStatusIcon(props: {
+  icon: "working" | keyof typeof TOP_STATUS_ICONS;
+  className: string;
+}) {
+  if (props.icon === "working") {
+    return (
+      <span
+        aria-hidden
+        onAnimationStart={synchronizeStatusPulse}
+        className="size-[7px] shrink-0 rounded-full bg-current motion-safe:animate-status-pulse"
+      />
+    );
+  }
   const Icon = TOP_STATUS_ICONS[props.icon];
   return <Icon aria-hidden className={cn("shrink-0", props.className)} />;
 }
@@ -570,7 +590,7 @@ function ThreadRenameInput(props: {
       }}
       onClick={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}
-      className="-mx-1 min-w-0 flex-1 rounded-sm bg-card px-1 text-sm font-medium text-card-foreground outline-none ring-1 ring-inset ring-input focus:ring-foreground"
+      className="-mx-1 min-w-0 flex-1 rounded-sm bg-card px-1 text-sm font-medium text-card-foreground outline-none ring-1 ring-inset ring-ring/50 focus:ring-ring/70"
     />
   );
 }
@@ -1420,12 +1440,12 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
                       ) : (
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 font-medium",
+                            "inline-flex items-center gap-1.5 font-medium",
                             topStatus.className,
                           )}
                         >
-                          <span className={hasDuration ? "sr-only" : "contents"}>
-                            <TopStatusIcon icon={topStatus.icon} className="size-4" />
+                          <TopStatusIcon icon={topStatus.icon} className="size-3.5" />
+                          <span className={hasDuration ? "sr-only" : undefined}>
                             {topStatus.label}
                           </span>
                           {/* Not a live region: a collapsed sidebar is inert, so

@@ -8,6 +8,8 @@ import {
   EnvironmentId,
   type LocalApi,
   ProjectId,
+  ProviderInstanceId,
+  RunId,
   ThreadId,
   type ScopedThreadRef,
 } from "@t3tools/contracts";
@@ -395,5 +397,63 @@ describe("sidebar settled pagination", () => {
     const loadedRows = screen.container.querySelectorAll("[data-thread-item]").length;
     await act(() => moreButton.click());
     expect(screen.container.querySelectorAll("[data-thread-item]")).toHaveLength(loadedRows);
+  });
+});
+
+describe("sidebar working thread indicator", () => {
+  it("shows a pulsing dot beside the working duration on card rows", async () => {
+    using _now = vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-01-01T00:07:00.000Z"));
+    const activeProject = project("active");
+    const runId = RunId.make("run-1");
+    const workingThread = makeThreadFixture({
+      environmentId: activeProject.environmentId,
+      id: ThreadId.make("working-1"),
+      projectId: activeProject.id,
+      title: "Running task",
+      runtime: {
+        providerName: "codex",
+        providerInstanceId: ProviderInstanceId.make("codex"),
+        status: "running",
+        activeRunId: runId,
+        lastError: null,
+        lastErrorClass: null,
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+      latestRun: {
+        runId,
+        status: "running",
+        requestedAt: "2026-01-01T00:00:00.000Z",
+        startedAt: "2026-01-01T00:00:00.000Z",
+        completedAt: null,
+        assistantMessageId: null,
+      },
+    });
+    const threadRef = { environmentId: activeProject.environmentId, threadId: workingThread.id };
+    vi.mocked(useProjects).mockReturnValue([activeProject]);
+    vi.mocked(useQuietThreadShells).mockReturnValue([workingThread]);
+    vi.mocked(useThreadRouteTarget).mockReturnValue({ kind: "server", threadRef });
+    vi.mocked(useHandleNewThread).mockReturnValue({
+      activeDraftThread: null,
+      activeThread: null,
+      defaultProjectRef: {
+        environmentId: activeProject.environmentId,
+        projectId: activeProject.id,
+      },
+      defaultProjectFallbackReady: true,
+      handleNewThread: vi.fn().mockResolvedValue(null),
+      routeDraftId: null,
+      routeThreadRef: threadRef,
+    });
+    await using screen = await render(
+      <SidebarProvider>
+        <Sidebar routeReveal={{ observedKey: null, pendingKey: null }} />
+      </SidebarProvider>,
+    );
+    const card = screen.getByTestId("sidebar-row-card");
+    await expect.element(screen.getByText("7m")).toBeInTheDocument();
+    const statusSlot = card.element().querySelector(".group\\/sidebar-status-slot")!;
+    const pulseDot = statusSlot.querySelector("span.motion-safe\\:animate-status-pulse");
+    expect(pulseDot).not.toBeNull();
+    expect(pulseDot?.closest(".sr-only")).toBeNull();
   });
 });
