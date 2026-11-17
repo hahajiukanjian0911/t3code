@@ -3,7 +3,11 @@ import { useStore } from "zustand";
 import { ChatCanvasContext } from "./ChatCanvasContext";
 import { resolveChatCanvasLayout, type ChatCanvasPreview } from "./chatCanvasLayout";
 import { resolveChatCanvasModel, type ChatCanvasStore } from "./canvasStore";
-import { selectThreadPanelOpen, useRightPanelStore } from "../../rightPanelStore";
+import {
+  selectThreadPanelOpen,
+  selectThreadRightPanelState,
+  useRightPanelStore,
+} from "../../rightPanelStore";
 import { observeResize } from "../../lib/observeResize";
 import { cn } from "../../lib/utils";
 import { useWorkspaceDockEnabled } from "../workspace/WorkspaceDock";
@@ -137,6 +141,11 @@ export function ChatCanvas({
     };
   }, [store, composerOverlayElement, timelineElement, detailsCardTopInset]);
   const workspaceDock = useWorkspaceDockEnabled();
+  const rightPanelSurfacesOpen = useRightPanelStore((state) => {
+    if (threadRef === null) return false;
+    const panel = selectThreadRightPanelState(state.byThreadKey, threadRef);
+    return panel.isOpen && panel.surfaces.length > 0;
+  });
   const detailsCardInlineOpen = useRightPanelStore((state) =>
     threadRef === null
       ? false
@@ -162,7 +171,9 @@ export function ChatCanvas({
   };
   const { layout } = context;
   const dockedInlineDetails =
-    workspaceDock && Boolean(model.detailsCardPlacement && detailsCardInlineOpen);
+    workspaceDock &&
+    !rightPanelSurfacesOpen &&
+    Boolean(model.detailsCardPlacement && detailsCardInlineOpen);
   const laneChat = dockedInlineDetails
     ? resolveChatCanvasLayout({
         container: {

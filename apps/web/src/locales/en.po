@@ -8219,6 +8219,7 @@ msgid "No checks reported"
 msgstr "No checks reported"
 
 #: src/components/chat/BackgroundWorkDetails.tsx
+#: src/components/chat/ThreadDetailsCard.tsx
 #: src/components/device/DevicePanel.tsx
 #: src/components/preview/PreviewUnreachable.tsx
 #: src/components/pullRequest/PullRequestChecksPopover.tsx
@@ -9519,8 +9520,8 @@ msgid "Adjust the contrast of colors and borders across the interface."
 msgstr "Adjust the contrast of colors and borders across the interface."
 
 #: src/components/settings/AppearanceSettingsPanel.tsx
-msgid "Higher values make menus, dialogs, and the composer more solid."
-msgstr "Higher values make menus, dialogs, and the composer more solid."
+msgid "Higher values make the workspace frame, sidebars, menus, dialogs, and the composer more solid."
+msgstr "Higher values make the workspace frame, sidebars, menus, dialogs, and the composer more solid."
 
 #: src/components/settings/AppearanceSettingsPanel.tsx
 msgid "Set how wide messages and the composer can grow on large screens."
@@ -21345,25 +21346,3 @@ msgstr "1 merge loaded"
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "{0} merges loaded"
 msgstr "{0} merges loaded"
-
-#: src/components/settings/AppearanceSettingsPanel.tsx
-#: src/i18n/staticUiLabels.ts
-msgid "Backdrop source"
-msgstr "Backdrop source"
-
-#: src/i18n/staticUiLabels.ts
-msgid "Desktop wallpaper"
-msgstr "Desktop wallpaper"
-
-#: src/components/settings/AppearanceSettingsPanel.tsx
-#: src/i18n/staticUiLabels.ts
-msgid "Behind window"
-msgstr "Behind window"
-
-#: src/components/settings/AppearanceSettingsPanel.tsx
-msgid "Ignore other app windows behind T3 Code and tint translucent surfaces with your desktop wallpaper."
-msgstr "Ignore other app windows behind T3 Code and tint translucent surfaces with your desktop wallpaper."
-
-#: src/components/settings/AppearanceSettingsPanel.tsx
-msgid "Desktop wallpaper (default)"
-msgstr "Desktop wallpaper (default)"

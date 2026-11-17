@@ -37,7 +37,6 @@ import {
 } from "./composerDraftStore";
 import { startDefaultThemeAdoption } from "./hooks/useDefaultTheme";
 import { startEnvironmentThemeRepaint } from "./hooks/useEnvironmentTheme";
-import { startDesktopWallpaperBackdrop } from "./desktopWallpaperBackdrop";
 import { startThemeBackground } from "./themeBackground";
 import { readLocalStorageValue, subscribeLocalStorageKey } from "./hooks/useLocalStorage";
 import { startHostEnvironmentLookup } from "./state/primaryEnvironment";
@@ -98,9 +97,6 @@ function startClientAppearance(): void {
       } else {
         root.style.removeProperty("--glass-blur");
       }
-    }
-    if (previous?.glassBackdropSource !== settings.glassBackdropSource) {
-      root.dataset.glassBackdropSource = settings.glassBackdropSource;
     }
     if (
       previous?.fontFamilySans !== settings.fontFamilySans ||
@@ -270,7 +266,6 @@ export function startAppServices(): AppRouter {
   startHostEnvironmentLookup();
   startEnvironmentThemeRepaint();
   startThemeBackground();
-  startDesktopWallpaperBackdrop();
   startBrowserChromeThemeSync(router);
   startDefaultThemeAdoption();
   startModelPreferencesMigration();

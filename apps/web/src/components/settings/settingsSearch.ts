@@ -338,14 +338,7 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "setting-glass-opacity",
     title: "Glass opacity",
     to: "/settings/appearance",
-    searchTerms: ["transparent transparency solid menus dialogs composer"],
-  },
-  {
-    id: "glass-backdrop-source",
-    title: "Backdrop source",
-    to: "/settings/appearance",
-    desktopOnly: true,
-    searchTerms: ["wallpaper desktop behind window periscope tint blur"],
+    searchTerms: ["transparent transparency solid windows sidebars panels menus dialogs composer"],
   },
   {
     id: "diff-color-scheme",

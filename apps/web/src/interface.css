@@ -120,8 +120,9 @@ p > [data-draft-project-trigger] {
   }
 }
 
-[data-workspace-owner="left"] [data-slot="sidebar"] {
+[data-workspace-owner="left"] :is([data-slot="sidebar"], [data-slot="sidebar-inner"]) {
   background-color: transparent !important;
+  background-image: none !important;
 }
 
 [data-workspace-owner="left"] [data-slot="sidebar-inner"] {

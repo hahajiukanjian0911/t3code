@@ -147,10 +147,6 @@ export const GlassOpacity = Schema.Int.check(
 export type GlassOpacity = typeof GlassOpacity.Type;
 const DEFAULT_GLASS_OPACITY: GlassOpacity = 80;
 
-export const GlassBackdropSource = Schema.Literals(["wallpaper", "behind-window"]);
-export type GlassBackdropSource = typeof GlassBackdropSource.Type;
-const DEFAULT_GLASS_BACKDROP_SOURCE: GlassBackdropSource = "wallpaper";
-
 export const MIN_APPEARANCE_CONTRAST = 50;
 export const MAX_APPEARANCE_CONTRAST = 200;
 export const AppearanceContrast = Schema.Int.check(
@@ -498,9 +494,6 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   glassOpacity: GlassOpacity.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_GLASS_OPACITY)),
-  ),
-  glassBackdropSource: GlassBackdropSource.pipe(
-    Schema.withDecodingDefault(Effect.succeed(DEFAULT_GLASS_BACKDROP_SOURCE)),
   ),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
@@ -2089,7 +2082,6 @@ export const ClientSettingsPatch = Schema.Struct({
   diffLayout: Schema.optionalKey(DiffLayout),
   environmentIdentificationMode: Schema.optionalKey(EnvironmentIdentificationMode),
   glassOpacity: Schema.optionalKey(GlassOpacity),
-  glassBackdropSource: Schema.optionalKey(GlassBackdropSource),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizeChat: Schema.optionalKey(ChatFontSize),

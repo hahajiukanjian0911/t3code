@@ -6,11 +6,17 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import { scopedThreadKey } from "@t3tools/client-runtime/environment";
 import type { ScopedThreadRef } from "@t3tools/contracts";
+import { SquareMenuIcon } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { cn } from "../../lib/utils";
 import { Popover, PopoverPopup, PopoverCreateHandle } from "../ui/popover";
-import { selectThreadPanelOpen, useRightPanelStore } from "../../rightPanelStore";
+import {
+  selectThreadPanelOpen,
+  selectThreadRightPanelState,
+  useRightPanelStore,
+} from "../../rightPanelStore";
 import { useChatCanvas } from "./ChatCanvasContext";
 import {
   THREAD_DETAILS_CARD_GAP,
@@ -18,7 +24,7 @@ import {
 } from "./threadDetailsCardLayout";
 import { observeResize } from "../../lib/observeResize";
 import { requestWorkspaceFocus } from "../../lib/workspaceFocus";
-import { useWorkspaceDockEnabled } from "../workspace/WorkspaceDock";
+import { WorkspaceWindow, useWorkspaceDockEnabled } from "../workspace/WorkspaceDock";
 
 export function ThreadDetailsCard({
   threadRef,
@@ -42,20 +48,40 @@ export function ThreadDetailsCard({
   const placement = canvas?.detailsCardPlacement ?? null;
   const mode = placement ? "inline" : "popover";
   const topInset = canvas?.detailsCardTopInset ?? 0;
+  const workspaceDock = useWorkspaceDockEnabled();
   const inlineOpen = useRightPanelStore((state) =>
     selectThreadPanelOpen(state.threadPanelVisibilityByThreadKey, threadRef, "inline"),
   );
   const popoverOpen = useRightPanelStore((state) =>
     selectThreadPanelOpen(state.threadPanelVisibilityByThreadKey, threadRef, "popover"),
   );
-  const measurementKey = `${threadRef.environmentId}:${threadRef.threadId}:${preferredPlacement?.width ?? "popup"}:${contentKey}`;
+  const rightPanelSurfacesOpen = useRightPanelStore((state) => {
+    const panel = selectThreadRightPanelState(state.byThreadKey, threadRef);
+    return panel.isOpen && panel.surfaces.length > 0;
+  });
+  const dockedInRightPanel =
+    workspaceDock && (rightPanelSurfacesOpen || (!placement && popoverOpen));
+  const [rightPanelElement, setRightPanelElement] = useState<HTMLDivElement | null>(null);
+  const [rightPanelHeight, setRightPanelHeight] = useState(0);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- tracks the docked right-panel window height so vertical splits adapt card density
+  useLayoutEffect(() => {
+    if (!rightPanelElement) return;
+    const update = () => setRightPanelHeight(rightPanelElement.clientHeight);
+    update();
+    return observeResize(rightPanelElement, update);
+  }, [rightPanelElement]);
+  const measurementKey = `${threadRef.environmentId}:${threadRef.threadId}:${dockedInRightPanel ? "right-panel" : (preferredPlacement?.width ?? "popup")}:${contentKey}`;
   const [measurements, setMeasurements] = useState({
     key: measurementKey,
     heights: { full: 0, compact: 0 },
   });
   const contentHeights =
     measurements.key === measurementKey ? measurements.heights : { full: 0, compact: 0 };
-  const height = placement?.height ?? Math.max(0, (canvas?.container.height ?? 0) - 52);
+  const height = dockedInRightPanel
+    ? rightPanelHeight > 0
+      ? rightPanelHeight
+      : Math.max(0, canvas?.container.height ?? 0)
+    : (placement?.height ?? Math.max(0, (canvas?.container.height ?? 0) - 52));
   const density = resolveThreadDetailsCardDensity(height, contentHeights);
   const measureDetailsCard = canvas?.measureDetailsCard;
   const cardWidth = preferredPlacement?.width;
@@ -94,7 +120,7 @@ export function ThreadDetailsCard({
       });
       // Only the laid-out DOM knows the full card height, and the canvas keeps preview
       // frames clear of it, so it is reported from this measure effect.
-      if (density === "full" && cardWidth !== undefined) {
+      if (density === "full" && cardWidth !== undefined && !dockedInRightPanel) {
         measureDetailsCard?.({
           threadRef: { environmentId, threadId },
           width: cardWidth,
@@ -107,26 +133,28 @@ export function ThreadDetailsCard({
   }, [
     contentElement,
     density,
+    dockedInRightPanel,
     measurementKey,
     cardWidth,
     measureDetailsCard,
     environmentId,
     threadId,
   ]);
-  const workspaceDock = useWorkspaceDockEnabled();
-  const dockedInline = workspaceDock && Boolean(placement && inlineOpen);
+  const dockedInline = workspaceDock && !dockedInRightPanel && Boolean(placement && inlineOpen);
+  const isDockedCard = dockedInline || dockedInRightPanel;
   const card = (
     <div
       className={cn(
         "isolate contain-paint grid max-h-full grid-rows-[minmax(0,1fr)] overflow-hidden",
-        dockedInline ? "h-full" : "dropdown-glass rounded-2xl",
-        mode === "popover" &&
+        isDockedCard ? "h-full" : "dropdown-glass rounded-2xl",
+        !workspaceDock &&
+          mode === "popover" &&
           "max-h-[min(calc(100dvh-6.5rem),calc(var(--available-height,100dvh)-1rem))]",
       )}
-      style={placement && !dockedInline ? { maxHeight: height } : undefined}
+      style={placement && !isDockedCard ? { maxHeight: height } : undefined}
       onContextMenu={onContextMenu}
       data-thread-details-card
-      data-docked={dockedInline ? "true" : undefined}
+      data-docked={isDockedCard ? "true" : undefined}
     >
       <ScrollArea scrollFade className="min-h-0">
         <div ref={setContentElement}>{children(density)}</div>
@@ -134,79 +162,104 @@ export function ThreadDetailsCard({
     </div>
   );
   return (
-    <Popover
-      handle={handle}
-      open={mode === "popover" && popoverOpen}
-      onOpenChange={(open, details) => {
-        const target =
-          details.reason === "focus-out"
-            ? (details.event as FocusEvent).relatedTarget
-            : details.reason === "outside-press"
-              ? details.event.target
-              : null;
-        if (!open && target instanceof Element && target.closest("[data-thread-find-bar]")) {
-          details.cancel();
-          return;
-        }
-        useRightPanelStore.getState().setThreadPanelOpen(threadRef, "popover", open);
-      }}
-    >
-      {placement && inlineOpen ? (
-        <aside
-          {...detailsArea}
-          data-workspace-focus-key={`details:${threadRef.environmentId}:${threadRef.threadId}`}
-          // Skip the return transition to avoid overlapping the rising preview.
-          className={cn(
-            dockedInline
-              ? "relative z-20 flex h-full shrink-0 flex-col overflow-hidden workspace-window-card workspace-window-surface-right"
-              : "absolute z-20",
-            !dockedInline &&
-              topInset > 0 &&
-              "transition-[top] duration-150 ease-out motion-reduce:transition-none",
-          )}
-          style={
-            dockedInline
-              ? { width: placement.width }
-              : {
-                  right: placement.right,
-                  top: placement.y,
-                  width: placement.width,
-                  maxHeight: height,
-                }
-          }
-          data-density={density}
-          data-thread-details-panel="inline"
-        >
-          {card}
-        </aside>
-      ) : null}
-      {/* Rendered in both modes: base-ui keeps a popup that unmounts mid-open
-          mounted, because its exit animation never finishes. Staying in the tree
-          lets it close cleanly when the card switches inline. */}
-      <PopoverPopup
-        {...(mode === "popover" ? detailsArea : {})}
-        role="dialog"
-        data-workspace-focus-key={`details:${threadRef.environmentId}:${threadRef.threadId}`}
-        initialFocus={() => {
-          requestWorkspaceFocus({ area: "details" });
-          return false;
-        }}
-        anchor={anchor}
-        align="end"
-        // Account for the find panel's 8px card padding.
-        alignOffset={THREAD_DETAILS_CARD_GAP - 8}
-        collisionAvoidance={{ side: "shift", align: "shift", fallbackAxisSide: "none" }}
-        side="bottom"
-        sideOffset={topInset}
-        variant="panel"
-        padding="none"
+    <>
+      <WorkspaceWindow
+        enabled={workspaceDock}
+        id={`details:${scopedThreadKey(threadRef)}`}
+        title="Details"
+        icon={<SquareMenuIcon className="size-3.5" />}
+        panel="right"
+        closable={false}
+        available={dockedInRightPanel}
+        selected={!rightPanelSurfacesOpen && popoverOpen}
       >
-        {mode === "popover" ? (
-          <div data-density={density} data-thread-details-panel="popover">
+        {dockedInRightPanel ? (
+          <div
+            ref={setRightPanelElement}
+            {...detailsArea}
+            data-workspace-focus-key={`details:${threadRef.environmentId}:${threadRef.threadId}`}
+            data-density={density}
+            data-thread-details-panel="right"
+            className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden"
+          >
             {card}
           </div>
         ) : null}
-      </PopoverPopup>
-    </Popover>
+      </WorkspaceWindow>
+      <Popover
+        handle={handle}
+        open={!workspaceDock && mode === "popover" && popoverOpen}
+        onOpenChange={(open, details) => {
+          const target =
+            details.reason === "focus-out"
+              ? (details.event as FocusEvent).relatedTarget
+              : details.reason === "outside-press"
+                ? details.event.target
+                : null;
+          if (!open && target instanceof Element && target.closest("[data-thread-find-bar]")) {
+            details.cancel();
+            return;
+          }
+          useRightPanelStore.getState().setThreadPanelOpen(threadRef, "popover", open);
+        }}
+      >
+        {!dockedInRightPanel && placement && inlineOpen ? (
+          <aside
+            {...detailsArea}
+            data-workspace-focus-key={`details:${threadRef.environmentId}:${threadRef.threadId}`}
+            // Skip the return transition to avoid overlapping the rising preview.
+            className={cn(
+              dockedInline
+                ? "relative z-20 flex h-full shrink-0 flex-col overflow-hidden workspace-window-card workspace-window-surface-right"
+                : "absolute z-20",
+              !dockedInline &&
+                topInset > 0 &&
+                "transition-[top] duration-150 ease-out motion-reduce:transition-none",
+            )}
+            style={
+              dockedInline
+                ? { width: placement.width }
+                : {
+                    right: placement.right,
+                    top: placement.y,
+                    width: placement.width,
+                    maxHeight: height,
+                  }
+            }
+            data-density={density}
+            data-thread-details-panel="inline"
+          >
+            {card}
+          </aside>
+        ) : null}
+        {/* Rendered in both modes: base-ui keeps a popup that unmounts mid-open
+            mounted, because its exit animation never finishes. Staying in the tree
+            lets it close cleanly when the card switches inline. */}
+        <PopoverPopup
+          {...(!workspaceDock && mode === "popover" ? detailsArea : {})}
+          role="dialog"
+          data-workspace-focus-key={`details:${threadRef.environmentId}:${threadRef.threadId}`}
+          initialFocus={() => {
+            requestWorkspaceFocus({ area: "details" });
+            return false;
+          }}
+          anchor={anchor}
+          align="end"
+          // Account for the find panel's 8px card padding.
+          alignOffset={THREAD_DETAILS_CARD_GAP - 8}
+          collisionAvoidance={{ side: "shift", align: "shift", fallbackAxisSide: "none" }}
+          side="bottom"
+          sideOffset={topInset}
+          variant="panel"
+          padding="none"
+        >
+          {!workspaceDock && mode === "popover" ? (
+            <div data-density={density} data-thread-details-panel="popover">
+              {card}
+            </div>
+          ) : null}
+        </PopoverPopup>
+      </Popover>
+    </>
   );
 }

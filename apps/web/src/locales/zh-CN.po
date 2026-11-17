@@ -8219,6 +8219,7 @@ msgid "No checks reported"
 msgstr "未报告检查结果"
 
 #: src/components/chat/BackgroundWorkDetails.tsx
+#: src/components/chat/ThreadDetailsCard.tsx
 #: src/components/device/DevicePanel.tsx
 #: src/components/preview/PreviewUnreachable.tsx
 #: src/components/pullRequest/PullRequestChecksPopover.tsx
@@ -9519,8 +9520,8 @@ msgid "Adjust the contrast of colors and borders across the interface."
 msgstr "调整整个界面的颜色和边框对比度。"
 
 #: src/components/settings/AppearanceSettingsPanel.tsx
-msgid "Higher values make menus, dialogs, and the composer more solid."
-msgstr "数值越高，菜单、对话框和输入区越不透明。"
+msgid "Higher values make the workspace frame, sidebars, menus, dialogs, and the composer more solid."
+msgstr "数值越高，工作区底座、侧栏与检视窗、菜单、对话框及输入区越不透明。"
 
 #: src/components/settings/AppearanceSettingsPanel.tsx
 msgid "Set how wide messages and the composer can grow on large screens."
@@ -21345,25 +21346,3 @@ msgstr "已加载 1 次合并"
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "{0} merges loaded"
 msgstr "已加载 {0} 次合并"
-
-#: src/components/settings/AppearanceSettingsPanel.tsx
-#: src/i18n/staticUiLabels.ts
-msgid "Backdrop source"
-msgstr "玻璃透视来源"
-
-#: src/i18n/staticUiLabels.ts
-msgid "Desktop wallpaper"
-msgstr "仅桌面壁纸"
-
-#: src/components/settings/AppearanceSettingsPanel.tsx
-#: src/i18n/staticUiLabels.ts
-msgid "Behind window"
-msgstr "实时窗口后方"
-
-#: src/components/settings/AppearanceSettingsPanel.tsx
-msgid "Ignore other app windows behind T3 Code and tint translucent surfaces with your desktop wallpaper."
-msgstr "忽略后方叠放的其他应用窗口，始终透出纯净的桌面壁纸色彩。"
-
-#: src/components/settings/AppearanceSettingsPanel.tsx
-msgid "Desktop wallpaper (default)"
-msgstr "仅桌面壁纸（默认）"

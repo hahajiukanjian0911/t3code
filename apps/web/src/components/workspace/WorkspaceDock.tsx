@@ -47,6 +47,7 @@ interface DockWindow {
   id: string;
   defaultPanel: WorkspacePanel;
   fixed: boolean;
+  closable: boolean;
   title: string;
   icon: ReactNode;
   available: boolean;
@@ -178,8 +179,16 @@ function createDockStore() {
       const restored = !previous && snapshot.layout.placements[window.id] !== undefined;
       let next = snapshot.layout;
       const placement = next.placements[window.id];
-      if (!placement || (window.fixed && (placement.panel !== panel || placement.group !== panel)))
+      if (
+        !placement ||
+        (window.fixed && (placement.panel !== panel || placement.group !== panel))
+      ) {
+        const currentActive = next.active[panel];
         next = moveWorkspaceWindow(next, window.id, { panel, group: panel });
+        if (!window.selected && currentActive) {
+          next = { ...next, active: { ...next.active, [panel]: currentActive } };
+        }
+      }
       if (
         window.available &&
         window.selected &&
@@ -212,14 +221,15 @@ function createDockStore() {
         return true;
       }
       if (!snapshot.windows[id]?.available) return false;
-      if (visibleWindow(snapshot, id))
+      if (visibleWindow(snapshot, id)) {
+        if (window && !window.closable) return true;
         updateLayout({ ...snapshot.layout, dismissed: [...snapshot.layout.dismissed, id] });
-      else activate(id);
+      } else activate(id);
       return true;
     },
     close(id: string) {
       const window = snapshot.windows[id];
-      if (window?.fixed) return;
+      if (window?.fixed || window?.closable === false) return;
       if (window?.onClose) window.onClose();
       else updateLayout({ ...snapshot.layout, dismissed: [...snapshot.layout.dismissed, id] });
     },
@@ -270,6 +280,7 @@ export function WorkspaceWindow(props: {
   available?: boolean;
   selected?: boolean;
   fixed?: boolean;
+  closable?: boolean;
   activation?: unknown;
   onActivate?: (() => void) | undefined;
   onClose?: (() => void) | undefined;
@@ -283,12 +294,13 @@ function RegisteredWindow({
   store,
   ...props
 }: Parameters<typeof WorkspaceWindow>[0] & { store: DockStore }) {
-  const [container] = useState(() =>
-    Object.assign(document.createElement("div"), {
-      className:
-        "relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-background",
-    }),
-  );
+  const [container] = useState(() => {
+    const node = document.createElement("div");
+    node.dataset.workspaceWindowContainer = "";
+    node.className =
+      "relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden data-[workspace-dragging]:rounded-[7px] data-[workspace-dragging]:border data-[workspace-dragging]:border-border data-[workspace-dragging]:bg-popover";
+    return node;
+  });
   const [titleContainer] = useState(() =>
     Object.assign(document.createElement("div"), { className: "flex min-w-0 flex-1 items-center" }),
   );
@@ -303,6 +315,7 @@ function RegisteredWindow({
         id: props.id,
         defaultPanel: props.panel,
         fixed: props.fixed ?? false,
+        closable: props.closable ?? true,
         title: props.title,
         icon: props.icon,
         container,
@@ -324,6 +337,7 @@ function RegisteredWindow({
     props.available,
     props.selected,
     props.fixed,
+    props.closable,
     props.activation,
     props.panel,
     hasTitlebar,
@@ -434,14 +448,12 @@ export function WorkspacePanelActions({ children }: { children: ReactNode }) {
 
 export function WorkspaceActions({
   windowId,
-  anchorRef,
   children,
   onOpenBottom,
   onOpenRight,
 }: {
   windowId: string;
-  anchorRef?: { current: HTMLElement | null };
-  children: ReactNode;
+  children?: ReactNode;
   onOpenBottom: () => void;
   onOpenRight: () => void;
 }) {
@@ -451,16 +463,9 @@ export function WorkspaceActions({
     store?.setOpeners({ bottom: onOpenBottom, right: onOpenRight });
     return () => store?.setOpeners({});
   }, [store, onOpenBottom, onOpenRight]);
-  return store
+  return store && children
     ? createPortal(
-        <div
-          ref={(node) => {
-            if (anchorRef) anchorRef.current = node;
-          }}
-          className="flex items-center"
-        >
-          {children}
-        </div>,
+        <div className="flex items-center">{children}</div>,
         store.getActionsContainer(windowId),
       )
     : null;
@@ -702,7 +707,7 @@ function DockFrame({
           </span>
         ) : null}
         <span className="truncate">{snapshot.windows[id]!.title}</span>
-        {snapshot.windows[id]!.fixed ? null : (
+        {snapshot.windows[id]!.fixed || !snapshot.windows[id]!.closable ? null : (
           <span
             role="button"
             aria-label={`Close ${snapshot.windows[id]!.title}`}

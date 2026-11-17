@@ -5,7 +5,6 @@ import {
   DesktopEnvironmentBootstrapSchema,
   DesktopMediaReadSchema,
   DesktopThemeSchema,
-  DesktopWallpaperReadSchema,
   EDITORS,
   EditorId,
   PickedThemeFileSchema,
@@ -50,10 +49,6 @@ import * as MacPermissions from "../../permissions/MacPermissions.ts";
 import { safariPermissionCheck } from "../../preview/BrowserImport/SafariPermission.ts";
 import * as IpcChannels from "../channels.ts";
 import * as DesktopIpc from "../DesktopIpc.ts";
-import {
-  readDesktopWallpaperForPlatform,
-  resolveWindowDisplaySpace,
-} from "../../window/DesktopWallpaper.ts";
 import {
   extractDistroFromUncPath,
   resolveWslPickFolderDefaultPath,
@@ -614,25 +609,4 @@ export const restartAudioService = DesktopIpc.makeIpcMethod({
   payload: Schema.Void,
   result: Schema.Boolean,
   handler: ElectronAudio.restart,
-});
-
-export const readDesktopWallpaper = DesktopIpc.makeIpcMethod({
-  channel: IpcChannels.READ_DESKTOP_WALLPAPER_CHANNEL,
-  payload: Schema.Void,
-  result: Schema.NullOr(DesktopWallpaperReadSchema),
-  handler: Effect.fn("desktop.ipc.window.readDesktopWallpaper")(function* () {
-    const environment = yield* DesktopEnvironment.DesktopEnvironment;
-    const electronWindow = yield* ElectronWindow.ElectronWindow;
-    const window = yield* electronWindow.currentMainOrFirst;
-    if (Option.isNone(window) || window.value.isDestroyed()) return null;
-    const displays = yield* Effect.sync(() => {
-      try {
-        return Electron.screen.getAllDisplays();
-      } catch {
-        return [];
-      }
-    });
-    const space = resolveWindowDisplaySpace(window.value.getBounds(), displays);
-    return yield* readDesktopWallpaperForPlatform(environment.platform, space);
-  }),
 });

@@ -33,7 +33,11 @@ import { openDeviceSetupDialog } from "./ChatOverlayHosts";
 import { previewEnvironment } from "../../state/preview";
 import { useAtomCommand } from "../../state/use-atom-command";
 import type { ChatShortcutCommands } from "./useChatShortcuts";
-import { useWorkspacePanel } from "../workspace/WorkspaceDock";
+import {
+  useWorkspaceDockEnabled,
+  useWorkspacePanel,
+  useWorkspaceWindowToggle,
+} from "../workspace/WorkspaceDock";
 
 interface RightPanelActionsInput {
   readonly activeThreadRef: ScopedThreadRef | null;
@@ -68,7 +72,9 @@ interface RightPanelActionsInput {
  * requests, device, and terminal tabs.
  */
 export function useRightPanelActions(input: RightPanelActionsInput) {
+  const workspaceDock = useWorkspaceDockEnabled();
   const workspacePanel = useWorkspacePanel("right");
+  const toggleWorkspaceWindow = useWorkspaceWindowToggle();
   const {
     closeRightPanelSurface,
     activeThreadRef,
@@ -224,6 +230,10 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
       workspacePanel.toggle();
       return;
     }
+    if (workspacePanel?.visible && !embedded && !rightPanelOpen) {
+      useRightPanelStore.getState().setThreadPanelOpen(activeThreadRef, "popover", false);
+      return;
+    }
     if (rightPanelOpen) {
       closePreviewPanel();
       return;
@@ -235,11 +245,25 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
   const toggleThreadPanel = () => {
     if (!activeThreadRef) return;
     const store = useRightPanelStore.getState();
+    if (workspaceDock && !embedded && rightPanelOpen) {
+      toggleWorkspaceWindow(`details:${scopedThreadKey(activeThreadRef)}`, "right");
+      requestWorkspaceFocus({ area: "details" });
+      return;
+    }
     if (threadPanelPresentation === "inline") {
       const open = selectThreadPanelOpen(
         store.threadPanelVisibilityByThreadKey,
         activeThreadRef,
         "inline",
+      );
+      if (!open) requestWorkspaceFocus({ area: "details" });
+      else if (document.activeElement?.closest('[data-workspace-area="details"]'))
+        requestWorkspaceContentFocus();
+    } else if (workspaceDock && !embedded) {
+      const open = selectThreadPanelOpen(
+        store.threadPanelVisibilityByThreadKey,
+        activeThreadRef,
+        "popover",
       );
       if (!open) requestWorkspaceFocus({ area: "details" });
       else if (document.activeElement?.closest('[data-workspace-area="details"]'))

@@ -4140,18 +4140,15 @@ export default function ChatView(props: ChatViewProps) {
           <WorkspacePanelActions>{rightPanelShell}</WorkspacePanelActions>
           <WorkspaceActions
             windowId={`chat:${activeThreadKey}`}
-            anchorRef={threadPanelPopoverAnchorRef}
             onOpenBottom={toggleTerminalVisibilityStable}
             onOpenRight={
-              rightPanelState.surfaces.length === 0 ? addFilesSurfaceStable : toggleRightPanelStable
+              rightPanelState.surfaces.length === 0
+                ? activeProject
+                  ? addFilesSurfaceStable
+                  : toggleThreadPanelStable
+                : toggleRightPanelStable
             }
-          >
-            <PanelLayoutControls
-              {...panelToggleControlProps}
-              showTerminalControl={false}
-              showRightPanelControl={false}
-            />
-          </WorkspaceActions>
+          />
           {rightPanelState.surfaces.map((surface) => (
             <RightPanelWorkspaceWindow
               surface={surface}

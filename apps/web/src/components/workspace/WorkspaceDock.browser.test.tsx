@@ -3,12 +3,10 @@ import { useEffect, useState } from "react";
 import { expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
 import { act, render, stubGlobal } from "../../../test/render";
-import { DEFAULT_CLIENT_SETTINGS, type DesktopWindowDisplaySpace } from "@t3tools/contracts";
 import { BrowserSurfaceSlot } from "../../browser/BrowserSurfaceSlot";
 import { useBrowserSurfaceStore } from "../../browser/browserSurfaceStore";
-import { installDesktopWallpaperBackdrop } from "../../desktopWallpaperBackdrop";
-import { __setClientSettingsForTests, persistClientSettingsPatch } from "../../hooks/useSettings";
 import { syncDocumentElectronPlatformClasses } from "../../lib/windowControlsOverlay";
+import { Sidebar, SidebarProvider } from "../ui/sidebar";
 import {
   WorkspaceActions,
   WorkspacePanelActions,
@@ -452,28 +450,65 @@ it.each([true, false])(
   },
 );
 
-it("applies 7px concentric window cards, stratified panel translucency, and desktop wallpaper periscope backing", async () => {
+it("applies 7px concentric window cards, unmasked stratified translucency, and clean inline-details unwrapping", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   const cleanupPlatform = syncDocumentElectronPlatformClasses("MacIntel");
   using _platform = { [Symbol.dispose]: cleanupPlatform };
-  const ui = (fullscreen: boolean) => (
-    <div className="h-screen w-screen" data-window-fullscreen={fullscreen ? "true" : undefined}>
+  const ui = (fullscreen: boolean, dockedDetails: boolean) => (
+    <SidebarProvider
+      className="h-screen w-screen"
+      data-window-fullscreen={fullscreen ? "true" : undefined}
+    >
       <WorkspaceRoot>
         <WorkspaceWindow id="threads" fixed title="Threads" panel="left">
-          <p>Sidebar navigation</p>
+          <Sidebar collapsible="none" className="w-full">
+            <p>Sidebar navigation</p>
+          </Sidebar>
         </WorkspaceWindow>
         <WorkspaceWindow id="chat:glass" title="Conversation" panel="main" selected>
-          <p>Solid conversation</p>
+          <div data-chat-column className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+            <div
+              data-chat-canvas
+              data-inline-details-docked={dockedDetails ? "" : undefined}
+              className={
+                dockedDetails
+                  ? "relative flex min-h-0 min-w-0 flex-1 flex-row gap-1.5"
+                  : "relative flex min-h-0 min-w-0 flex-1 flex-col"
+              }
+            >
+              <div
+                data-chat-conversation-card=""
+                className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden in-data-[inline-details-docked]:workspace-window-card in-data-[inline-details-docked]:workspace-window-surface-main"
+              >
+                <div className="flex-1 bg-background">Solid conversation</div>
+              </div>
+              {dockedDetails ? (
+                <aside
+                  data-thread-details-panel="inline"
+                  className="relative z-20 flex h-full w-[280px] shrink-0 flex-col overflow-hidden workspace-window-card workspace-window-surface-right"
+                >
+                  Docked details
+                </aside>
+              ) : null}
+            </div>
+          </div>
         </WorkspaceWindow>
-        <WorkspaceWindow id="details:glass" title="Inspector" panel="right">
+        <WorkspaceWindow id="details:glass" title="Details" panel="right" closable={false}>
           <p>Inspector details</p>
         </WorkspaceWindow>
+        <WorkspaceWindow id="surface:glass:files" title="Files" panel="right" selected>
+          <p>Workspace files</p>
+        </WorkspaceWindow>
       </WorkspaceRoot>
-    </div>
+    </SidebarProvider>
   );
-  await using screen = await render(ui(false));
+  await using screen = await render(ui(false, true));
   await expect.element(screen.getByText("Solid conversation", { exact: true })).toBeVisible();
+  await expect.element(screen.getByText("Workspace files", { exact: true })).toBeVisible();
+  await expect.element(screen.getByRole("tab", { name: "Details", exact: true })).toBeVisible();
+  expect(screen.container.querySelector('[aria-label="Close Details"]')).toBeNull();
+  expect(screen.container.querySelector('[aria-label="Close Files"]')).not.toBeNull();
   const dock = screen.container.querySelector<HTMLElement>("[data-workspace-dock]")!;
   const titlebar = screen.container.querySelector<HTMLElement>("[data-workspace-titlebar]")!;
   const rightToggles = screen
@@ -483,11 +518,26 @@ it("applies 7px concentric window cards, stratified panel translucency, and desk
   const leftGroup = screen.container.querySelector<HTMLElement>(
     '[data-workspace-panel="left"] [data-workspace-group]',
   )!;
+  const leftWindowContainer = leftGroup.querySelector<HTMLElement>(
+    "[data-workspace-window-container]",
+  )!;
+  const leftSidebar = leftGroup.querySelector<HTMLElement>('[data-slot="sidebar"]')!;
   const mainGroup = screen.container.querySelector<HTMLElement>(
     '[data-workspace-panel="main"] [data-workspace-group]',
   )!;
+  const mainWindowContainer = mainGroup.querySelector<HTMLElement>(
+    "[data-workspace-window-container]",
+  )!;
+  const chatColumn = mainGroup.querySelector<HTMLElement>("[data-chat-column]")!;
+  const conversationCard = mainGroup.querySelector<HTMLElement>("[data-chat-conversation-card]")!;
+  const dockedDetailsCard = mainGroup.querySelector<HTMLElement>(
+    '[data-thread-details-panel="inline"]',
+  )!;
   const rightGroup = screen.container.querySelector<HTMLElement>(
     '[data-workspace-panel="right"] [data-workspace-group]',
+  )!;
+  const rightWindowContainer = rightGroup.querySelector<HTMLElement>(
+    "[data-workspace-window-container]",
   )!;
 
   const alphaOf = (element: Element) => {
@@ -502,103 +552,61 @@ it("applies 7px concentric window cards, stratified panel translucency, and desk
 
   expect(document.documentElement.classList.contains("electron-macos")).toBe(true);
   expect(getComputedStyle(titlebar).height).toBe("34px");
-  expect(getComputedStyle(mainGroup).borderRadius).toBe("7px");
   expect(alphaOf(document.body)).toBe(0);
   expect(alphaOf(mainPanel)).toBe(0);
   expect(alphaOf(titlebar)).toBe(0);
   expect(alphaOf(rightToggles)).toBe(0);
 
-  // Default 80% tier: Z0 ~58%, Left ~88%, Right ~92%, Main 100% solid.
-  const defaultGlassAlpha = alphaOf(dock);
-  expect(defaultGlassAlpha).toBeGreaterThan(120);
-  expect(defaultGlassAlpha).toBeLessThan(180);
-  expect(alphaOf(leftGroup)).toBeGreaterThan(205);
-  expect(alphaOf(leftGroup)).toBeLessThan(240);
+  // Inner portal containers and sidebar wrappers never paint an opaque fill over window cards or split seams.
+  expect(alphaOf(leftWindowContainer)).toBe(0);
+  expect(alphaOf(leftSidebar)).toBe(0);
+  expect(alphaOf(rightWindowContainer)).toBe(0);
+  expect(alphaOf(mainGroup)).toBe(0);
+  expect(alphaOf(mainWindowContainer)).toBe(0);
+  expect(getComputedStyle(mainGroup).overflowX).toBe("visible");
+  expect(getComputedStyle(mainWindowContainer).overflowX).toBe("visible");
+  expect(getComputedStyle(chatColumn).overflowX).toBe("visible");
+  expect(getComputedStyle(conversationCard).borderRadius).toBe("7px");
+  expect(getComputedStyle(dockedDetailsCard).borderRadius).toBe("7px");
+
+  // Default 80% tier: Z0 < Left (~70%) < Right/Docked details (~79%) < Main conversation (100% solid).
+  expect(alphaOf(dock)).toBeGreaterThan(100);
+  expect(alphaOf(dock)).toBeLessThan(160);
+  expect(alphaOf(leftGroup)).toBeGreaterThan(alphaOf(dock));
+  expect(alphaOf(leftGroup)).toBeLessThan(195);
   expect(alphaOf(rightGroup)).toBeGreaterThan(alphaOf(leftGroup));
-  expect(alphaOf(rightGroup)).toBeLessThan(250);
-  expect(alphaOf(mainGroup)).toBe(255);
+  expect(alphaOf(rightGroup)).toBeLessThan(220);
+  expect(alphaOf(dockedDetailsCard)).toBe(alphaOf(rightGroup));
+  expect(alphaOf(conversationCard)).toBe(255);
 
   using _glassStyle = {
     [Symbol.dispose]: () => {
-      delete document.documentElement.dataset.desktopWallpaperActive;
       document.documentElement.style.removeProperty("--glass-opacity");
       document.documentElement.style.removeProperty("--glass-blur");
     },
   };
-  // 40% ultra-glass tier: Left ~70%, Right ~80%, Main stays 100% solid paper.
+  // 40% ultra-glass tier: Z0 (~6%) < Left (~34%) < Right (~50%) < Main conversation (100% solid).
   document.documentElement.style.setProperty("--glass-opacity", "40%");
-  expect(alphaOf(dock)).toBeLessThan(35);
-  expect(alphaOf(leftGroup)).toBeGreaterThan(165);
-  expect(alphaOf(leftGroup)).toBeLessThan(195);
-  expect(alphaOf(rightGroup)).toBeGreaterThan(192);
-  expect(alphaOf(rightGroup)).toBeLessThan(220);
-  expect(alphaOf(mainGroup)).toBe(255);
+  expect(alphaOf(dock)).toBeLessThan(30);
+  expect(alphaOf(leftGroup)).toBeGreaterThan(70);
+  expect(alphaOf(leftGroup)).toBeLessThan(110);
+  expect(alphaOf(rightGroup)).toBeGreaterThan(115);
+  expect(alphaOf(rightGroup)).toBeLessThan(150);
+  expect(alphaOf(dockedDetailsCard)).toBe(alphaOf(rightGroup));
+  expect(alphaOf(conversationCard)).toBe(255);
 
-  // Periscope desktop-wallpaper controller projects display-space wallpaper and makes body opaque.
-  __setClientSettingsForTests({
-    ...DEFAULT_CLIENT_SETTINGS,
-    glassBackdropSource: "wallpaper",
-    glassOpacity: 40,
-  });
-  const listeners = new Set<(space: DesktopWindowDisplaySpace) => void>();
-  const disposeWallpaper = installDesktopWallpaperBackdrop(
-    () => ({
-      readDesktopWallpaper: async () => ({
-        mimeType: "image/jpeg",
-        data: new Uint8Array([0xff, 0xd8, 0xff]),
-        revision: "wp-1",
-        space: {
-          offsetX: 120,
-          offsetY: 64,
-          displayWidth: 1920,
-          displayHeight: 1200,
-          displayKey: "0,0,1920x1200",
-        },
-      }),
-      onWindowDisplaySpaceChange: (listener) => {
-        listeners.add(listener);
-        return () => {
-          listeners.delete(listener);
-        };
-      },
-    }),
-    { preblur: async () => "blob:test-wallpaper" },
-  );
-  try {
-    await vi.waitFor(() =>
-      expect(document.documentElement.dataset.desktopWallpaperActive).toBe("true"),
-    );
-    expect(alphaOf(document.body)).toBe(255);
-    expect(alphaOf(leftGroup)).toBeLessThan(195);
-    for (const listener of listeners) {
-      listener({
-        offsetX: 340,
-        offsetY: 180,
-        displayWidth: 1920,
-        displayHeight: 1200,
-        displayKey: "0,0,1920x1200",
-      });
-    }
-    expect(document.documentElement.style.getPropertyValue("--desktop-window-offset-x")).toBe(
-      "340px",
-    );
-    await persistClientSettingsPatch({ glassBackdropSource: "behind-window" }, async () => {});
-    expect(document.documentElement.dataset.desktopWallpaperActive).toBeUndefined();
-  } finally {
-    disposeWallpaper();
-    __setClientSettingsForTests(DEFAULT_CLIENT_SETTINGS);
-  }
-
-  // 100% solid mode turns off all translucency.
+  // 100% solid mode turns off all translucency across Z0, Left, and Right.
   document.documentElement.style.setProperty("--glass-opacity", "100%");
   document.documentElement.style.setProperty("--glass-blur", "0px");
   expect(alphaOf(dock)).toBe(255);
   expect(alphaOf(leftGroup)).toBe(255);
   expect(alphaOf(rightGroup)).toBe(255);
+  expect(alphaOf(dockedDetailsCard)).toBe(255);
   document.documentElement.style.removeProperty("--glass-opacity");
   document.documentElement.style.removeProperty("--glass-blur");
 
-  await screen.rerender(ui(true));
+  // Fullscreen also falls back to 100% solid.
+  await screen.rerender(ui(true, false));
   expect(alphaOf(dock)).toBe(255);
   expect(alphaOf(leftGroup)).toBe(255);
   expect(alphaOf(rightGroup)).toBe(255);

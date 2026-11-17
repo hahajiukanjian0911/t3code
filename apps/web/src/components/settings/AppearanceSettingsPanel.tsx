@@ -6,7 +6,6 @@ import {
   type ChatWidth,
   type EffortDisplay,
   type EnvironmentIdentificationMode,
-  type GlassBackdropSource,
   MAX_APPEARANCE_CONTRAST,
   MAX_GLASS_OPACITY,
   MAX_PANEL_ANIMATION_DURATION_MS,
@@ -39,7 +38,6 @@ import { TypographySection } from "./TypographySettings";
 import { ThreadDetailsItemsRow } from "./ThreadDetailsItemsRow";
 import { InterfaceLanguageSetting } from "./InterfaceLanguageSetting";
 import { useUiLabel } from "../../i18n/staticUiLabels";
-import { isElectron } from "../../env";
 
 const ENVIRONMENT_IDENTIFICATION_LABELS: Record<EnvironmentIdentificationMode, string> = {
   artwork: "Artwork",
@@ -86,11 +84,6 @@ const CHAT_WIDTH_LABELS: Record<ChatWidth, string> = {
 const EFFORT_DISPLAY_LABELS: Record<EffortDisplay, string> = {
   label: "Word",
   bars: "Bars",
-};
-
-const GLASS_BACKDROP_SOURCE_LABELS: Record<GlassBackdropSource, string> = {
-  wallpaper: "Desktop wallpaper",
-  "behind-window": "Behind window",
 };
 
 export function AppearanceSettingsPanel() {
@@ -224,7 +217,7 @@ export function AppearanceSettingsPanel() {
 
         <SettingsRow
           {...searchableSetting("setting-glass-opacity")}
-          description="Higher values make menus, dialogs, and the composer more solid."
+          description="Higher values make the workspace frame, sidebars, menus, dialogs, and the composer more solid."
           resetAction={
             settings.glassOpacity !== DEFAULT_UNIFIED_SETTINGS.glassOpacity ? (
               <SettingResetButton
@@ -267,46 +260,6 @@ export function AppearanceSettingsPanel() {
             </div>
           }
         />
-
-        {isElectron && settings.glassOpacity < MAX_GLASS_OPACITY ? (
-          <SettingsRow
-            {...searchableSetting("glass-backdrop-source")}
-            description="Ignore other app windows behind T3 Code and tint translucent surfaces with your desktop wallpaper."
-            resetAction={
-              settings.glassBackdropSource !== DEFAULT_UNIFIED_SETTINGS.glassBackdropSource ? (
-                <SettingResetButton
-                  label="backdrop source"
-                  onClick={() =>
-                    updateSettings({
-                      glassBackdropSource: DEFAULT_UNIFIED_SETTINGS.glassBackdropSource,
-                    })
-                  }
-                />
-              ) : null
-            }
-            control={
-              <div className="w-full sm:w-44">
-                <Select
-                  value={settings.glassBackdropSource}
-                  onValueChange={(value) => {
-                    if (value === "wallpaper" || value === "behind-window")
-                      updateSettings({ glassBackdropSource: value });
-                  }}
-                >
-                  <SelectTrigger size="sm" className="w-full min-w-0" aria-label="Backdrop source">
-                    <SelectValue>
-                      {uiLabel(GLASS_BACKDROP_SOURCE_LABELS[settings.glassBackdropSource])}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectPopup align="end" alignItemWithTrigger={false}>
-                    <SelectItem value="wallpaper">Desktop wallpaper (default)</SelectItem>
-                    <SelectItem value="behind-window">Behind window</SelectItem>
-                  </SelectPopup>
-                </Select>
-              </div>
-            }
-          />
-        ) : null}
 
         <SettingsRow
           {...searchableSetting("chat-width")}
