@@ -3593,12 +3593,22 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
                               />,
                             );
                             break;
-                          case "snoozed-header":
+                          case "snoozed-header": {
+                            const hasItemsAbove =
+                              pinnedThreads.length > 0 ||
+                              activeThreads.length > 0 ||
+                              workingThreads.length > 0 ||
+                              (projectFolders !== null && projectFolders.length > 0);
                             items.push(
                               <SidebarSectionHeader
                                 key="snoozed-shelf-header"
                                 marker="snoozed-header"
-                                className="mt-auto"
+                                className={cn(
+                                  "mt-auto",
+                                  snoozedShelfExpanded &&
+                                    hasItemsAbove &&
+                                    "border-t border-sidebar-border/60 pt-1.5",
+                                )}
                                 label="Snoozed"
                                 count={snoozedThreads.length}
                                 toggle={{
@@ -3608,12 +3618,25 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
                               />,
                             );
                             break;
-                          case "settled-header":
+                          }
+                          case "settled-header": {
+                            const isFirstBottomShelf = snoozedThreads.length === 0;
+                            const hasItemsAbove =
+                              !isFirstBottomShelf ||
+                              pinnedThreads.length > 0 ||
+                              activeThreads.length > 0 ||
+                              workingThreads.length > 0 ||
+                              (projectFolders !== null && projectFolders.length > 0);
                             items.push(
                               <SidebarSectionHeader
                                 key="settled-shelf-header"
                                 marker="settled-header"
-                                className={cn(snoozedThreads.length === 0 && "mt-auto")}
+                                className={cn(
+                                  isFirstBottomShelf && "mt-auto",
+                                  settledShelfExpanded &&
+                                    hasItemsAbove &&
+                                    "border-t border-sidebar-border/60 pt-1.5",
+                                )}
                                 label="Settled"
                                 count={settledCount}
                                 dragging={from !== null}
@@ -3625,6 +3648,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
                               />,
                             );
                             break;
+                          }
                           case "settled-placeholder":
                             items.push(
                               <SidebarSectionPlaceholder
@@ -3659,7 +3683,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
                             olderSettledShelf.retry();
                             showMoreSettled();
                           }}
-                          className="flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-left text-xs text-sidebar-muted-foreground hover:bg-sidebar-row-hover hover:text-sidebar-foreground aria-disabled:cursor-default"
+                          className="flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-left text-sm text-sidebar-muted-foreground hover:bg-sidebar-row-hover hover:text-sidebar-foreground aria-disabled:cursor-default"
                         >
                           {/* Plus means "add", so revealing more uses a chevron. */}
                           <ChevronDownIcon aria-hidden className="size-4 shrink-0" />

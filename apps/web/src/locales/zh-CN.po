@@ -2222,7 +2222,7 @@ msgstr "已稍后处理"
 #: src/components/Sidebar.tsx
 #: src/components/chat/useThreadLifecycle.tsx
 msgid "Settled"
-msgstr "已收起"
+msgstr "已归档"
 
 #: src/components/Sidebar.tsx
 msgid "No projects yet"

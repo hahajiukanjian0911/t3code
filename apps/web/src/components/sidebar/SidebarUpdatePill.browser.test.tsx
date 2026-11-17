@@ -93,6 +93,16 @@ function publish(update: DesktopUpdateState | null) {
 const releaseNotes = () => document.querySelector('[aria-label="Update release notes"]');
 
 describe("SidebarUpdatePill release notes", () => {
+  it("stays hidden when no update is available or checking", async () => {
+    setup({
+      ...nightlyUpdate([]),
+      status: "up-to-date",
+      availableVersion: null,
+    });
+    await using screen = await render(<SidebarUpdatePill />);
+    await expect.element(screen.getByRole("button")).not.toBeInTheDocument();
+  });
+
   it.each(["installedVersion", "preparedVersion"] as const)(
     "shows the %s button ahead of other updates",
     async (field) => {

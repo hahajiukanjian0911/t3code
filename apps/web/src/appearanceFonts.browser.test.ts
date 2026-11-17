@@ -56,6 +56,18 @@ describe("applyAppearanceFontVariables", () => {
           probe.className = "text-sm";
         }),
       ).toBe("14px");
+      for (const sidebarRow of ["shelf:settled", "settled:more"]) {
+        expect(
+          renderedFontSize((probe) => {
+            probe.dataset.sidebarRow = sidebarRow;
+          }),
+        ).toBe("14px");
+        expect(
+          renderedFontSize((probe) => {
+            probe.dataset.sidebarRow = sidebarRow;
+          }, "fontFamily"),
+        ).toContain("serif");
+      }
       expect(
         renderedFontSize((probe) => {
           probe.className = "chat-markdown";

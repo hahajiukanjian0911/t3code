@@ -13,12 +13,14 @@ export function CollapsibleSectionHeader({
   expanded,
   tone = "muted",
   variant = "default",
+  icon,
   accessory,
   ...buttonProps
 }: Omit<ComponentProps<"button">, "className" | "style" | "aria-expanded"> & {
   expanded: boolean;
   tone?: keyof typeof tones;
   variant?: "default" | "panel";
+  icon?: ReactNode;
   accessory?: ReactNode;
 }) {
   return (
@@ -27,11 +29,22 @@ export function CollapsibleSectionHeader({
       type="button"
       aria-expanded={expanded}
       className={cn(
-        "flex h-8 w-full cursor-pointer items-center gap-2 rounded-md text-left text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/70",
-        variant === "panel" ? "ps-2 pe-2.5" : "px-2",
+        "flex w-full cursor-pointer items-center rounded-md text-left font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/70",
+        variant === "panel"
+          ? "h-8 gap-2 ps-2 pe-2.5 text-xs"
+          : "h-9 gap-2.5 px-2.5 text-sm hover:bg-sidebar-row-hover hover:text-sidebar-foreground",
         tones[tone].label,
       )}
     >
+      {icon ? (
+        <span
+          aria-hidden
+          data-slot="section-header-icon"
+          className="grid size-4 shrink-0 place-items-center text-(--sidebar-icon-color)"
+        >
+          {icon}
+        </span>
+      ) : null}
       <span className="min-w-0 truncate">{children}</span>
       <span
         aria-hidden

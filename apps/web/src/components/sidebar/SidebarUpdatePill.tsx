@@ -474,14 +474,18 @@ function SidebarUpdateControl() {
     );
   }
 
+  if (!showUpdateDetails && !showCheckIcon) {
+    return null;
+  }
+
   const updateButton = (
     <button
       type="button"
       aria-label={idleTooltip?.detail ? `${tooltip}: ${idleTooltip.detail}` : tooltip}
       aria-disabled={isInteractionDisabled || undefined}
       className={cn(
-        "inline-flex h-8 items-center justify-center rounded-full outline-hidden ring-ring transition-colors focus-visible:ring-2 focus-visible:ring-inset",
-        hasLocalUpdate ? "gap-2 px-3 text-xs" : "w-8",
+        "inline-flex h-7 items-center justify-center rounded-full outline-hidden ring-ring transition-colors focus-visible:ring-2 focus-visible:ring-inset [&_svg]:size-3.5",
+        hasLocalUpdate ? "gap-1.5 px-2.5 text-xs" : "w-7",
         isInteractionDisabled ? "cursor-not-allowed" : "cursor-pointer",
         showUpdateIconState
           ? cn(

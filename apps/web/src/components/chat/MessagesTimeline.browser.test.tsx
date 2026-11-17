@@ -2432,54 +2432,108 @@ it("keeps concurrent approvals actionable outside collapsed work and restores se
     .toBeVisible();
 });
 
-it.each([false, true])("keeps restored live status rows separate (hidden=%s)", async (hidden) => {
+it("reproduces switching between working threads", async () => {
   setup();
-  const props = baseProps();
-  const runId = RunId.make("restored-live");
-  const entries = [message("Resume the interrupted run", {}, "resume-user")];
-  const ui = (shown: boolean, streamed: boolean) => (
-    <div
-      style={{ display: shown ? "flex" : "none", height: 600, width: 900, flexDirection: "column" }}
-    >
-      <MessagesTimeline
-        {...props}
-        isWorking
-        activeTurnStartedAt={CREATED_AT}
-        runningRunId={runId}
-        latestRun={{ runId, status: "running", startedAt: CREATED_AT, completedAt: null }}
-        timelineEntries={
-          streamed
-            ? [
-                ...entries,
-                message(
-                  "Restored commentary ".repeat(40),
-                  { role: "assistant", runId, streaming: true },
-                  "restored-commentary",
-                ),
-              ]
-            : entries
-        }
-      />
-    </div>
-  );
-  await using screen = await render(ui(!hidden, false));
-  await screen.rerender(ui(false, true));
-  await screen.rerender(ui(true, true));
-  await vi.waitFor(() => {
-    const rows = Array.from(
-      screen.container.querySelectorAll<HTMLElement>("[data-timeline-row-id]"),
-    ).filter((row) => row.checkVisibility());
-    expect(rows.length).toBeGreaterThan(1);
-    const bounds = rows
-      .map((row) => ({
-        kind: row.dataset.timelineRowKind,
-        top: row.getBoundingClientRect().top,
-        bottom: row.getBoundingClientRect().bottom,
-      }))
-      .sort((a, b) => a.top - b.top);
-    for (let i = 1; i < bounds.length; i++)
-      expect(bounds[i]!.top, JSON.stringify(bounds)).toBeGreaterThanOrEqual(
-        bounds[i - 1]!.bottom - 1,
+  const { WorkspaceRoot, WorkspaceWindow } = await import("../workspace/WorkspaceDock");
+  await page.viewport(1280, 800);
+  const base = baseProps();
+  const runA = RunId.make("run-a");
+  const runB = RunId.make("run-b");
+  const threadAEntries = [
+    message("Check Karakeep bookmarks", {}, "a-user-1"),
+    work("a-work-1", {
+      label: "Running search",
+      command: "karakeep search",
+      tone: "tool",
+      itemType: "command_execution",
+      toolLifecycleStatus: "inProgress",
+    }),
+  ];
+  const threadBEntries = [
+    ...Array.from({ length: 12 }, (_, index) =>
+      message(
+        index % 2 === 0 ? `Question ${index}` : "Detailed upstream report ".repeat(30),
+        { role: index % 2 === 0 ? "user" : "assistant" },
+        `b-msg-${index}`,
+      ),
+    ),
+    message("What upstream optimizations landed?", {}, "b-user-last"),
+    work("b-work-echo", {
+      label: "Running echo",
+      command: "echo hi",
+      tone: "tool",
+      itemType: "command_execution",
+      toolLifecycleStatus: "inProgress",
+    }),
+  ];
+  const ui = (which: "a" | "b", extraWork = false) => {
+    const threadKey = which === "a" ? "environment-local:thread-a" : "environment-local:thread-b";
+    return (
+      <WorkspaceRoot>
+        <WorkspaceWindow id={`chat:${threadKey}`} title={which} panel="main" selected>
+          <MessagesTimeline
+            {...base}
+            routeThreadKey={threadKey}
+            isWorking
+            activeTurnStartedAt={CREATED_AT}
+            runningRunId={which === "a" ? runA : runB}
+            latestRun={{
+              runId: which === "a" ? runA : runB,
+              status: "running",
+              startedAt: CREATED_AT,
+              completedAt: null,
+            }}
+            timelineEntries={
+              which === "a"
+                ? threadAEntries
+                : extraWork
+                  ? [
+                      ...threadBEntries.slice(0, -1),
+                      work("b-work-echo", {
+                        label: "Ran echo",
+                        command: "echo hi",
+                        tone: "tool",
+                        itemType: "command_execution",
+                        toolLifecycleStatus: "completed",
+                      }),
+                      work("b-work-read", {
+                        label: "Running cat",
+                        command: "cat zh-CN.po",
+                        tone: "tool",
+                        itemType: "command_execution",
+                        toolLifecycleStatus: "inProgress",
+                      }),
+                    ]
+                  : threadBEntries
+            }
+          />
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    );
+  };
+  await using screen = await renderElement(ui("b"));
+  await expect.element(screen.getByText(/Running echo/)).toBeVisible();
+  await screen.rerender(ui("a"));
+  await expect.element(screen.getByText(/Running karakeep/)).toBeVisible();
+  await screen.rerender(ui("b", true));
+  await expect.element(screen.getByText(/Running cat/)).toBeVisible();
+  await vi.waitFor(
+    () => {
+      const working = screen.container.querySelector<HTMLElement>(
+        '[data-timeline-row-id="working-indicator-row"]',
       );
-  });
+      const live = screen.container.querySelector<HTMLElement>(
+        '[data-timeline-row-id="live-activity-row"]',
+      );
+      expect(working).not.toBeNull();
+      expect(live).not.toBeNull();
+      const workingRect = working!.getBoundingClientRect();
+      const liveRect = live!.getBoundingClientRect();
+      expect(
+        liveRect.top,
+        JSON.stringify({ working: workingRect, live: liveRect }),
+      ).toBeGreaterThanOrEqual(workingRect.bottom - 1);
+    },
+    { timeout: 1000 },
+  );
 });

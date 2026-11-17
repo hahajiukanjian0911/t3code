@@ -1,6 +1,7 @@
 import { CollapsibleSectionHeader } from "../ui/collapsible-section-header";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { ActivityIcon, AlarmClockIcon, ArchiveIcon } from "lucide-react";
 import { type ReactNode, useLayoutEffect } from "react";
 import { cn } from "~/lib/utils";
 import {
@@ -126,11 +127,19 @@ export function SidebarSectionHeader(props: {
       : props.marker === "snoozed-header"
         ? "snoozed"
         : "settled";
+  const icon =
+    shelf === "working" ? (
+      <ActivityIcon />
+    ) : shelf === "snoozed" ? (
+      <AlarmClockIcon />
+    ) : (
+      <ArchiveIcon />
+    );
   return (
     <SortableSidebarMarker
       marker={props.marker}
       data-testid={`sidebar-${props.marker}`}
-      className={cn("relative mx-0.5 h-8", props.className)}
+      className={cn("relative min-h-9", props.className)}
     >
       <CollapsibleSectionHeader
         data-sidebar-row={`shelf:${shelf}`}
@@ -138,7 +147,8 @@ export function SidebarSectionHeader(props: {
         expanded={props.toggle.expanded}
         tone={props.isDropTarget ? "accent" : props.dragging ? "emphasized" : "muted"}
         data-testid={`sidebar-${shelf}-shelf-toggle`}
-        accessory={<span className="font-normal tabular-nums">{props.count}</span>}
+        icon={icon}
+        accessory={<span className="text-xs font-normal tabular-nums">{props.count}</span>}
       >
         {props.label}
       </CollapsibleSectionHeader>

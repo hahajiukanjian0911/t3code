@@ -210,7 +210,12 @@ function SidebarUtilityItem({
       <Tooltip>
         <TooltipTrigger
           render={
-            <SidebarMenuButton aria-label={label} onClick={onClick} size="icon">
+            <SidebarMenuButton
+              aria-label={label}
+              onClick={onClick}
+              size="icon"
+              className="size-7 [&>svg]:size-[14.5px]"
+            >
               {icon}
             </SidebarMenuButton>
           }
@@ -262,7 +267,7 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
     <SidebarMenu className="flex-row items-center">
       {isOnUtilityPage ? (
         <SidebarMenuItem className="min-w-0 flex-1">
-          <SidebarMenuButton onClick={handleBackClick}>
+          <SidebarMenuButton size="sm" onClick={handleBackClick} className="[&>svg]:size-[14.5px]">
             <ArrowLeftIcon />
             <span>Back</span>
           </SidebarMenuButton>
@@ -296,7 +301,7 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
 
 export const SidebarChromeFooter = memo(function SidebarChromeFooter() {
   return (
-    <SidebarFooter>
+    <SidebarFooter data-sidebar-chrome-footer="">
       <SidebarProviderUpdatePill />
       <SidebarUpdateArchitectureWarning />
       <SidebarUtilityMenu />
