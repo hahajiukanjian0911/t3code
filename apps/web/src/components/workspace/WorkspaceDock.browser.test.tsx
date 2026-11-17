@@ -484,12 +484,27 @@ it("glazes only the dock board and titlebar on macOS desktop while keeping panel
 
   expect(document.documentElement.classList.contains("electron-macos")).toBe(true);
   expect(alphaOf(document.body)).toBe(0);
-  const glassDockAlpha = alphaOf(dock);
-  expect(glassDockAlpha).toBeGreaterThan(100);
-  expect(glassDockAlpha).toBeLessThan(200);
+  const defaultGlassAlpha = alphaOf(dock);
+  expect(defaultGlassAlpha).toBeGreaterThan(120);
+  expect(defaultGlassAlpha).toBeLessThan(180);
   expect(alphaOf(titlebar)).toBe(0);
   expect(alphaOf(rightToggles)).toBe(0);
   expect(alphaOf(mainPanel)).toBe(255);
+
+  using _glassStyle = {
+    [Symbol.dispose]: () => {
+      document.documentElement.style.removeProperty("--glass-opacity");
+      document.documentElement.style.removeProperty("--glass-blur");
+    },
+  };
+  document.documentElement.style.setProperty("--glass-opacity", "40%");
+  expect(alphaOf(dock)).toBeLessThan(30);
+
+  document.documentElement.style.setProperty("--glass-opacity", "100%");
+  document.documentElement.style.setProperty("--glass-blur", "0px");
+  expect(alphaOf(dock)).toBe(255);
+  document.documentElement.style.removeProperty("--glass-opacity");
+  document.documentElement.style.removeProperty("--glass-blur");
 
   await screen.rerender(ui(true));
   expect(alphaOf(dock)).toBe(255);

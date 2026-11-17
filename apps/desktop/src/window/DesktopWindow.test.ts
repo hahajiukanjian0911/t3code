@@ -1344,7 +1344,7 @@ describe("DesktopWindow", () => {
   );
 
   it.effect(
-    "uses native under-window vibrancy on macOS and preserves transparent backing on appearance sync",
+    "uses native popover vibrancy with transparency on macOS and preserves transparent backing on appearance sync",
     () =>
       Effect.gen(function* () {
         const main = makeFakeBrowserWindow();
@@ -1369,7 +1369,10 @@ describe("DesktopWindow", () => {
         }).pipe(Effect.provide(layer));
 
         assert.lengthOf(createdWindowOptions, 1);
-        assert.equal(createdWindowOptions[0]?.vibrancy, "under-window");
+        assert.equal(createdWindowOptions[0]?.transparent, true);
+        assert.equal(createdWindowOptions[0]?.roundedCorners, true);
+        assert.equal(createdWindowOptions[0]?.hasShadow, true);
+        assert.equal(createdWindowOptions[0]?.vibrancy, "popover");
         assert.equal(createdWindowOptions[0]?.visualEffectState, "followWindow");
         assert.equal(createdWindowOptions[0]?.backgroundColor, "#00000000");
         assert.lengthOf(vi.mocked(main.window.setBackgroundColor).mock.calls, 0);

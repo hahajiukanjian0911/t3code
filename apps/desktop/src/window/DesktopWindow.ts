@@ -487,7 +487,10 @@ export const make = Effect.gen(function* () {
       ...(environment.platform === "darwin"
         ? {
             disableAutoHideCursor: true,
-            vibrancy: "under-window" as const,
+            transparent: true,
+            roundedCorners: true,
+            hasShadow: true,
+            vibrancy: "popover" as const,
             visualEffectState: "followWindow" as const,
             backgroundColor: TRANSPARENT_WINDOW_BACKGROUND_COLOR,
           }
