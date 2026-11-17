@@ -568,6 +568,10 @@ it("applies 7px concentric window cards, unmasked stratified translucency, and c
   expect(getComputedStyle(chatColumn).overflowX).toBe("visible");
   expect(getComputedStyle(conversationCard).borderRadius).toBe("7px");
   expect(getComputedStyle(dockedDetailsCard).borderRadius).toBe("7px");
+  await userEvent.click(screen.getByText("Workspace files", { exact: true }));
+  expect(getComputedStyle(rightGroup).borderTopColor).toBe(
+    getComputedStyle(leftGroup).borderTopColor,
+  );
 
   // Default 80% tier: Z0 < Left (~70%) < Right/Docked details (~79%) < Main conversation (100% solid).
   expect(alphaOf(dock)).toBeGreaterThan(100);

@@ -546,10 +546,6 @@ function DockFrame({
     right = panelVisible("right"),
     bottom = panelVisible("bottom");
   const mounted = new Set<string>();
-  const totalVisibleGroups = workspacePanels.reduce(
-    (sum, key) => sum + (panelVisible(key) ? groups[key].length : 0),
-    0,
-  );
   const panel = (key: WorkspacePanel) => {
     if (groups[key].length === 0 && key !== "main") return null;
     const isFloating = key === "floating";
@@ -605,49 +601,42 @@ function DockFrame({
             layout.vertical[key] && "flex-col",
           )}
         >
-          {groups[key].map((group) => {
-            const groupFocused =
-              totalVisibleGroups > 1 &&
-              snapshot.focused !== null &&
-              group.windows.includes(snapshot.focused);
-            return (
-              <div
-                key={group.id}
-                data-workspace-group={group.id}
-                data-workspace-owner={key}
-                data-workspace-group-focused={groupFocused ? "true" : undefined}
-                className={cn(
-                  "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-                  !isFloating && "workspace-window-card",
-                  !isFloating &&
-                    (key === "left"
-                      ? "workspace-window-surface-left"
-                      : key === "right"
-                        ? "workspace-window-surface-right"
-                        : "workspace-window-surface-main"),
-                )}
-              >
-                {group.windows.map((id) => {
-                  const window = snapshot.windows[id]!;
-                  mounted.add(id);
-                  const active = group.active === id;
-                  return (
-                    <div
-                      key={id}
-                      hidden={!active}
-                      inert={!active}
-                      className="relative flex h-full min-h-0 min-w-0 flex-col"
-                    >
-                      <PortalMount
-                        node={window.container}
-                        className="h-full min-h-0 min-w-0 flex-1"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
+          {groups[key].map((group) => (
+            <div
+              key={group.id}
+              data-workspace-group={group.id}
+              data-workspace-owner={key}
+              className={cn(
+                "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+                !isFloating && "workspace-window-card",
+                !isFloating &&
+                  (key === "left"
+                    ? "workspace-window-surface-left"
+                    : key === "right"
+                      ? "workspace-window-surface-right"
+                      : "workspace-window-surface-main"),
+              )}
+            >
+              {group.windows.map((id) => {
+                const window = snapshot.windows[id]!;
+                mounted.add(id);
+                const active = group.active === id;
+                return (
+                  <div
+                    key={id}
+                    hidden={!active}
+                    inert={!active}
+                    className="relative flex h-full min-h-0 min-w-0 flex-col"
+                  >
+                    <PortalMount
+                      node={window.container}
+                      className="h-full min-h-0 min-w-0 flex-1"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
         {key === "right" ? (
           <div
