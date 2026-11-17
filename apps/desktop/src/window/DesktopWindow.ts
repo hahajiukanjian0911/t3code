@@ -28,8 +28,10 @@ import {
   SNAP_SHOT_EVENT_CHANNEL,
   TRACKPAD_SCROLL_BEGIN_CHANNEL,
   TRACKPAD_SCROLL_END_CHANNEL,
+  WINDOW_DISPLAY_SPACE_CHANNEL,
   WINDOW_FULLSCREEN_STATE_CHANNEL,
 } from "../ipc/channels.ts";
+import { resolveWindowDisplaySpace } from "./DesktopWallpaper.ts";
 import {
   PASSKEY_BRIDGE_ARGUMENT,
   PRIMARY_PASTE_DISABLED_ARGUMENT,
@@ -841,10 +843,28 @@ export const make = Effect.gen(function* () {
       event.preventDefault();
       window.setTitle(environment.displayName);
     });
-    window.on("resize", scheduleBoundsPersist);
-    window.on("move", scheduleBoundsPersist);
-    window.on("maximize", scheduleBoundsPersist);
-    window.on("unmaximize", scheduleBoundsPersist);
+    let lastSentSpaceKey: string | null = null;
+    const notifyDisplaySpace = () => {
+      if (window.isDestroyed() || window.webContents.isDestroyed()) return;
+      try {
+        const space = resolveWindowDisplaySpace(
+          window.getBounds(),
+          Electron.screen.getAllDisplays(),
+        );
+        const key = `${space.displayKey}:${space.offsetX},${space.offsetY}`;
+        if (key === lastSentSpaceKey) return;
+        lastSentSpaceKey = key;
+        window.webContents.send(WINDOW_DISPLAY_SPACE_CHANNEL, space);
+      } catch {}
+    };
+    const handleGeometryChange = () => {
+      scheduleBoundsPersist();
+      notifyDisplaySpace();
+    };
+    window.on("resize", handleGeometryChange);
+    window.on("move", handleGeometryChange);
+    window.on("maximize", handleGeometryChange);
+    window.on("unmaximize", handleGeometryChange);
     window.on("close", () => {
       runFork(flushBoundsPersist);
     });
@@ -862,6 +882,7 @@ export const make = Effect.gen(function* () {
       window.on("leave-full-screen", () => {
         syncMacosWindowButtons(window);
         window.webContents.send(WINDOW_FULLSCREEN_STATE_CHANNEL, false);
+        notifyDisplaySpace();
       });
     }
 

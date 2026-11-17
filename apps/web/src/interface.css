@@ -120,6 +120,14 @@ p > [data-draft-project-trigger] {
   }
 }
 
+[data-workspace-owner="left"] [data-slot="sidebar"] {
+  background-color: transparent !important;
+}
+
+[data-workspace-owner="left"] [data-slot="sidebar-inner"] {
+  border-right: none !important;
+}
+
 [data-slot="sidebar"] {
   font-size: var(--text-sm);
 }
@@ -712,7 +720,7 @@ p > [data-draft-project-trigger] {
   border-radius: 6px !important;
 }
 
-[data-thread-details-card] {
+[data-thread-details-card]:not([data-docked="true"]) {
   border-radius: 12px !important;
 }
 

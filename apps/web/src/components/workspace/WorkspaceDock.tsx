@@ -541,8 +541,13 @@ function DockFrame({
     right = panelVisible("right"),
     bottom = panelVisible("bottom");
   const mounted = new Set<string>();
+  const totalVisibleGroups = workspacePanels.reduce(
+    (sum, key) => sum + (panelVisible(key) ? groups[key].length : 0),
+    0,
+  );
   const panel = (key: WorkspacePanel) => {
     if (groups[key].length === 0 && key !== "main") return null;
+    const isFloating = key === "floating";
     return (
       <section
         key={key}
@@ -553,7 +558,7 @@ function DockFrame({
         data-workspace-group={key === "main" && groups.main.length === 0 ? "main" : undefined}
         data-workspace-owner={key === "main" && groups.main.length === 0 ? "main" : undefined}
         onPointerUp={
-          key === "floating"
+          isFloating
             ? (event) => {
                 const bounds = event.currentTarget.getBoundingClientRect(),
                   current = store.getSnapshot().layout;
@@ -569,13 +574,16 @@ function DockFrame({
             : undefined
         }
         className={cn(
-          "relative flex min-h-0 min-w-0 rounded-lg border border-border/80 bg-background",
-          key === "floating"
-            ? "absolute z-40 max-h-full max-w-full resize overflow-hidden shadow-2xl"
-            : "overflow-visible workspace-panel-elevation",
+          "relative flex min-h-0 min-w-0",
+          isFloating
+            ? "absolute z-40 max-h-full max-w-full resize overflow-hidden workspace-window-card workspace-window-surface-floating shadow-2xl"
+            : "overflow-visible",
+          key === "main" &&
+            groups.main.length === 0 &&
+            "workspace-window-card workspace-window-surface-main",
         )}
         style={
-          key === "floating"
+          isFloating
             ? {
                 left: `clamp(0px, ${layout.floating.x}px, max(0px, 100% - ${layout.floating.width}px))`,
                 top: `clamp(0px, ${layout.floating.y}px, max(0px, 100% - ${layout.floating.height}px))`,
@@ -587,41 +595,54 @@ function DockFrame({
       >
         <div
           className={cn(
-            "relative flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit]",
+            "relative flex min-h-0 min-w-0 flex-1",
+            isFloating ? "overflow-hidden rounded-[inherit]" : "gap-1.5",
             layout.vertical[key] && "flex-col",
           )}
         >
-          {groups[key].map((group, index) => (
-            <div
-              key={group.id}
-              data-workspace-group={group.id}
-              data-workspace-owner={key}
-              className={cn(
-                "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-                index > 0 &&
-                  (layout.vertical[key] ? "border-t border-border" : "border-l border-border"),
-              )}
-            >
-              {group.windows.map((id) => {
-                const window = snapshot.windows[id]!;
-                mounted.add(id);
-                const active = group.active === id;
-                return (
-                  <div
-                    key={id}
-                    hidden={!active}
-                    inert={!active}
-                    className="relative flex h-full min-h-0 min-w-0 flex-col"
-                  >
-                    <PortalMount
-                      node={window.container}
-                      className="h-full min-h-0 min-w-0 flex-1"
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+          {groups[key].map((group) => {
+            const groupFocused =
+              totalVisibleGroups > 1 &&
+              snapshot.focused !== null &&
+              group.windows.includes(snapshot.focused);
+            return (
+              <div
+                key={group.id}
+                data-workspace-group={group.id}
+                data-workspace-owner={key}
+                data-workspace-group-focused={groupFocused ? "true" : undefined}
+                className={cn(
+                  "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+                  !isFloating && "workspace-window-card",
+                  !isFloating &&
+                    (key === "left"
+                      ? "workspace-window-surface-left"
+                      : key === "right"
+                        ? "workspace-window-surface-right"
+                        : "workspace-window-surface-main"),
+                )}
+              >
+                {group.windows.map((id) => {
+                  const window = snapshot.windows[id]!;
+                  mounted.add(id);
+                  const active = group.active === id;
+                  return (
+                    <div
+                      key={id}
+                      hidden={!active}
+                      inert={!active}
+                      className="relative flex h-full min-h-0 min-w-0 flex-col"
+                    >
+                      <PortalMount
+                        node={window.container}
+                        className="h-full min-h-0 min-w-0 flex-1"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
         {key === "right" ? (
           <div
@@ -759,11 +780,11 @@ function DockFrame({
   const panels = workspacePanels.map(panel);
   return (
     <div
-      className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-(--workspace-board) [--workspace-board:color-mix(in_oklab,var(--background),var(--foreground)_4%)] [--workspace-topbar-height:30px]"
+      className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-(--workspace-board) [--workspace-board:color-mix(in_oklab,var(--background),var(--foreground)_4%)] [--workspace-topbar-height:34px]"
       data-workspace-dock=""
     >
       <header
-        className="drag-region relative grid h-[30px] min-h-[30px] shrink-0 items-center gap-2 px-2 wco:pr-(--workspace-native-controls-inset)"
+        className="drag-region relative grid h-[34px] min-h-[34px] shrink-0 items-center gap-1.5 px-1.5 wco:pr-(--workspace-native-controls-inset)"
         style={{
           gridTemplateColumns: `${left ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr)${right ? ` ${layout.sizes.right}px` : ""}`,
         }}
@@ -808,7 +829,7 @@ function DockFrame({
             {renderTabs(headerWindows.filter((window) => window.key === "right"))}
           </div>
         ) : null}
-        <div className="absolute right-2 top-0 flex h-full shrink-0 items-center gap-1">
+        <div className="absolute right-2.5 top-0 flex h-full shrink-0 items-center gap-1">
           {renderPanelToggle("bottom")}
           {renderPanelToggle("right")}
         </div>
@@ -816,7 +837,7 @@ function DockFrame({
       {controls}
       <div
         ref={(node) => store.setBody(node)}
-        className="relative grid min-h-0 flex-1 gap-2 overflow-hidden px-2 pb-2"
+        className="relative grid min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 pb-1.5"
         style={{
           gridTemplateColumns: [
             left ? `${layout.sizes.left}px` : null,
@@ -902,9 +923,9 @@ function PanelResize({ store, panel }: { store: DockStore; panel: "left" | "righ
       className={cn(
         "group/resize absolute z-20 touch-none",
         panel === "bottom"
-          ? "inset-x-0 -top-2 h-2 cursor-row-resize"
-          : "inset-y-0 w-2 cursor-col-resize",
-        panel === "left" ? "-right-2" : panel === "right" ? "-left-2" : "",
+          ? "inset-x-0 -top-1.5 h-1.5 cursor-row-resize"
+          : "inset-y-0 w-1.5 cursor-col-resize",
+        panel === "left" ? "-right-1.5" : panel === "right" ? "-left-1.5" : "",
       )}
       onPointerDown={(event) => {
         event.preventDefault();

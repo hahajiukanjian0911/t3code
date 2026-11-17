@@ -218,6 +218,9 @@ const SOURCE_LABELS = [
   "Preferences",
   "More",
   "Settings",
+  "Backdrop source",
+  "Desktop wallpaper",
+  "Behind window",
 ] as const;
 
 function createUiLabels(_revision: number): readonly string[] {
@@ -436,6 +439,9 @@ function createUiLabels(_revision: number): readonly string[] {
     "Preferences",
     "More",
     "Settings",
+    "Backdrop source",
+    "Desktop wallpaper",
+    "Behind window",
   ];
 }
 

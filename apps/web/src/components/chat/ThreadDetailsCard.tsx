@@ -18,6 +18,7 @@ import {
 } from "./threadDetailsCardLayout";
 import { observeResize } from "../../lib/observeResize";
 import { requestWorkspaceFocus } from "../../lib/workspaceFocus";
+import { useWorkspaceDockEnabled } from "../workspace/WorkspaceDock";
 
 export function ThreadDetailsCard({
   threadRef,
@@ -112,16 +113,20 @@ export function ThreadDetailsCard({
     environmentId,
     threadId,
   ]);
+  const workspaceDock = useWorkspaceDockEnabled();
+  const dockedInline = workspaceDock && Boolean(placement && inlineOpen);
   const card = (
     <div
       className={cn(
-        "dropdown-glass isolate contain-paint grid max-h-full grid-rows-[minmax(0,1fr)] overflow-hidden rounded-2xl",
+        "isolate contain-paint grid max-h-full grid-rows-[minmax(0,1fr)] overflow-hidden",
+        dockedInline ? "h-full" : "dropdown-glass rounded-2xl",
         mode === "popover" &&
           "max-h-[min(calc(100dvh-6.5rem),calc(var(--available-height,100dvh)-1rem))]",
       )}
-      style={placement ? { maxHeight: height } : undefined}
+      style={placement && !dockedInline ? { maxHeight: height } : undefined}
       onContextMenu={onContextMenu}
       data-thread-details-card
+      data-docked={dockedInline ? "true" : undefined}
     >
       <ScrollArea scrollFade className="min-h-0">
         <div ref={setContentElement}>{children(density)}</div>
@@ -152,15 +157,23 @@ export function ThreadDetailsCard({
           data-workspace-focus-key={`details:${threadRef.environmentId}:${threadRef.threadId}`}
           // Skip the return transition to avoid overlapping the rising preview.
           className={cn(
-            "absolute z-20",
-            topInset > 0 && "transition-[top] duration-150 ease-out motion-reduce:transition-none",
+            dockedInline
+              ? "relative z-20 flex h-full shrink-0 flex-col overflow-hidden workspace-window-card workspace-window-surface-right"
+              : "absolute z-20",
+            !dockedInline &&
+              topInset > 0 &&
+              "transition-[top] duration-150 ease-out motion-reduce:transition-none",
           )}
-          style={{
-            right: placement.right,
-            top: placement.y,
-            width: placement.width,
-            maxHeight: height,
-          }}
+          style={
+            dockedInline
+              ? { width: placement.width }
+              : {
+                  right: placement.right,
+                  top: placement.y,
+                  width: placement.width,
+                  maxHeight: height,
+                }
+          }
           data-density={density}
           data-thread-details-panel="inline"
         >

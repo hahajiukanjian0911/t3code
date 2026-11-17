@@ -7,6 +7,7 @@ import type {
   DesktopPreviewRecordingInputEvent,
   DesktopPreviewTabState,
   DesktopSnapShotEvent,
+  DesktopWindowDisplaySpace,
 } from "@t3tools/contracts";
 import { exposeClerkBridge } from "@clerk/electron/preload";
 import { contextBridge, ipcRenderer, webFrame, webUtils } from "electron";
@@ -321,6 +322,17 @@ contextBridge.exposeInMainWorld("desktopBridge", {
     ipcRenderer.on(IpcChannels.WINDOW_FULLSCREEN_STATE_CHANNEL, wrappedListener);
     return () => {
       ipcRenderer.removeListener(IpcChannels.WINDOW_FULLSCREEN_STATE_CHANNEL, wrappedListener);
+    };
+  },
+  readDesktopWallpaper: () => ipcRenderer.invoke(IpcChannels.READ_DESKTOP_WALLPAPER_CHANNEL),
+  onWindowDisplaySpaceChange: (listener) => {
+    const wrappedListener = (_event: Electron.IpcRendererEvent, space: unknown) => {
+      if (typeof space !== "object" || space === null) return;
+      listener(space as DesktopWindowDisplaySpace);
+    };
+    ipcRenderer.on(IpcChannels.WINDOW_DISPLAY_SPACE_CHANNEL, wrappedListener);
+    return () => {
+      ipcRenderer.removeListener(IpcChannels.WINDOW_DISPLAY_SPACE_CHANNEL, wrappedListener);
     };
   },
   getUpdateState: () => ipcRenderer.invoke(IpcChannels.UPDATE_GET_STATE_CHANNEL),

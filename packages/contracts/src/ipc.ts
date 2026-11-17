@@ -1058,6 +1058,23 @@ export const DesktopMediaReadSchema = Schema.Struct({
 });
 export type DesktopMediaRead = typeof DesktopMediaReadSchema.Type;
 
+export const DesktopWindowDisplaySpaceSchema = Schema.Struct({
+  offsetX: Schema.Number,
+  offsetY: Schema.Number,
+  displayWidth: Schema.Number,
+  displayHeight: Schema.Number,
+  displayKey: Schema.String,
+});
+export type DesktopWindowDisplaySpace = typeof DesktopWindowDisplaySpaceSchema.Type;
+
+export const DesktopWallpaperReadSchema = Schema.Struct({
+  mimeType: Schema.String,
+  data: Schema.Uint8Array,
+  revision: Schema.String,
+  space: DesktopWindowDisplaySpaceSchema,
+});
+export type DesktopWallpaperRead = typeof DesktopWallpaperReadSchema.Type;
+
 export const SystemSettingsPaneSchema = Schema.Literals(["full-disk-access"]);
 export type SystemSettingsPane = typeof SystemSettingsPaneSchema.Type;
 
@@ -1170,6 +1187,8 @@ export interface DesktopBridge {
   onQuitShortcut: (listener: (event: QuitShortcutHintEvent) => void) => () => void;
   getWindowFullscreenState: () => boolean;
   onWindowFullscreenStateChange: (listener: (fullscreen: boolean) => void) => () => void;
+  readDesktopWallpaper?: () => Promise<DesktopWallpaperRead | null>;
+  onWindowDisplaySpaceChange?: (listener: (space: DesktopWindowDisplaySpace) => void) => () => void;
   getWindowZoomFactor: () => number;
   getUpdateState: () => Promise<DesktopUpdateState>;
   /** `minimumVersion` is a track switch's checked release; nothing older is offered after. */

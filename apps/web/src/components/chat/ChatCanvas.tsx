@@ -1,10 +1,12 @@
 import { useLayoutEffect, useRef, useState, type ComponentProps, type CSSProperties } from "react";
 import { useStore } from "zustand";
 import { ChatCanvasContext } from "./ChatCanvasContext";
-import type { ChatCanvasPreview } from "./chatCanvasLayout";
+import { resolveChatCanvasLayout, type ChatCanvasPreview } from "./chatCanvasLayout";
 import { resolveChatCanvasModel, type ChatCanvasStore } from "./canvasStore";
 import { selectThreadPanelOpen, useRightPanelStore } from "../../rightPanelStore";
 import { observeResize } from "../../lib/observeResize";
+import { cn } from "../../lib/utils";
+import { useWorkspaceDockEnabled } from "../workspace/WorkspaceDock";
 import type { ScopedThreadRef } from "@t3tools/contracts";
 
 function panelWidthTransitions(element: HTMLElement) {
@@ -134,6 +136,7 @@ export function ChatCanvas({
       stopObserving();
     };
   }, [store, composerOverlayElement, timelineElement, detailsCardTopInset]);
+  const workspaceDock = useWorkspaceDockEnabled();
   const detailsCardInlineOpen = useRightPanelStore((state) =>
     threadRef === null
       ? false
@@ -158,19 +161,37 @@ export function ChatCanvas({
     detailsCardPlacement: model.detailsCardPlacement,
   };
   const { layout } = context;
+  const dockedInlineDetails =
+    workspaceDock && Boolean(model.detailsCardPlacement && detailsCardInlineOpen);
+  const laneChat = dockedInlineDetails
+    ? resolveChatCanvasLayout({
+        container: {
+          width: Math.max(0, model.container.width - model.detailsCardPlacement!.width - 6),
+          height: model.container.height,
+        },
+        preview: null,
+        padding: measurements.padding,
+        maxChatWidth: measurements.maxChatWidth,
+        minChatWidth: measurements.minChatWidth,
+      }).chat
+    : layout.chat;
   return (
     <ChatCanvasContext value={context}>
       <div
         {...props}
         ref={elementRef}
         data-chat-canvas
+        data-inline-details-docked={dockedInlineDetails ? "" : undefined}
         data-preview-overlaps-chat={layout.overlapsChat || undefined}
-        className="relative flex min-h-0 min-w-0 flex-1 flex-col"
+        className={cn(
+          "relative flex min-h-0 min-w-0 flex-1",
+          dockedInlineDetails ? "flex-row gap-1.5" : "flex-col",
+        )}
         style={
           {
             "--chat-timeline-gutter": `${measurements.timelineGutter}px`,
-            "--chat-lane-inset-start": `${layout.chat.insetStart}px`,
-            "--chat-lane-inset-end": `${layout.chat.insetEnd}px`,
+            "--chat-lane-inset-start": `${laneChat.insetStart}px`,
+            "--chat-lane-inset-end": `${laneChat.insetEnd}px`,
           } as CSSProperties
         }
       >

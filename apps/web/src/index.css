@@ -472,16 +472,38 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   }
 }
 
-@utility workspace-panel-elevation {
+@utility workspace-window-card {
+  border-radius: 7px;
+  border: 1px solid color-mix(in oklab, var(--border) 82%, transparent);
   box-shadow:
-    0 4px 14px -4px rgb(0 0 0 / 10%),
-    0 1px 2px rgb(0 0 0 / 6%);
+    0 2px 10px -2px rgb(0 0 0 / 8%),
+    0 1px 2px rgb(0 0 0 / 5%),
+    inset 0 0.5px 0 rgb(255 255 255 / 55%);
 
   @variant dark {
     box-shadow:
-      0 6px 18px -4px rgb(0 0 0 / 40%),
-      0 1px 3px rgb(0 0 0 / 26%);
+      0 6px 18px -4px rgb(0 0 0 / 42%),
+      0 1px 3px rgb(0 0 0 / 28%),
+      inset 0 0.5px 0 rgb(255 255 255 / 12%);
   }
+}
+
+@utility workspace-window-surface-main {
+  background-color: var(--background);
+}
+
+@utility workspace-window-surface-left {
+  background-color: var(--workspace-left-surface, var(--sidebar));
+}
+
+@utility workspace-window-surface-right {
+  background-color: var(--workspace-right-surface, var(--background));
+}
+
+@utility workspace-window-surface-floating {
+  background-color: var(--workspace-floating-surface, var(--popover));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
 }
 
 @utility workspace-titlebar-tabs-fade {
@@ -1811,18 +1833,33 @@ body {
   background-size: var(--surface-grain-size);
 }
 
+/* Subtle focus border cue when multiple workspace window groups are visible, and
+   transparent slot unwrapping when a chat window splits into Conversation + docked Details. */
+[data-workspace-group][data-workspace-group-focused="true"] {
+  border-color: color-mix(in oklab, var(--ring) 45%, var(--border));
+}
+
+[data-workspace-group]:has(> :not([hidden]) [data-inline-details-docked]) {
+  background-color: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+[data-workspace-window^="chat:"]:has([data-inline-details-docked])
+  > [data-workspace-window-controls] {
+  right: calc(280px + 0.625rem);
+}
+
 @media not (prefers-reduced-transparency: reduce) {
-  /* Native macOS vibrancy blurs the desktop in WindowServer, so the renderer
-     only glazes Z0 (dock board + 30px titlebar + 8px gutters) without a
-     full-viewport CSS backdrop-filter pass. Scaling --glass-opacity (40%..100%)
-     gives ~6% tint at 40%, 58% at the 80% default, and falls back to solid at
-     100% (--glass-blur: 0px) or in native fullscreen. */
-  html.electron-macos:not([style*="--glass-blur: 0px"]):has([data-workspace-dock]):not(
-      :has([data-window-fullscreen="true"])
-    ),
-  html.electron-macos:not([style*="--glass-blur: 0px"]):has([data-workspace-dock]):not(
-      :has([data-window-fullscreen="true"])
-    )
+  /* Behind-window vibrancy mode on macOS: keep root transparent so WindowServer
+     vibrancy shows through when desktop-wallpaper periscope projection is off. */
+  html.electron-macos:not([data-desktop-wallpaper-active="true"]):not(
+      [style*="--glass-blur: 0px"]
+    ):has([data-workspace-dock]):not(:has([data-window-fullscreen="true"])),
+  html.electron-macos:not([data-desktop-wallpaper-active="true"]):not(
+      [style*="--glass-blur: 0px"]
+    ):has([data-workspace-dock]):not(:has([data-window-fullscreen="true"]))
     body {
     background-color: transparent !important;
     background-image: var(--theme-background-image, none);
@@ -1831,20 +1868,55 @@ body {
     background-size: cover;
   }
 
-  html.electron-macos:not([style*="--glass-blur: 0px"]):not(:has([data-window-fullscreen="true"]))
+  /* Periscope desktop-wallpaper mode: paint an opaque screen-coordinate-aligned
+     preblurred desktop wallpaper on body so stacked apps behind T3 Code never bleed through. */
+  html[data-desktop-wallpaper-active="true"]:not([style*="--glass-blur: 0px"]):has(
+      [data-workspace-dock]
+    ):not(:has([data-window-fullscreen="true"]))
+    body {
+    background-color: var(--background) !important;
+    background-image: var(--theme-background-image, var(--desktop-wallpaper-image)) !important;
+    background-repeat: no-repeat !important;
+    background-position: calc(-1 * var(--desktop-window-offset-x, 0px))
+      calc(-1 * var(--desktop-window-offset-y, 0px)) !important;
+    background-size: var(--desktop-display-width, 100%) var(--desktop-display-height, 100%) !important;
+  }
+
+  /* Stratified opacity tiers (Feel 1): Z0 board high-glass, Left sidebar 70%..88%,
+     Right inspector 80%..92%, Floating 82%..92%, Main/Bottom canvas stays 100% solid. */
+  :is(
+      html.electron-macos,
+      html[data-desktop-wallpaper-active="true"],
+      html[style*="--theme-background-image"]
+    ):not([style*="--glass-blur: 0px"]):not(:has([data-window-fullscreen="true"]))
     [data-workspace-dock] {
     --workspace-board: color-mix(
       in oklab,
-      var(--app-chrome-background) calc(6% + (var(--glass-opacity) - 40%) * 1.3),
+      var(--app-chrome-background) calc(8% + (var(--glass-opacity) - 40%) * 1.25),
+      transparent
+    );
+    --workspace-left-surface: color-mix(
+      in oklab,
+      var(--sidebar) calc(70% + (var(--glass-opacity) - 40%) * 0.45),
+      transparent
+    );
+    --workspace-right-surface: color-mix(
+      in oklab,
+      var(--background) calc(80% + (var(--glass-opacity) - 40%) * 0.3),
+      transparent
+    );
+    --workspace-floating-surface: color-mix(
+      in oklab,
+      var(--popover) calc(82% + (var(--glass-opacity) - 40%) * 0.25),
       transparent
     );
   }
 
   html[style*="--theme-background-image"]:has([data-workspace-dock]) body {
-    background-image: var(--theme-background-image);
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
+    background-image: var(--theme-background-image) !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-size: cover !important;
   }
 
   html[style*="--theme-background-image"]:not([style*="--glass-blur: 0px"]) [data-workspace-dock] {

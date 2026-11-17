@@ -3,8 +3,11 @@ import { useEffect, useState } from "react";
 import { expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
 import { act, render, stubGlobal } from "../../../test/render";
+import { DEFAULT_CLIENT_SETTINGS, type DesktopWindowDisplaySpace } from "@t3tools/contracts";
 import { BrowserSurfaceSlot } from "../../browser/BrowserSurfaceSlot";
 import { useBrowserSurfaceStore } from "../../browser/browserSurfaceStore";
+import { installDesktopWallpaperBackdrop } from "../../desktopWallpaperBackdrop";
+import { __setClientSettingsForTests, persistClientSettingsPatch } from "../../hooks/useSettings";
 import { syncDocumentElectronPlatformClasses } from "../../lib/windowControlsOverlay";
 import {
   WorkspaceActions,
@@ -138,7 +141,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   expect(frame.contentDocument).toBe(frameDocument);
   expect(
     screen.container.querySelector("[data-workspace-titlebar]")?.getBoundingClientRect().height,
-  ).toBe(30);
+  ).toBe(34);
 });
 it("cancels a handle drag with Escape and floats a window without remounting its input", async () => {
   await page.viewport(1280, 800);
@@ -449,7 +452,7 @@ it.each([true, false])(
   },
 );
 
-it("glazes only the dock board and titlebar on macOS desktop while keeping panels opaque and fullscreen solid", async () => {
+it("applies 7px concentric window cards, stratified panel translucency, and desktop wallpaper periscope backing", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   const cleanupPlatform = syncDocumentElectronPlatformClasses("MacIntel");
@@ -457,8 +460,14 @@ it("glazes only the dock board and titlebar on macOS desktop while keeping panel
   const ui = (fullscreen: boolean) => (
     <div className="h-screen w-screen" data-window-fullscreen={fullscreen ? "true" : undefined}>
       <WorkspaceRoot>
+        <WorkspaceWindow id="threads" fixed title="Threads" panel="left">
+          <p>Sidebar navigation</p>
+        </WorkspaceWindow>
         <WorkspaceWindow id="chat:glass" title="Conversation" panel="main" selected>
           <p>Solid conversation</p>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="details:glass" title="Inspector" panel="right">
+          <p>Inspector details</p>
         </WorkspaceWindow>
       </WorkspaceRoot>
     </div>
@@ -471,6 +480,15 @@ it("glazes only the dock board and titlebar on macOS desktop while keeping panel
     .getByRole("button", { name: "Toggle Right panel" })
     .element().parentElement!;
   const mainPanel = screen.container.querySelector<HTMLElement>('[data-workspace-panel="main"]')!;
+  const leftGroup = screen.container.querySelector<HTMLElement>(
+    '[data-workspace-panel="left"] [data-workspace-group]',
+  )!;
+  const mainGroup = screen.container.querySelector<HTMLElement>(
+    '[data-workspace-panel="main"] [data-workspace-group]',
+  )!;
+  const rightGroup = screen.container.querySelector<HTMLElement>(
+    '[data-workspace-panel="right"] [data-workspace-group]',
+  )!;
 
   const alphaOf = (element: Element) => {
     const canvas = document.createElement("canvas");
@@ -483,29 +501,105 @@ it("glazes only the dock board and titlebar on macOS desktop while keeping panel
   };
 
   expect(document.documentElement.classList.contains("electron-macos")).toBe(true);
+  expect(getComputedStyle(titlebar).height).toBe("34px");
+  expect(getComputedStyle(mainGroup).borderRadius).toBe("7px");
   expect(alphaOf(document.body)).toBe(0);
+  expect(alphaOf(mainPanel)).toBe(0);
+  expect(alphaOf(titlebar)).toBe(0);
+  expect(alphaOf(rightToggles)).toBe(0);
+
+  // Default 80% tier: Z0 ~58%, Left ~88%, Right ~92%, Main 100% solid.
   const defaultGlassAlpha = alphaOf(dock);
   expect(defaultGlassAlpha).toBeGreaterThan(120);
   expect(defaultGlassAlpha).toBeLessThan(180);
-  expect(alphaOf(titlebar)).toBe(0);
-  expect(alphaOf(rightToggles)).toBe(0);
-  expect(alphaOf(mainPanel)).toBe(255);
+  expect(alphaOf(leftGroup)).toBeGreaterThan(205);
+  expect(alphaOf(leftGroup)).toBeLessThan(240);
+  expect(alphaOf(rightGroup)).toBeGreaterThan(alphaOf(leftGroup));
+  expect(alphaOf(rightGroup)).toBeLessThan(250);
+  expect(alphaOf(mainGroup)).toBe(255);
 
   using _glassStyle = {
     [Symbol.dispose]: () => {
+      delete document.documentElement.dataset.desktopWallpaperActive;
       document.documentElement.style.removeProperty("--glass-opacity");
       document.documentElement.style.removeProperty("--glass-blur");
     },
   };
+  // 40% ultra-glass tier: Left ~70%, Right ~80%, Main stays 100% solid paper.
   document.documentElement.style.setProperty("--glass-opacity", "40%");
-  expect(alphaOf(dock)).toBeLessThan(30);
+  expect(alphaOf(dock)).toBeLessThan(35);
+  expect(alphaOf(leftGroup)).toBeGreaterThan(165);
+  expect(alphaOf(leftGroup)).toBeLessThan(195);
+  expect(alphaOf(rightGroup)).toBeGreaterThan(192);
+  expect(alphaOf(rightGroup)).toBeLessThan(220);
+  expect(alphaOf(mainGroup)).toBe(255);
 
+  // Periscope desktop-wallpaper controller projects display-space wallpaper and makes body opaque.
+  __setClientSettingsForTests({
+    ...DEFAULT_CLIENT_SETTINGS,
+    glassBackdropSource: "wallpaper",
+    glassOpacity: 40,
+  });
+  const listeners = new Set<(space: DesktopWindowDisplaySpace) => void>();
+  const disposeWallpaper = installDesktopWallpaperBackdrop(
+    () => ({
+      readDesktopWallpaper: async () => ({
+        mimeType: "image/jpeg",
+        data: new Uint8Array([0xff, 0xd8, 0xff]),
+        revision: "wp-1",
+        space: {
+          offsetX: 120,
+          offsetY: 64,
+          displayWidth: 1920,
+          displayHeight: 1200,
+          displayKey: "0,0,1920x1200",
+        },
+      }),
+      onWindowDisplaySpaceChange: (listener) => {
+        listeners.add(listener);
+        return () => {
+          listeners.delete(listener);
+        };
+      },
+    }),
+    { preblur: async () => "blob:test-wallpaper" },
+  );
+  try {
+    await vi.waitFor(() =>
+      expect(document.documentElement.dataset.desktopWallpaperActive).toBe("true"),
+    );
+    expect(alphaOf(document.body)).toBe(255);
+    expect(alphaOf(leftGroup)).toBeLessThan(195);
+    for (const listener of listeners) {
+      listener({
+        offsetX: 340,
+        offsetY: 180,
+        displayWidth: 1920,
+        displayHeight: 1200,
+        displayKey: "0,0,1920x1200",
+      });
+    }
+    expect(document.documentElement.style.getPropertyValue("--desktop-window-offset-x")).toBe(
+      "340px",
+    );
+    await persistClientSettingsPatch({ glassBackdropSource: "behind-window" }, async () => {});
+    expect(document.documentElement.dataset.desktopWallpaperActive).toBeUndefined();
+  } finally {
+    disposeWallpaper();
+    __setClientSettingsForTests(DEFAULT_CLIENT_SETTINGS);
+  }
+
+  // 100% solid mode turns off all translucency.
   document.documentElement.style.setProperty("--glass-opacity", "100%");
   document.documentElement.style.setProperty("--glass-blur", "0px");
   expect(alphaOf(dock)).toBe(255);
+  expect(alphaOf(leftGroup)).toBe(255);
+  expect(alphaOf(rightGroup)).toBe(255);
   document.documentElement.style.removeProperty("--glass-opacity");
   document.documentElement.style.removeProperty("--glass-blur");
 
   await screen.rerender(ui(true));
   expect(alphaOf(dock)).toBe(255);
+  expect(alphaOf(leftGroup)).toBe(255);
+  expect(alphaOf(rightGroup)).toBe(255);
 });

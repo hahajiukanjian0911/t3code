@@ -341,6 +341,13 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["transparent transparency solid menus dialogs composer"],
   },
   {
+    id: "glass-backdrop-source",
+    title: "Backdrop source",
+    to: "/settings/appearance",
+    desktopOnly: true,
+    searchTerms: ["wallpaper desktop behind window periscope tint blur"],
+  },
+  {
     id: "diff-color-scheme",
     title: "Diff colors",
     to: "/settings/diffs",
