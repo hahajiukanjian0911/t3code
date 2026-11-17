@@ -468,6 +468,27 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   }
 }
 
+@utility workspace-panel-elevation {
+  box-shadow:
+    0 4px 14px -4px rgb(0 0 0 / 10%),
+    0 1px 2px rgb(0 0 0 / 6%);
+
+  @variant dark {
+    box-shadow:
+      0 6px 18px -4px rgb(0 0 0 / 40%),
+      0 1px 3px rgb(0 0 0 / 26%);
+  }
+}
+
+@utility workspace-titlebar-tabs-fade {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black calc(100% - 4rem),
+    transparent calc(100% - 3.25rem)
+  );
+  mask-image: linear-gradient(to right, black calc(100% - 4rem), transparent calc(100% - 3.25rem));
+}
+
 @utility topbar-scroll-fade {
   -webkit-mask-image:
     linear-gradient(
@@ -1784,6 +1805,38 @@ body {
   background-image: var(--surface-grain);
   background-repeat: repeat;
   background-size: var(--surface-grain-size);
+}
+
+@media not (prefers-reduced-transparency: reduce) {
+  /* Native macOS vibrancy blurs the desktop in WindowServer, so the renderer
+     only glazes Z0 (dock board + 30px titlebar + 8px gutters) without a
+     full-viewport CSS backdrop-filter pass. Native fullscreen sits over a black
+     Space rather than wallpaper, so it keeps the solid board. */
+  html.electron-macos:has([data-workspace-dock]):not(:has([data-window-fullscreen="true"])),
+  html.electron-macos:has([data-workspace-dock]):not(:has([data-window-fullscreen="true"])) body {
+    background-color: transparent !important;
+    background-image: var(--theme-background-image, none);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  html.electron-macos:not(:has([data-window-fullscreen="true"])) [data-workspace-dock] {
+    --workspace-board: color-mix(in oklab, var(--app-chrome-background) 58%, transparent);
+  }
+
+  html[style*="--theme-background-image"]:has([data-workspace-dock]) body {
+    background-image: var(--theme-background-image);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  html[style*="--theme-background-image"] [data-workspace-dock] {
+    --workspace-board: color-mix(in oklab, var(--app-chrome-background) 58%, transparent);
+    -webkit-backdrop-filter: blur(24px) saturate(165%);
+    backdrop-filter: blur(24px) saturate(165%);
+  }
 }
 
 pre,

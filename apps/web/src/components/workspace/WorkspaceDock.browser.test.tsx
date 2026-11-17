@@ -5,6 +5,7 @@ import { page, userEvent } from "vite-plus/test/browser";
 import { act, render, stubGlobal } from "../../../test/render";
 import { BrowserSurfaceSlot } from "../../browser/BrowserSurfaceSlot";
 import { useBrowserSurfaceStore } from "../../browser/browserSurfaceStore";
+import { syncDocumentElectronPlatformClasses } from "../../lib/windowControlsOverlay";
 import {
   WorkspaceActions,
   WorkspacePanelActions,
@@ -447,3 +448,49 @@ it.each([true, false])(
     ).toBe("bottom");
   },
 );
+
+it("glazes only the dock board and titlebar on macOS desktop while keeping panels opaque and fullscreen solid", async () => {
+  await page.viewport(1280, 800);
+  using _layout = isolatedLayout();
+  const cleanupPlatform = syncDocumentElectronPlatformClasses("MacIntel");
+  using _platform = { [Symbol.dispose]: cleanupPlatform };
+  const ui = (fullscreen: boolean) => (
+    <div className="h-screen w-screen" data-window-fullscreen={fullscreen ? "true" : undefined}>
+      <WorkspaceRoot>
+        <WorkspaceWindow id="chat:glass" title="Conversation" panel="main" selected>
+          <p>Solid conversation</p>
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    </div>
+  );
+  await using screen = await render(ui(false));
+  await expect.element(screen.getByText("Solid conversation", { exact: true })).toBeVisible();
+  const dock = screen.container.querySelector<HTMLElement>("[data-workspace-dock]")!;
+  const titlebar = screen.container.querySelector<HTMLElement>("[data-workspace-titlebar]")!;
+  const rightToggles = screen
+    .getByRole("button", { name: "Toggle Right panel" })
+    .element().parentElement!;
+  const mainPanel = screen.container.querySelector<HTMLElement>('[data-workspace-panel="main"]')!;
+
+  const alphaOf = (element: Element) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = getComputedStyle(element).backgroundColor;
+    ctx.fillRect(0, 0, 1, 1);
+    return ctx.getImageData(0, 0, 1, 1).data[3]!;
+  };
+
+  expect(document.documentElement.classList.contains("electron-macos")).toBe(true);
+  expect(alphaOf(document.body)).toBe(0);
+  const glassDockAlpha = alphaOf(dock);
+  expect(glassDockAlpha).toBeGreaterThan(100);
+  expect(glassDockAlpha).toBeLessThan(200);
+  expect(alphaOf(titlebar)).toBe(0);
+  expect(alphaOf(rightToggles)).toBe(0);
+  expect(alphaOf(mainPanel)).toBe(255);
+
+  await screen.rerender(ui(true));
+  expect(alphaOf(dock)).toBe(255);
+});

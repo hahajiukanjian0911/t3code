@@ -491,6 +491,7 @@ export function AppSidebarLayout({
       <SidebarProvider
         className="h-dvh! min-h-0!"
         data-panel-animations={routePanelAnimationsActive ? "true" : "false"}
+        data-window-fullscreen={isWindowFullscreen ? "true" : undefined}
         storageKey="chat_thread_sidebar_open"
         hoverReveal={showSidebar}
         style={sidebarProviderStyle}

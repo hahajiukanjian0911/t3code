@@ -84,6 +84,7 @@ function syncMacosWindowButtons(window: Electron.BrowserWindow): void {
 }
 
 const TITLEBAR_COLOR = "#01000000"; // #00000000 does not work correctly on Linux
+const TRANSPARENT_WINDOW_BACKGROUND_COLOR = "#00000000";
 const TITLEBAR_LIGHT_SYMBOL_COLOR = "#1f2937";
 const TITLEBAR_DARK_SYMBOL_COLOR = "#f8fafc";
 const MAIN_WINDOW_BOUNDS_PERSIST_DEBOUNCE_MS = 500;
@@ -344,6 +345,7 @@ function getWindowTitleBarOptions(
 function syncWindowAppearance(
   window: Electron.BrowserWindow,
   hasTitleBarOverlay: boolean,
+  hasVibrancy: boolean,
   shouldUseDarkColors: boolean,
   platform: NodeJS.Platform,
 ): Effect.Effect<void> {
@@ -352,7 +354,9 @@ function syncWindowAppearance(
       return;
     }
 
-    window.setBackgroundColor(getInitialWindowBackgroundColor(shouldUseDarkColors));
+    if (!hasVibrancy) {
+      window.setBackgroundColor(getInitialWindowBackgroundColor(shouldUseDarkColors));
+    }
     const { titleBarOverlay } = getWindowTitleBarOptions(shouldUseDarkColors, platform);
     if (hasTitleBarOverlay && typeof titleBarOverlay === "object") {
       window.setTitleBarOverlay(titleBarOverlay);
@@ -402,6 +406,7 @@ export const make = Effect.gen(function* () {
   const runPromise = Effect.runPromiseWith(context);
   const mainWindowMutex = yield* Semaphore.make(1);
   const pendingMainReveals = new WeakMap<Electron.BrowserWindow, Effect.Effect<void>>();
+  const vibrancyWindows = new WeakSet<Electron.BrowserWindow>();
   const revealMain = Effect.fn("desktop.window.revealMain")((window: Electron.BrowserWindow) =>
     Effect.suspend(() => pendingMainReveals.get(window) ?? electronWindow.reveal(window)),
   );
@@ -479,8 +484,16 @@ export const make = Effect.gen(function* () {
       minHeight: DesktopAppSettings.MIN_MAIN_WINDOW_SIZE.height,
       show: false,
       autoHideMenuBar: true,
-      ...(environment.platform === "darwin" ? { disableAutoHideCursor: true } : {}),
-      backgroundColor: getInitialWindowBackgroundColor(shouldUseDarkColors),
+      ...(environment.platform === "darwin"
+        ? {
+            disableAutoHideCursor: true,
+            vibrancy: "under-window" as const,
+            visualEffectState: "followWindow" as const,
+            backgroundColor: TRANSPARENT_WINDOW_BACKGROUND_COLOR,
+          }
+        : {
+            backgroundColor: getInitialWindowBackgroundColor(shouldUseDarkColors),
+          }),
       ...iconOption,
       title: environment.displayName,
       ...getWindowTitleBarOptions(shouldUseDarkColors, environment.platform),
@@ -497,6 +510,9 @@ export const make = Effect.gen(function* () {
         disableHtmlFullscreenWindowResize: true,
       },
     });
+    if (environment.platform === "darwin") {
+      vibrancyWindows.add(window);
+    }
     if (yield* Ref.get(desktopState.quitting)) {
       yield* electronWindow.destroyAll;
       return Option.none();
@@ -1217,7 +1233,13 @@ export const make = Effect.gen(function* () {
     syncAppearance: Effect.gen(function* () {
       const shouldUseDarkColors = yield* electronTheme.shouldUseDarkColors;
       yield* electronWindow.syncAllAppearance((window, { titleBarOverlay }) =>
-        syncWindowAppearance(window, titleBarOverlay, shouldUseDarkColors, environment.platform),
+        syncWindowAppearance(
+          window,
+          titleBarOverlay,
+          vibrancyWindows.has(window),
+          shouldUseDarkColors,
+          environment.platform,
+        ),
       );
     }).pipe(Effect.withSpan("desktop.window.syncAppearance")),
   });

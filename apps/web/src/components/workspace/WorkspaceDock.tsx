@@ -570,8 +570,9 @@ function DockFrame({
         }
         className={cn(
           "relative flex min-h-0 min-w-0 rounded-lg border border-border/80 bg-background",
-          key === "floating" ? "overflow-hidden" : "overflow-visible",
-          key === "floating" && "absolute z-40 max-h-full max-w-full resize shadow-2xl",
+          key === "floating"
+            ? "absolute z-40 max-h-full max-w-full resize overflow-hidden shadow-2xl"
+            : "overflow-visible workspace-panel-elevation",
         )}
         style={
           key === "floating"
@@ -668,8 +669,9 @@ function DockFrame({
           if (event.button === 1) store.close(id);
         }}
         className={cn(
-          "workspace-window-label group flex h-6 max-w-48 shrink-0 items-center gap-2 rounded px-2 text-muted-foreground",
-          groups[key].some((value) => value.active === id) && "bg-accent text-accent-foreground",
+          "workspace-window-label group flex h-6 max-w-48 shrink-0 items-center gap-2 rounded px-2 text-muted-foreground transition-colors hover:bg-foreground/6 hover:text-foreground",
+          groups[key].some((value) => value.active === id) &&
+            "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground",
           index > 0 && tabs[index - 1]?.key !== key && "ml-2",
         )}
       >
@@ -761,7 +763,7 @@ function DockFrame({
       data-workspace-dock=""
     >
       <header
-        className="drag-region relative grid h-[30px] min-h-[30px] shrink-0 items-center gap-2 bg-(--workspace-board) px-2 wco:pr-(--workspace-native-controls-inset)"
+        className="drag-region relative grid h-[30px] min-h-[30px] shrink-0 items-center gap-2 px-2 wco:pr-(--workspace-native-controls-inset)"
         style={{
           gridTemplateColumns: `${left ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr)${right ? ` ${layout.sizes.right}px` : ""}`,
         }}
@@ -781,7 +783,7 @@ function DockFrame({
         <div
           className={cn(
             "flex h-full min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]",
-            !right && "pr-16",
+            !right && "pr-16 workspace-titlebar-tabs-fade",
           )}
           data-workspace-titlebar-content=""
         >
@@ -800,13 +802,13 @@ function DockFrame({
         </div>
         {right ? (
           <div
-            className="flex h-full min-w-0 items-center overflow-x-auto pr-16 [scrollbar-width:none]"
+            className="flex h-full min-w-0 items-center overflow-x-auto pr-16 workspace-titlebar-tabs-fade [scrollbar-width:none]"
             data-workspace-titlebar-right=""
           >
             {renderTabs(headerWindows.filter((window) => window.key === "right"))}
           </div>
         ) : null}
-        <div className="absolute right-2 top-0 flex h-full shrink-0 items-center gap-1 bg-(--workspace-board)">
+        <div className="absolute right-2 top-0 flex h-full shrink-0 items-center gap-1">
           {renderPanelToggle("bottom")}
           {renderPanelToggle("right")}
         </div>

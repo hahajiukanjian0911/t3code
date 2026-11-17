@@ -1343,6 +1343,40 @@ describe("DesktopWindow", () => {
     }),
   );
 
+  it.effect(
+    "uses native under-window vibrancy on macOS and preserves transparent backing on appearance sync",
+    () =>
+      Effect.gen(function* () {
+        const main = makeFakeBrowserWindow();
+        const popup = makeFakeBrowserWindow();
+        const createdWindowOptions: Electron.BrowserWindowConstructorOptions[] = [];
+        const layer = layerTest({
+          window: main.window,
+          createCount: yield* Ref.make(0),
+          mainWindow: yield* Ref.make<Option.Option<Electron.BrowserWindow>>(Option.none()),
+          createdWindowOptions,
+          platform: "darwin",
+          appearanceWindows: [
+            { window: main.window, titleBarOverlay: false },
+            { window: popup.window, titleBarOverlay: false },
+          ],
+        });
+
+        yield* Effect.gen(function* () {
+          const desktopWindow = yield* DesktopWindow.DesktopWindow;
+          yield* desktopWindow.createMain;
+          yield* desktopWindow.syncAppearance;
+        }).pipe(Effect.provide(layer));
+
+        assert.lengthOf(createdWindowOptions, 1);
+        assert.equal(createdWindowOptions[0]?.vibrancy, "under-window");
+        assert.equal(createdWindowOptions[0]?.visualEffectState, "followWindow");
+        assert.equal(createdWindowOptions[0]?.backgroundColor, "#00000000");
+        assert.lengthOf(vi.mocked(main.window.setBackgroundColor).mock.calls, 0);
+        assert.deepEqual(vi.mocked(popup.window.setBackgroundColor).mock.calls, [["#ffffff"]]);
+      }),
+  );
+
   it.effect.each([
     { window: "normal", write: "flush" },
     { window: "normal", write: "debounce" },
