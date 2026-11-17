@@ -224,6 +224,7 @@ export function makeAntigravityAcpAdapterFlavor(
     supportsNativeGoals: options.supportsNativeGoals ?? Effect.succeed(false),
     // Agents that advertise HTTP MCP skip the stdio bridge process; others keep stdio.
     mcpOverHttp: true,
+    deferMcpTools: true,
     mcpInstructions: ANTIGRAVITY_BACKGROUND_WAIT_INSTRUCTIONS,
     foregroundCommandWait: {
       ...(profileDirectory === undefined
