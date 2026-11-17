@@ -8577,12 +8577,12 @@ msgstr "{0} #{1} not found"
 msgid "Pull request tabs"
 msgstr "Pull request tabs"
 
-#. 0: candidate.name
+#. 0: names.join(", ")
 #: src/components/pullRequest/PullRequestLabelPicker.tsx
 msgid "Could not take {0} off"
 msgstr "Could not take {0} off"
 
-#. 0: candidate.name
+#. 0: names.join(", ")
 #: src/components/pullRequest/PullRequestLabelPicker.tsx
 msgid "Could not put {0} on"
 msgstr "Could not put {0} on"
@@ -8708,11 +8708,6 @@ msgstr "Search authors"
 msgid "<0/> Anyone"
 msgstr "<0/> Anyone"
 
-#. 0: option.mergedCount
-#: src/components/pullRequest/PullRequestListFilters.tsx
-msgid "{0} merges loaded"
-msgstr "{0} merges loaded"
-
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "Author"
 msgstr "Author"
@@ -8822,12 +8817,12 @@ msgstr "Review summary"
 msgid "Review verdict"
 msgstr "Review verdict"
 
-#. 0: candidate.login
+#. 0: logins
 #: src/components/pullRequest/PullRequestReviewerPicker.tsx
 msgid "Could not take back the review request to {0}"
 msgstr "Could not take back the review request to {0}"
 
-#. 0: candidate.login
+#. 0: logins
 #: src/components/pullRequest/PullRequestReviewerPicker.tsx
 msgid "Could not ask {0} for a review"
 msgstr "Could not ask {0} for a review"
@@ -8835,16 +8830,6 @@ msgstr "Could not ask {0} for a review"
 #: src/components/pullRequest/PullRequestReviewerPicker.tsx
 msgid "The host refused it. Check that you have write access on this repository, and that they still have access to it."
 msgstr "The host refused it. Check that you have write access on this repository, and that they still have access to it."
-
-#. 0: candidate.login
-#: src/components/pullRequest/PullRequestReviewerPicker.tsx
-msgid "Review request to {0} taken back"
-msgstr "Review request to {0} taken back"
-
-#. 0: candidate.login
-#: src/components/pullRequest/PullRequestReviewerPicker.tsx
-msgid "Review requested from {0}"
-msgstr "Review requested from {0}"
 
 #: src/components/pullRequest/PullRequestReviewerPicker.tsx
 msgid "Already asked"
@@ -14441,9 +14426,6 @@ msgstr "Choose what the thread details card shows. You can also right-click the 
 msgid "Thread details: {0} of {1} on"
 msgstr "Thread details: {0} of {1} on"
 
-#~ msgid "Everything outside code blocks and the terminal."
-#~ msgstr "Everything outside code blocks and the terminal."
-
 #: src/components/settings/TypographySettings.tsx
 msgid "Interface font size"
 msgstr "Interface font size"
@@ -15827,6 +15809,7 @@ msgstr "Link to this thread"
 msgid "Link to thread"
 msgstr "Link to thread"
 
+#: src/components/chat/GlobalVoiceInputIndicator.tsx
 #: src/components/pullRequest/PullRequestThreadLinks.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Untitled thread"
@@ -19050,6 +19033,7 @@ msgid "Clones go to github.com/owner/repo under the folder above, like ghq."
 msgstr "Clones go to github.com/owner/repo under the folder above, like ghq."
 
 #: src/components/settings/SettingsPanels.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "Clone into host folders"
 msgstr "Clone into host folders"
 
@@ -20572,6 +20556,7 @@ msgstr "Retry T3 Connect"
 
 #: src/components/cloud/ConnectOnboardingDialog.tsx
 #: src/components/settings/RevokeConnectDeviceDialog.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "Require approval for new devices"
 msgstr "Require approval for new devices"
 
@@ -20932,6 +20917,7 @@ msgid "What a screen reader hears from the open thread: a turn starting, needing
 msgstr "What a screen reader hears from the open thread: a turn starting, needing you, and ending. Status and messages adds what the agent writes before its last message. Everything adds each step."
 
 #: src/components/settings/SettingsPanels.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "Screen reader announcements"
 msgstr "Screen reader announcements"
 
@@ -20940,6 +20926,7 @@ msgid "Start the window title with the thread's status, like Needs approval, and
 msgstr "Start the window title with the thread's status, like Needs approval, and its name, so screen readers read them first when you switch apps. Taskbars, shared screens, and time trackers see it too."
 
 #: src/components/settings/SettingsPanels.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "Screen reader window title"
 msgstr "Screen reader window title"
 
@@ -20948,6 +20935,7 @@ msgid "Stop the computer from going to sleep while agents are working, and let i
 msgstr "Stop the computer from going to sleep while agents are working, and let it sleep once they finish. Closing a laptop lid still puts it to sleep."
 
 #: src/components/settings/SettingsPanels.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "Keep awake while agents work"
 msgstr "Keep awake while agents work"
 
@@ -21329,3 +21317,31 @@ msgstr "User messages, agent replies, and the prompt by default."
 #: src/components/settings/TypographySettings.tsx
 msgid "Follow conversation"
 msgstr "Follow conversation"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Streaming transcription"
+msgstr "Streaming transcription"
+
+#: src/components/chat/SnapShotAttachmentDetails.tsx
+#: src/components/chat/SnapShotAttachmentDetails.tsx
+msgid "Copy snapshot"
+msgstr "Copy snapshot"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Transcribe while recording. Turn off to transcribe after stopping, which may help when live transcription falls behind."
+msgstr "Transcribe while recording. Turn off to transcribe after stopping, which may help when live transcription falls behind."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "This model doesn’t support native streaming."
+msgstr "This model doesn’t support native streaming."
+
+#: src/components/pullRequest/PullRequestListFilters.tsx
+msgid "1 merge loaded"
+msgstr "1 merge loaded"
+
+#. 0: option.mergedCount
+#: src/components/pullRequest/PullRequestListFilters.tsx
+msgid "{0} merges loaded"
+msgstr "{0} merges loaded"

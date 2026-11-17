@@ -8577,12 +8577,12 @@ msgstr "未找到 {0} #{1}"
 msgid "Pull request tabs"
 msgstr "拉取请求标签页"
 
-#. 0: candidate.name
+#. 0: names.join(", ")
 #: src/components/pullRequest/PullRequestLabelPicker.tsx
 msgid "Could not take {0} off"
 msgstr "无法移除标签 {0}"
 
-#. 0: candidate.name
+#. 0: names.join(", ")
 #: src/components/pullRequest/PullRequestLabelPicker.tsx
 msgid "Could not put {0} on"
 msgstr "无法添加标签 {0}"
@@ -8708,11 +8708,6 @@ msgstr "搜索作者"
 msgid "<0/> Anyone"
 msgstr "<0/> 任何人"
 
-#. 0: option.mergedCount
-#: src/components/pullRequest/PullRequestListFilters.tsx
-msgid "{0} merges loaded"
-msgstr "已加载 {0} 次合并"
-
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "Author"
 msgstr "作者"
@@ -8822,12 +8817,12 @@ msgstr "评审总结"
 msgid "Review verdict"
 msgstr "评审结论"
 
-#. 0: candidate.login
+#. 0: logins
 #: src/components/pullRequest/PullRequestReviewerPicker.tsx
 msgid "Could not take back the review request to {0}"
 msgstr "无法撤回向 {0} 发出的评审请求"
 
-#. 0: candidate.login
+#. 0: logins
 #: src/components/pullRequest/PullRequestReviewerPicker.tsx
 msgid "Could not ask {0} for a review"
 msgstr "无法请求 {0} 进行评审"
@@ -8835,16 +8830,6 @@ msgstr "无法请求 {0} 进行评审"
 #: src/components/pullRequest/PullRequestReviewerPicker.tsx
 msgid "The host refused it. Check that you have write access on this repository, and that they still have access to it."
 msgstr "托管服务拒绝了操作。请确认你拥有此仓库的写入权限，并且对方仍可访问该仓库。"
-
-#. 0: candidate.login
-#: src/components/pullRequest/PullRequestReviewerPicker.tsx
-msgid "Review request to {0} taken back"
-msgstr "已撤回向 {0} 发出的评审请求"
-
-#. 0: candidate.login
-#: src/components/pullRequest/PullRequestReviewerPicker.tsx
-msgid "Review requested from {0}"
-msgstr "已请求 {0} 进行评审"
 
 #: src/components/pullRequest/PullRequestReviewerPicker.tsx
 msgid "Already asked"
@@ -14441,9 +14426,6 @@ msgstr "选择对话详情卡片的显示内容，也可右键点击卡片。"
 msgid "Thread details: {0} of {1} on"
 msgstr "对话详情：已开启 {0}/{1} 项"
 
-#~ msgid "Everything outside code blocks and the terminal."
-#~ msgstr "应用于代码块和终端之外的所有界面。"
-
 #: src/components/settings/TypographySettings.tsx
 msgid "Interface font size"
 msgstr "界面字号"
@@ -15827,6 +15809,7 @@ msgstr "链接到此对话"
 msgid "Link to thread"
 msgstr "关联到任务"
 
+#: src/components/chat/GlobalVoiceInputIndicator.tsx
 #: src/components/pullRequest/PullRequestThreadLinks.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Untitled thread"
@@ -19050,6 +19033,7 @@ msgid "Clones go to github.com/owner/repo under the folder above, like ghq."
 msgstr "克隆的仓库会按 github.com/owner/repo 存放在上述文件夹下，与 ghq 相同。"
 
 #: src/components/settings/SettingsPanels.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "Clone into host folders"
 msgstr "按主机分目录克隆"
 
@@ -20572,6 +20556,7 @@ msgstr "重试 T3 Connect"
 
 #: src/components/cloud/ConnectOnboardingDialog.tsx
 #: src/components/settings/RevokeConnectDeviceDialog.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "Require approval for new devices"
 msgstr "新设备连接需批准"
 
@@ -20932,6 +20917,7 @@ msgid "What a screen reader hears from the open thread: a turn starting, needing
 msgstr "屏幕阅读器会播报当前对话的轮次开始、需要你处理和轮次结束。「状态与消息」还会播报最终消息之前 Agent 写出的内容；「全部」则播报每个步骤。"
 
 #: src/components/settings/SettingsPanels.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "Screen reader announcements"
 msgstr "屏幕阅读器播报"
 
@@ -20940,6 +20926,7 @@ msgid "Start the window title with the thread's status, like Needs approval, and
 msgstr "将对话状态（如「需要批准」）和名称放在窗口标题开头，便于切换应用时屏幕阅读器优先读出。任务栏、屏幕共享和时间跟踪工具也会看到这些内容。"
 
 #: src/components/settings/SettingsPanels.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "Screen reader window title"
 msgstr "适用于屏幕阅读器的窗口标题"
 
@@ -20948,6 +20935,7 @@ msgid "Stop the computer from going to sleep while agents are working, and let i
 msgstr "Agent 工作时阻止电脑休眠，完成后恢复正常休眠。合上笔记本电脑盖仍会进入休眠。"
 
 #: src/components/settings/SettingsPanels.tsx
+#: src/i18n/staticUiLabels.ts
 msgid "Keep awake while agents work"
 msgstr "Agent 工作时保持唤醒"
 
@@ -21329,3 +21317,31 @@ msgstr "用于用户消息和 Agent 回复，输入框默认跟随此字号。"
 #: src/components/settings/TypographySettings.tsx
 msgid "Follow conversation"
 msgstr "跟随对话"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/components/settings/VoiceSettingsPanel.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Streaming transcription"
+msgstr "流式转写"
+
+#: src/components/chat/SnapShotAttachmentDetails.tsx
+#: src/components/chat/SnapShotAttachmentDetails.tsx
+msgid "Copy snapshot"
+msgstr "复制截图"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Transcribe while recording. Turn off to transcribe after stopping, which may help when live transcription falls behind."
+msgstr "录音时实时转写。关闭后改为停止录音后再转写，有助于改善实时转写跟不上的情况。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "This model doesn’t support native streaming."
+msgstr "此模型不支持原生流式转写。"
+
+#: src/components/pullRequest/PullRequestListFilters.tsx
+msgid "1 merge loaded"
+msgstr "已加载 1 次合并"
+
+#. 0: option.mergedCount
+#: src/components/pullRequest/PullRequestListFilters.tsx
+msgid "{0} merges loaded"
+msgstr "已加载 {0} 次合并"
