@@ -4,9 +4,11 @@ import { EditorView, keymap, lineNumbers, type ViewUpdate } from "@codemirror/vi
 import { getCM } from "@replit/codemirror-vim";
 import { useLayoutEffect, useRef, useState } from "react";
 
+import { useClientSettings } from "~/hooks/useSettings";
 import { useStableCallback } from "~/hooks/useStableCallback";
 import { cn } from "~/lib/utils";
 import { codeEditing, vimEditing } from "./codeMirrorExtensions";
+import { syncVimKeybindings } from "./vimKeymapsAndIme";
 
 // CodeMirror normalizes line breaks. Replay the edits against the source so untouched lines keep their original endings.
 function changedText(source: string, update: ViewUpdate): string {
@@ -57,11 +59,17 @@ const editorTheme = EditorView.theme({
 
 export function CodeMirrorSurface(props: CodeMirrorSurfaceProps) {
   const { value, extensions, vimEnabled, wordWrap, languageExtension, tabIndents = true } = props;
+  const vimKeybindings = useClientSettings((settings) => settings.vimKeybindings);
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView>(null);
   const source = useRef(value);
   const current = useStableCallback(() => props);
   const [config] = useState(() => new Compartment());
+
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- keep global CodeMirror-Vim keymap in sync with user settings.
+  useLayoutEffect(() => {
+    if (vimEnabled) syncVimKeybindings(vimKeybindings);
+  }, [vimEnabled, vimKeybindings]);
   const options = [
     vimEnabled ? vimEditing : [],
     tabIndents ? keymap.of([indentWithTab]) : [],

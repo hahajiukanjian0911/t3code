@@ -260,6 +260,7 @@ function Composer() {
       value={prompt.value}
       cursor={prompt.cursor}
       richTextEnabled
+      vimMode={false}
       contextRecords={new Map()}
       skills={[]}
       disabled={false}

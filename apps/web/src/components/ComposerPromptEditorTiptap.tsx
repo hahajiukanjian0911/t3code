@@ -145,6 +145,7 @@ import {
   captureComposerAttachmentInsertion,
   type ComposerAttachmentInsertion,
 } from "./composerAttachmentInsertion";
+import type { VimTelemetrySnapshot } from "./editor/vimKeymapsAndIme";
 import type { ComposerDraftContextRecords } from "./composerContextPresentation";
 
 const COMPOSER_TEXT_CLASS_NAME =
@@ -200,6 +201,7 @@ export interface ComposerPromptEditorProps {
     contextIds: string[],
   ) => void;
   onVisibleSelectionChange?: () => void;
+  onVimTelemetryChange?: (telemetry: VimTelemetrySnapshot | null) => void;
   onCommandKeyDown?: (key: string, event: KeyboardEvent, isTaskItem?: boolean) => boolean;
   onPageScrollKeyDown?: (key: "PageUp" | "PageDown") => void;
   onPageScrollKeyUp?: (key: string) => void;
@@ -208,7 +210,7 @@ export interface ComposerPromptEditorProps {
   /** Saves unsaved citation text into replacedValue when a controlled rewrite replaces the document. */
   onCitationDraftSave?: (replacedValue: string, savedValue: string) => void;
   onPaste: React.ClipboardEventHandler<HTMLElement>;
-  editorRef: React.RefObject<ComposerPromptEditorHandle | null>;
+  editorRef: React.Ref<ComposerPromptEditorHandle | null>;
 }
 
 export type ComposerCitationCommentRequest = {
@@ -736,11 +738,67 @@ function replaceSkillChips(
 
 const ComposerPromptEditorCodeMirror = lazy(() => import("./ComposerPromptEditorCodeMirror"));
 
+type PendingEditorFocus = { kind: "default" } | { kind: "end" } | { kind: "at"; offset: number };
+
 export function ComposerPromptEditorTiptap(props: ComposerPromptEditorProps) {
   const restoreFocusRef = useRef(false);
+  const innerEditorRef = useRef<ComposerPromptEditorHandle | null>(null);
+  const pendingFocusRef = useRef<PendingEditorFocus | null>(null);
   const clientVimMode = useClientSettings((settings) => settings.vimMode);
   const vimEnabled = props.vimMode ?? clientVimMode;
-  const { onChange: onPromptChange } = props;
+  const { onChange: onPromptChange, onVimTelemetryChange } = props;
+  const assignEditorHandle = useStableCallback((handle: ComposerPromptEditorHandle | null) => {
+    innerEditorRef.current = handle;
+    if (handle && pendingFocusRef.current) {
+      const pending = pendingFocusRef.current;
+      pendingFocusRef.current = null;
+      // Only replay queued focus if the user has not already focused another element outside the composer
+      const active = document.activeElement;
+      if (!active || active === document.body || active === document.documentElement) {
+        if (pending.kind === "end") handle.focusAtEnd();
+        else if (pending.kind === "at") handle.focusAt(pending.offset);
+        else handle.focus();
+      }
+    }
+  });
+  useImperativeHandle(props.editorRef, () => ({
+    focus: () => {
+      if (innerEditorRef.current) innerEditorRef.current.focus();
+      else pendingFocusRef.current = { kind: "default" };
+    },
+    focusAt: (offset) => {
+      if (innerEditorRef.current) innerEditorRef.current.focusAt(offset);
+      else pendingFocusRef.current = { kind: "at", offset };
+    },
+    focusAtEnd: () => {
+      if (innerEditorRef.current) innerEditorRef.current.focusAtEnd();
+      else pendingFocusRef.current = { kind: "end" };
+    },
+    readSelectionRange: () => {
+      if (innerEditorRef.current) return innerEditorRef.current.readSelectionRange();
+      const head = expandCollapsedComposerCursor(props.value, props.cursor, props.literalText);
+      return { start: head, end: head };
+    },
+    readSnapshot: () => {
+      if (innerEditorRef.current) return innerEditorRef.current.readSnapshot();
+      const literalText = props.literalText ?? false;
+      const cursor = clampCollapsedComposerCursor(props.value, props.cursor, literalText);
+      const expandedCursor = expandCollapsedComposerCursor(props.value, cursor, literalText);
+      return {
+        value: props.value,
+        cursor,
+        expandedCursor,
+        contextIds: literalText ? [] : collectInlineContextIds(props.value),
+      };
+    },
+    captureAttachmentInsertion: () => innerEditorRef.current?.captureAttachmentInsertion(),
+    requestCitationComment: (citation) => innerEditorRef.current?.requestCitationComment(citation),
+    isCaretOnVisualEdge: (edge) => innerEditorRef.current?.isCaretOnVisualEdge(edge) ?? true,
+  }));
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- clear Vim status pill when Vim mode is turned off.
+  useLayoutEffect(() => {
+    if (!vimEnabled) onVimTelemetryChange?.(null);
+  }, [vimEnabled, onVimTelemetryChange]);
   const [selection, setSelection] = useState<{
     value: string;
     cursor: number;
@@ -765,6 +823,7 @@ export function ComposerPromptEditorTiptap(props: ComposerPromptEditorProps) {
         <ComposerPromptEditorCodeMirror
           key={`${props.draftKey ?? ""}:vim:${props.literalText ? "literal" : "markdown"}`}
           {...props}
+          editorRef={assignEditorHandle}
           restoreFocusRef={restoreFocusRef}
           initialExpandedCursor={initialExpandedCursor}
           onChange={onChange}
@@ -778,6 +837,7 @@ export function ComposerPromptEditorTiptap(props: ComposerPromptEditorProps) {
     <ComposerPromptEditorTiptapInner
       key={`${props.draftKey ?? ""}:${props.literalText ? "literal" : props.richTextEnabled ? "rich" : "plain"}`}
       {...props}
+      editorRef={assignEditorHandle}
       restoreFocusRef={restoreFocusRef}
       initialExpandedCursor={initialExpandedCursor}
       onChange={onChange}

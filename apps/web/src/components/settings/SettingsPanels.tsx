@@ -113,6 +113,7 @@ import {
 import { searchableSetting, type SettingsSearchItemId } from "./settingsSearch";
 import { BackgroundActivitySettingsRow } from "./BackgroundActivitySettings";
 import { AdvancedSettings } from "./AdvancedSettings";
+import { VimKeybindingsEditor } from "./VimKeybindingsEditor";
 import { PullRequestLinksOpenInAppSetting } from "./IntegrationsSettings";
 import { StorageCleanupSections } from "./StorageSettings";
 import { UpdateTrackSwitchDialog } from "./UpdateTrackSwitchDialog";
@@ -538,6 +539,10 @@ export function useSettingsRestore(onRestored?: () => void) {
       ? ["Rich text composer"]
       : []),
     ...(settings.vimMode !== DEFAULT_UNIFIED_SETTINGS.vimMode ? ["Vim mode"] : []),
+    ...(JSON.stringify(settings.vimKeybindings) !==
+    JSON.stringify(DEFAULT_UNIFIED_SETTINGS.vimKeybindings)
+      ? ["Custom Vim keybindings"]
+      : []),
     ...(settings.sendShortcut !== DEFAULT_UNIFIED_SETTINGS.sendShortcut ? ["Send shortcut"] : []),
     ...(settings.followUpBehavior !== DEFAULT_UNIFIED_SETTINGS.followUpBehavior
       ? ["Follow-up behavior"]
@@ -670,6 +675,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       showSkillsInSlashMenu: DEFAULT_UNIFIED_SETTINGS.showSkillsInSlashMenu,
       composerRichTextEnabled: DEFAULT_UNIFIED_SETTINGS.composerRichTextEnabled,
       vimMode: DEFAULT_UNIFIED_SETTINGS.vimMode,
+      vimKeybindings: DEFAULT_UNIFIED_SETTINGS.vimKeybindings,
       sendShortcut: DEFAULT_UNIFIED_SETTINGS.sendShortcut,
       followUpBehavior: DEFAULT_UNIFIED_SETTINGS.followUpBehavior,
       toolCallVisibility: DEFAULT_UNIFIED_SETTINGS.toolCallVisibility,
@@ -1196,6 +1202,30 @@ export function ChatSettingsPanel() {
             />
           }
         />
+        {settings.vimMode ? (
+          <SettingsRow
+            {...searchableSetting("composer-vim-keybindings")}
+            description="Customize Vim key mappings for Normal, Insert, Visual, and Operator-pending modes."
+            resetAction={
+              JSON.stringify(settings.vimKeybindings) !==
+              JSON.stringify(DEFAULT_UNIFIED_SETTINGS.vimKeybindings) ? (
+                <SettingResetButton
+                  label="Custom Vim keybindings"
+                  onClick={() =>
+                    updateSettings({
+                      vimKeybindings: DEFAULT_UNIFIED_SETTINGS.vimKeybindings,
+                    })
+                  }
+                />
+              ) : null
+            }
+          >
+            <VimKeybindingsEditor
+              value={settings.vimKeybindings}
+              onChange={(vimKeybindings) => updateSettings({ vimKeybindings })}
+            />
+          </SettingsRow>
+        ) : null}
         <SettingsRow
           {...searchableSetting("send-shortcut")}
           description="Choose when Enter sends a prompt or inserts a new line"

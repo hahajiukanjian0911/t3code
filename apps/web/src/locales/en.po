@@ -22007,3 +22007,24 @@ msgstr "The provider has not reported a window limit."
 #: src/components/chat/ThreadDetailsUsage.tsx
 msgid "Auto-compaction starts around {0} tokens."
 msgstr "Auto-compaction starts around {0} tokens."
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Customize Vim key mappings for Normal, Insert, Visual, and Operator-pending modes."
+msgstr "Customize Vim key mappings for Normal, Insert, Visual, and Operator-pending modes."
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Custom Vim keybindings"
+msgstr "Custom Vim keybindings"
+
+#: src/components/settings/VimKeybindingsEditor.tsx
+msgid "Custom Vim keybindings JSON"
+msgstr "Custom Vim keybindings JSON"
+
+#: src/components/settings/VimKeybindingsEditor.tsx
+msgid "Format JSON"
+msgstr "Format JSON"
+
+#. 0: value.length; 1: " "; 2: " "
+#: src/components/settings/VimKeybindingsEditor.tsx
+msgid "{0} active Vim mappings (<0/>,{1} <1/>, <2/>,{2} <3/>)"
+msgstr "{0} active Vim mappings (<0/>,{1} <1/>, <2/>,{2} <3/>)"

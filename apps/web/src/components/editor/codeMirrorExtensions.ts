@@ -11,10 +11,14 @@ import { EditorState, Prec } from "@codemirror/state";
 import { EditorView, drawSelection, keymap } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 import { getCM, vim } from "@replit/codemirror-vim";
+import { ensureVimMarkdownListContinuation, vimNormalModeImeShield } from "./vimKeymapsAndIme";
+
+ensureVimMarkdownListContinuation();
 
 export const vimEditing = [
   vim({ status: false }),
-  drawSelection(),
+  drawSelection({ cursorBlinkRate: 0 }),
+  vimNormalModeImeShield,
   Prec.highest(
     EditorView.domEventHandlers({
       keydown(event, view) {
@@ -77,17 +81,28 @@ export const codeEditing = [
       color: "var(--muted-foreground)",
       borderRight: "1px solid var(--border)",
     },
-    ".cm-cursor": { borderLeftColor: "var(--foreground)" },
+    ".cm-cursorLayer, &.cm-focused > .cm-scroller > .cm-cursorLayer, .cm-vimCursorLayer": {
+      animation: "none !important",
+    },
+    ".cm-cursor": {
+      borderLeftWidth: "2px",
+      borderLeftColor: "var(--primary, var(--foreground))",
+      marginLeft: "-1px",
+    },
     ".cm-fat-cursor": {
       background: "var(--foreground) !important",
-      color: "var(--background) !important",
+      color: "var(--popover, var(--background)) !important",
+      borderRadius: "0",
+      minWidth: "1ch",
     },
     "&:not(.cm-focused) .cm-fat-cursor": {
       background: "none !important",
+      color: "transparent !important",
       outline: "1px solid var(--muted-foreground) !important",
     },
     "&.cm-focused .cm-selectionBackground, .cm-selectionBackground": {
-      backgroundColor: "color-mix(in srgb, var(--primary) 24%, transparent)",
+      backgroundColor: "color-mix(in srgb, var(--primary) 22%, transparent) !important",
+      borderRadius: "0 !important",
     },
     ".cm-panels": { backgroundColor: "var(--card)", color: "var(--foreground)" },
   }),

@@ -136,6 +136,7 @@ it("a machine chip stashed in one thread restores with its machine in another", 
     await userEvent.click(editor);
     await userEvent.keyboard("{ControlOrMeta>}s{/ControlOrMeta}");
   };
+  await expect.element(editor).toBeVisible();
   await vi.waitFor(() => expect(editor.element().textContent).toContain("Deploy on"));
   // A draft can't stash until the shell snapshot lists its project.
   await expect.element(page.getByText("render", { exact: true }).first()).toBeVisible();
@@ -286,7 +287,7 @@ it("an interrupted image-only first send of a new thread says it may not have be
   await expect.element(page.getByRole("img", { name: "shot.png" })).toBeVisible();
   await userEvent.keyboard("{Enter}");
   await vi.waitFor(() => expect(launch.calls).toHaveLength(1));
-  await userEvent.keyboard("next draft");
+  await userEvent.keyboard("inext draft");
   await expect.element(editor).toHaveTextContent("next draft");
   launch.release();
 
@@ -441,7 +442,7 @@ it("a rejected send leaves the timeline when a new draft was typed meanwhile", a
 
   const editor = page.getByTestId("composer-editor");
   await userEvent.click(editor);
-  await userEvent.keyboard("Failed prompt{Enter}");
+  await userEvent.keyboard("iFailed prompt{Enter}");
   await vi.waitFor(() =>
     expect(dispatchedCommands().map((command) => command.type)).toContain("message.dispatch"),
   );
@@ -660,7 +661,7 @@ it("selecting a side-chat tab focuses that side chat's composer", async () => {
   const sideEditor = screen.getByRole("textbox", { name: `Message ${side.title}`, exact: true });
   await expect.element(sideEditor).toBeVisible();
   await userEvent.click(mainEditor);
-  await userEvent.keyboard("main draft");
+  await userEvent.keyboard("imain draft");
 
   await userEvent.click(screen.getByRole("tab", { name: otherSide.title, exact: true }));
   const otherEditor = screen.getByRole("textbox", {
@@ -668,7 +669,7 @@ it("selecting a side-chat tab focuses that side chat's composer", async () => {
     exact: true,
   });
   await expect.element(otherEditor).toHaveFocus();
-  await userEvent.keyboard("other draft");
+  await userEvent.keyboard("iother draft");
   await expect.element(otherEditor).toHaveTextContent("other draft");
 
   await userEvent.click(screen.getByRole("tab", { name: side.title, exact: true }));

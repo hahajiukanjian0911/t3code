@@ -82,6 +82,7 @@ function Composer({
       value={prompt.value}
       cursor={prompt.cursor}
       richTextEnabled={richTextEnabled}
+      vimMode={false}
       contextRecords={new Map()}
       skills={skills}
       disabled={false}
@@ -912,6 +913,7 @@ describe("composer context undo lifetime", () => {
         editorRef,
         value: draft.value,
         cursor: 0,
+        vimMode: false,
         contextRecords: new Map(
           draft.files.map((entry) => [
             fileContextReference(entry).contextId,

@@ -39,11 +39,13 @@ it. Very large code blocks are shown without syntax highlighting.
 
 ## Vim editing
 
-On web and desktop, turn on **Settings → Chat → Vim mode**, or choose **Enable Vim Mode** in the
-command palette. The composer, editable source files and custom theme CSS share this setting.
-Press `i` to insert text and `Esc` to return to Normal mode. The composer keeps its file and
-skill suggestions, attachments and citation comments. Source files show line numbers and save
-edits automatically.
+On web and desktop, **Settings → Chat → Vim mode** is enabled by default (toggle it there or with
+**Enable/Disable Vim Mode** in the command palette). The composer, editable source files and custom
+theme CSS share this setting. Press `i` to insert text and `Esc` (or `jk`) to return to Normal
+mode; in Normal and Visual modes, physical keys run Vim commands directly without CJK input method
+pre-edit interference. Customize Vim key mappings as JSON under **Settings → Chat → Custom Vim
+keybindings**. The composer keeps its file and skill suggestions, Markdown list continuation,
+attachments and citation comments. Source files show line numbers and save edits automatically.
 
 ## Attach files
 

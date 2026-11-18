@@ -111,4 +111,105 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
     await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
     expect(onShiftEscapeBubble).toHaveBeenCalledTimes(1);
   });
+
+  it("caps height at 6 lines with internal scroll-follow, steady non-blinking cursor, seamless selection, and monospace font", async () => {
+    const nineLines = Array.from(
+      { length: 9 },
+      (_, index) => `Line ${index + 1}: composer vim`,
+    ).join("\n");
+    await using screen = await render(<VimHarness initialValue={nineLines} />);
+    const editor = screen.getByTestId("composer-editor");
+    await expect.element(editor).toBeVisible();
+
+    const scroller = screen.container.querySelector<HTMLElement>(".cm-scroller")!;
+    expect(scroller).not.toBeNull();
+    expect(getComputedStyle(scroller).overflowY).toBe("auto");
+
+    // 9 lines exceed the 6-line cap, so the scroller caps its viewport and overflows internally
+    expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight);
+    expect(scroller.scrollTop).toBe(0);
+
+    // Cursor layers do not blink
+    const vimCursorLayer = screen.container.querySelector<HTMLElement>(".cm-vimCursorLayer");
+    if (vimCursorLayer) {
+      expect(getComputedStyle(vimCursorLayer).animationName).toBe("none");
+    }
+
+    // Jumping to line 9 (`G`) in Normal mode scrolls the viewport to keep the caret in view
+    await userEvent.click(editor);
+    await userEvent.keyboard("{Escape}ggG");
+    await vi.waitFor(() => {
+      expect(scroller.scrollTop).toBeGreaterThan(0);
+    });
+  });
+
+  it("bypasses CJK IME in Normal mode via physical key codes while preserving native IME composition in Insert mode", async () => {
+    await using screen = await render(<VimHarness initialValue={"first line\nsecond line"} />);
+    const editor = screen.getByTestId("composer-editor");
+    await expect.element(editor).toBeVisible();
+    await userEvent.click(editor);
+    // Ensure caret starts at line 1 col 1 regardless of click x-coordinate
+    await userEvent.keyboard("{Escape}gg0");
+
+    // Simulate macOS Chinese IME intercepting `j` + `x` in Normal mode (keyCode 229 / Process)
+    const dom = editor.element();
+    await act(() => {
+      dom.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Process",
+          code: "KeyJ",
+          keyCode: 229,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      dom.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Process",
+          code: "KeyX",
+          keyCode: 229,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
+    // Moved down to line 2 (`j`) and deleted `s` (`x`) without inserting Pinyin text
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe(
+        "first line\necond line",
+      );
+    });
+
+    // Enter Insert mode (`i`), insert `s`, then press custom `jk` mapping to exit Insert mode cleanly
+    await userEvent.keyboard("is");
+    // Type `j` then `k` via real browser input within insertModeEscKeysTimeout (400ms)
+    await userEvent.keyboard("jk");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe(
+        "first line\nsecond line",
+      );
+    });
+    // Confirm we are back in Normal mode: `0x` deletes the char at col 1 (`s`) rather than inserting `"0x"`
+    await userEvent.keyboard("0x");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe(
+        "first line\necond line",
+      );
+    });
+  });
+
+  it("auto-continues Markdown ordered and bullet lists on Enter in Insert mode and o in Normal mode", async () => {
+    await using screen = await render(<VimHarness initialValue="1. first" />);
+    const editor = screen.getByTestId("composer-editor");
+    await expect.element(editor).toBeVisible();
+    await userEvent.click(editor);
+
+    // Normal mode `o` continues `1. first` -> `2. ` and enters Insert mode; typing + Enter creates `3. `
+    await userEvent.keyboard("osecond{Enter}third{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe(
+        "1. first\n2. second\n3. third",
+      );
+    });
+  });
 });

@@ -763,6 +763,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["vim modal keybindings normal insert visual codemirror editor composer"],
   },
   {
+    id: "composer-vim-keybindings",
+    title: "Custom Vim keybindings",
+    to: "/settings/chat",
+    searchTerms: ["vim keymap keybindings neovim nmap imap vmap jk custom json"],
+  },
+  {
     id: "send-shortcut",
     title: "Send shortcut",
     to: "/settings/chat",

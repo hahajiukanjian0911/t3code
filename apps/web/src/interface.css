@@ -490,10 +490,16 @@ p > [data-draft-project-trigger] {
   }
 }
 
-.composer-tiptap {
+.composer-tiptap:not([data-composer-codemirror]) {
   font-weight: 400;
   line-height: 1.55 !important;
   letter-spacing: -0.002em;
+}
+
+[data-composer-codemirror] {
+  font-weight: 400;
+  line-height: 1.5 !important;
+  letter-spacing: 0;
 }
 
 [data-model-picker-layout] {

@@ -22007,3 +22007,24 @@ msgstr "模型服务尚未提供窗口上限。"
 #: src/components/chat/ThreadDetailsUsage.tsx
 msgid "Auto-compaction starts around {0} tokens."
 msgstr "用量达到约 {0} 个 token 时，会自动压缩较早的对话内容。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Customize Vim key mappings for Normal, Insert, Visual, and Operator-pending modes."
+msgstr "自定义 Normal、Insert、Visual 与 Operator-pending 模式下的 Vim 按键映射。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Custom Vim keybindings"
+msgstr "自定义 Vim 键位"
+
+#: src/components/settings/VimKeybindingsEditor.tsx
+msgid "Custom Vim keybindings JSON"
+msgstr "自定义 Vim 键位 JSON"
+
+#: src/components/settings/VimKeybindingsEditor.tsx
+msgid "Format JSON"
+msgstr "格式化 JSON"
+
+#. 0: value.length; 1: " "; 2: " "
+#: src/components/settings/VimKeybindingsEditor.tsx
+msgid "{0} active Vim mappings (<0/>,{1} <1/>, <2/>,{2} <3/>)"
+msgstr "已启用 {0} 条 Vim 映射（<0/>、{1}<1/>、<2/>、{2}<3/>）"

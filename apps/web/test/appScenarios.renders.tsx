@@ -145,6 +145,7 @@ await page.viewport(1400, 900);
 // A returning user: the first-run gate would otherwise wait on onboarding evidence.
 __setClientSettingsForTests({
   ...DEFAULT_CLIENT_SETTINGS,
+  vimMode: false,
   onboardingCompletedAt: "2026-01-01T00:00:00.000Z",
 });
 
