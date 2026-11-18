@@ -8,7 +8,7 @@ in once, and you choose what it may do.
 
 ## Add T3 Code to an assistant app
 
-Open the command palette (`Cmd/Ctrl+K`) and choose **Use T3 Code in another
+Open the command palette (`Cmd+Shift+P` on macOS or `Ctrl+K` on Windows and Linux) and choose **Use T3 Code in another
 app (MCP)**, or use the button in **Settings → Sharing & access**. Pick the
 app and follow the step for that app. Assistants like
 Poke and Claude run in the cloud, so the wizard first asks you to sign in to T3

@@ -3587,6 +3587,7 @@ export default function ChatView(props: ChatViewProps) {
         id={`chat:${activeThreadKey}`}
         title={activeThread.title}
         panel="main"
+        closable={false}
         selected
         titlebar={chatHeader}
       >

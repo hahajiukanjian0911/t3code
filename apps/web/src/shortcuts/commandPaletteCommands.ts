@@ -10,8 +10,15 @@ import { APPEARANCE_OPTIONS, notifyThemeSaveFailure } from "../components/Comman
 import { toggleThemeEditorForTheme } from "../components/settings/themeEditorStore";
 import { toastManager } from "../components/ui/toast";
 import { getThemeSnapshot, setAppearanceMode } from "../hooks/useTheme";
+import { queueWorkspaceFocusFromPalette } from "../lib/workspaceFocus";
 import { selectActiveRightPanel, useRightPanelStore } from "../rightPanelStore";
-import { type CommandHandler, type CommandScopeOptions, registerCommands } from "./dispatcher";
+import {
+  type CommandHandler,
+  type CommandScopeOptions,
+  dispatchMenuAction,
+  registerCommands,
+  registerMenuAction,
+} from "./dispatcher";
 import { selectThreadTerminalUiState, useTerminalUiStateStore } from "../terminalUiStateStore";
 import { resolveThreadRouteTarget } from "../threadRoutes";
 
@@ -41,16 +48,69 @@ export function installCommandPaletteCommands(
     const target = resolveThreadRouteTarget(router.state.matches.at(-1)?.params ?? {});
     return target?.kind === "server" ? target.threadRef : null;
   };
+  const context = () => {
+    const threadRef = readRouteThreadRef();
+    return {
+      terminalOpen: threadRef
+        ? selectThreadTerminalUiState(
+            useTerminalUiStateStore.getState().terminalUiStateByThreadKey,
+            threadRef,
+          ).terminalOpen
+        : false,
+      previewOpen: threadRef
+        ? selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, threadRef) === "preview"
+        : false,
+      usagePageOpen: router.state.location.pathname === "/usage",
+    };
+  };
+  const togglePalette = () => {
+    if (isCommandPaletteMounted()) dispatchCommandPalette({ _tag: "ToggleMode", mode: "command" });
+  };
+  const focusCompactComposer = () => {
+    const editor = document.querySelector<HTMLElement>(
+      '[data-workspace-area="composer"] [data-testid="composer-editor"]:not([data-side-chat-pane] *)',
+    );
+    editor?.focus({ preventScroll: true });
+    return !!editor && document.activeElement === editor;
+  };
 
   // A child search (files, contents) goes back to the palette on Escape before
   // its own widgets or the dialog can treat the key as a close.
-  const disposeEscape = registerCommands(
-    {},
+  const disposeCapture = registerCommands(
     {
+      "commandPalette.toggle": (event) => {
+        consume(event);
+        if (!event.repeat) togglePalette();
+      },
+      "workspace.focusPanel.main": (event) => {
+        const dialog =
+          event.target instanceof Element
+            ? event.target.closest('[role="dialog"], [role="alertdialog"]')
+            : null;
+        const docked = document.querySelector("[data-workspace-dock]") !== null;
+        if (
+          dialog?.hasAttribute("data-command-palette") &&
+          !document.querySelector("[data-app-modal]")
+        ) {
+          queueWorkspaceFocusFromPalette(
+            docked ? () => dispatchMenuAction("workspace.focusPanel.main") : focusCompactComposer,
+          );
+          dispatchCommandPalette({ _tag: "SetOpen", open: false });
+        } else if (dialog || docked || !focusCompactComposer()) return false;
+        consume(event);
+      },
+    },
+    {
+      ...options,
+      context,
       capture: true,
-      when: isCommandPaletteMounted,
+      when: (event) =>
+        isCommandPaletteMounted() &&
+        !event.isComposing &&
+        event.keyCode !== 229 &&
+        !(event.target instanceof Element && event.target.closest("[data-keybinding-capture]")),
       onKeyDown: (event) => {
-        if (event.isComposing || event.keyCode === 229 || event.key !== "Escape") return false;
+        if (event.key !== "Escape") return false;
         const { open, mode } = useCommandPaletteStore.getState();
         if (!open || mode === "command") return false;
         consume(event);
@@ -92,34 +152,20 @@ export function installCommandPaletteCommands(
         dispatchCommandPalette({ _tag: "SetOpen", open: false });
         void router.navigate({ to: "/usage" });
       },
-      "commandPalette.toggle": toggleOverlay("commandPalette.toggle"),
       "filePicker.toggle": toggleOverlay("filePicker.toggle"),
       "projectSearch.toggle": toggleOverlay("projectSearch.toggle"),
     },
     {
       ...options,
       when: isCommandPaletteMounted,
-      context: () => {
-        const threadRef = readRouteThreadRef();
-        return {
-          terminalOpen: threadRef
-            ? selectThreadTerminalUiState(
-                useTerminalUiStateStore.getState().terminalUiStateByThreadKey,
-                threadRef,
-              ).terminalOpen
-            : false,
-          previewOpen: threadRef
-            ? selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, threadRef) ===
-              "preview"
-            : false,
-          usagePageOpen: router.state.location.pathname === "/usage",
-        };
-      },
+      context,
     },
   );
 
+  const disposeMenu = registerMenuAction("commandPalette.toggle", togglePalette);
   return () => {
-    disposeEscape();
+    disposeMenu();
+    disposeCapture();
     disposeCommands();
   };
 }

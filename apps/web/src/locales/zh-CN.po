@@ -392,7 +392,6 @@ msgstr "工作区"
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
-#: src/components/GitActionsControl.tsx
 #: src/components/ProjectCloneToastCoordinator.tsx
 #: src/components/Sidebar.tsx
 #: src/components/Sidebar.tsx
@@ -1555,10 +1554,6 @@ msgstr "无法在编辑器中打开。"
 #: src/components/chat/MarkdownFileLink.tsx
 msgid "Unable to open file"
 msgstr "无法打开文件"
-
-#: src/components/GitActionsControl.tsx
-msgid "Git initialization failed"
-msgstr "Git 初始化失败"
 
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
@@ -4750,6 +4745,7 @@ msgstr "新模型"
 
 #: src/components/chat/ModelListRow.tsx
 #: src/components/chat/ProviderModelPicker.tsx
+#: src/components/chat/ThreadDetailsUsage.tsx
 #: src/components/cloud/CloudEnvironmentConnectList.tsx
 #: src/components/files/AudioPreview.tsx
 #: src/components/settings/CodexSetupSection.tsx
@@ -5343,10 +5339,6 @@ msgstr "这将使用 {1} 合并 #{0}。"
 #: src/components/chat/ThreadDetailsUsage.tsx
 msgid "Limits"
 msgstr "限额"
-
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "Context"
-msgstr "场景"
 
 #: src/components/chat/ThreadDetailsUsage.tsx
 msgid "Context window"
@@ -17422,14 +17414,6 @@ msgid "Behind upstream. Pull/rebase first."
 msgstr "落后于上游，请先拉取或变基。"
 
 #: src/components/GitActionsControl.tsx
-msgid "Initializing..."
-msgstr "正在初始化…"
-
-#: src/components/GitActionsControl.tsx
-msgid "Initialize Git"
-msgstr "初始化 Git"
-
-#: src/components/GitActionsControl.tsx
 msgid "Default branch"
 msgstr "默认分支"
 
@@ -18931,21 +18915,6 @@ msgstr "辅助功能数据"
 #: src/components/chat/SnapShotAttachmentDetails.tsx
 msgid "Captured window"
 msgstr "截取的窗口"
-
-#. 0: used
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "Context: {0}% used"
-msgstr "上下文：已使用 {0}%"
-
-#. 0: usedTokens
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "Context: {0} tokens used"
-msgstr "上下文：已使用 {0} 个 token"
-
-#. 0: usage.usedTokens.toLocaleString("en-US"); 1: maxTokens.toLocaleString("en-US"); 2: " "
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "{0} of {1}{2} tokens"
-msgstr "{0}/{1}{2} 个 token"
 
 #. 0: props.summary === null ? null \\: ( <span className="text-muted-foreground"> <span aria-hidden>· </span> {props.summary} </span> )
 #: src/components/chat/TimelineOverlays.tsx
@@ -22007,3 +21976,34 @@ msgstr "将窗口移到下面板"
 #: src/components/CommandPalette.tsx
 msgid "Move Window to Floating Panel"
 msgstr "将窗口移到浮动面板"
+
+#: src/components/chat/ThreadDetailsUsage.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Context usage"
+msgstr "上下文用量"
+
+#. 0: formatContextWindowTokens(usage.usedTokens)
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "{0} tokens"
+msgstr "{0} 个 token"
+
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "Remaining tokens"
+msgstr "剩余 token"
+
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "Window limit"
+msgstr "窗口上限"
+
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "Used tokens"
+msgstr "已用 token"
+
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "The provider has not reported a window limit."
+msgstr "模型服务尚未提供窗口上限。"
+
+#. 0: threshold.toLocaleString(locale)
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "Auto-compaction starts around {0} tokens."
+msgstr "用量达到约 {0} 个 token 时，会自动压缩较早的对话内容。"

@@ -94,6 +94,39 @@ function isSameKeybindingRule(left: KeybindingRule, right: KeybindingRule): bool
   return keybindingRuleIdentity(left) === keybindingRuleIdentity(right);
 }
 
+const MAC_WORKSPACE_MIGRATION = "workspace.mac-command-k";
+const LEGACY_MAC_WORKSPACE_RULES: readonly KeybindingRule[] = [
+  { key: "mod+k", command: "commandPalette.toggle", when: "!terminalFocus" },
+  { key: "mod+shift+p", command: "thread.pin", when: "!terminalFocus" },
+  { key: "ctrl+2", command: "workspace.focusPanel.main", when: "isMac" },
+];
+
+function migrateMacWorkspaceRules(
+  rules: readonly KeybindingRule[],
+): readonly KeybindingRule[] | null {
+  const inherited = new Set<KeybindingRule["command"]>();
+  const kept = rules.filter((rule) => {
+    if (!LEGACY_MAC_WORKSPACE_RULES.some((old) => isSameKeybindingRule(rule, old))) return true;
+    inherited.add(rule.command);
+    return false;
+  });
+  if (inherited.size === 0) return rules;
+  const replacements = DEFAULT_KEYBINDINGS.filter(
+    (rule) =>
+      inherited.has(rule.command) &&
+      (rule.command !== "workspace.focusPanel.main" || rule.when === "isMac") &&
+      !kept.some(
+        (entry) =>
+          hasSameShortcutContext(entry, rule) ||
+          isSameKeybindingRule(entry, { ...rule, when: "false" }),
+      ),
+  );
+  // Leave the old bindings usable until the entire swap fits.
+  return kept.length + replacements.length <= MAX_KEYBINDINGS_COUNT
+    ? [...replacements, ...kept]
+    : null;
+}
+
 const LATE_DEFAULT_KEYBINDINGS: ReadonlyArray<{
   readonly id: string;
   readonly alongside: KeybindingRule;
@@ -471,15 +504,17 @@ const make = Effect.gen(function* () {
   const syncDefaultKeybindingsOnStartup = upsertSemaphore.withPermits(1)(
     Effect.gen(function* () {
       const appliedMigrationIds = yield* readAppliedMigrationIds;
+      const needsMacWorkspaceMigration = !appliedMigrationIds.has(MAC_WORKSPACE_MIGRATION);
       const pendingLateDefaults = LATE_DEFAULT_KEYBINDINGS.filter(
         (late) => !appliedMigrationIds.has(late.id),
       );
       const configExists = yield* readConfigExists;
       if (!configExists) {
         yield* writeConfigAtomically(DEFAULT_KEYBINDINGS);
-        if (pendingLateDefaults.length > 0) {
+        if (pendingLateDefaults.length > 0 || needsMacWorkspaceMigration) {
           yield* recordAppliedMigrations([
             ...appliedMigrationIds,
+            MAC_WORKSPACE_MIGRATION,
             ...LATE_DEFAULT_KEYBINDINGS.map((late) => late.id),
           ]);
         }
@@ -499,7 +534,10 @@ const make = Effect.gen(function* () {
         yield* Cache.invalidate(resolvedConfigCache, resolvedConfigCacheKey);
         return;
       }
-      const customConfig = runtimeConfig.keybindings;
+      const migratedRules = needsMacWorkspaceMigration
+        ? migrateMacWorkspaceRules(runtimeConfig.keybindings)
+        : runtimeConfig.keybindings;
+      const customConfig = migratedRules ?? runtimeConfig.keybindings;
       const existingCommands = new Set(customConfig.map((entry) => entry.command));
       const missingDefaults: KeybindingRule[] = [];
       const shortcutConflictWarnings: Array<{
@@ -573,15 +611,17 @@ const make = Effect.gen(function* () {
           commands: skippedDefaults.map((rule) => rule.command),
         });
       }
-      if (defaultsToAppend.length > 0) {
+      if (defaultsToAppend.length > 0 || customConfig !== runtimeConfig.keybindings) {
         yield* writeConfigAtomically([...defaultsToAppend, ...customConfig]);
       }
       const settledLateDefaults = pendingLateDefaults.filter(
         (late) => !skippedDefaults.includes(late.rule),
       );
-      if (settledLateDefaults.length > 0) {
+      const macWorkspaceMigrated = needsMacWorkspaceMigration && migratedRules !== null;
+      if (settledLateDefaults.length > 0 || macWorkspaceMigrated) {
         yield* recordAppliedMigrations([
           ...appliedMigrationIds,
+          ...(macWorkspaceMigrated ? [MAC_WORKSPACE_MIGRATION] : []),
           ...settledLateDefaults.map((late) => late.id),
         ]);
       }

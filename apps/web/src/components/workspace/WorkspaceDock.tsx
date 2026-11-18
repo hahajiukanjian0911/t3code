@@ -35,6 +35,7 @@ import { cn } from "../../lib/utils";
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import { Button } from "../ui/button";
 import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "../ui/menu";
+import { useWorkspaceResizeTransition } from "./useWorkspaceResizeTransition";
 import { useDockedPanelMotion } from "./useDockedPanelMotion";
 import {
   advanceWorkspaceMaximizeInApp,
@@ -74,7 +75,7 @@ interface DockSnapshot {
   layout: WorkspaceLayout;
   focused: string | null;
 }
-function createDockStore() {
+function createDockStore(transitionResize: (dock: HTMLElement | null, resize: () => void) => void) {
   let layout = createWorkspaceLayout();
   try {
     layout = restoreWorkspaceLayout(JSON.parse(localStorage.getItem(storageKey) ?? "null"));
@@ -315,23 +316,25 @@ function createDockStore() {
     toggleMaximizeInApp(explicitId?: string) {
       const targetId = resolveTargetWindowId(explicitId);
       if (!targetId) return false;
-      if (!canMaximizeWorkspaceWindowInApp(targetId)) {
-        // If already maximized on another window, allow Shift+Esc to exit; otherwise sidebar never maximizes.
-        if (snapshot.layout.maximized) {
-          updateLayout({ ...snapshot.layout, maximized: null });
-          return true;
+      const canMaximize = canMaximizeWorkspaceWindowInApp(targetId);
+      if (!canMaximize && !snapshot.layout.maximized) return false;
+      transitionResize(body?.parentElement ?? null, () => {
+        const maximized = canMaximize
+          ? advanceWorkspaceMaximizeInApp(snapshot.layout.maximized, targetId)
+          : null;
+        updateLayout({ ...snapshot.layout, maximized });
+        if (canMaximize) {
+          activate(targetId);
+          focusWindowContainer(targetId);
         }
-        return false;
-      }
-      const nextMax = advanceWorkspaceMaximizeInApp(snapshot.layout.maximized, targetId);
-      updateLayout({ ...snapshot.layout, maximized: nextMax });
-      activate(targetId);
-      focusWindowContainer(targetId);
+      });
       return true;
     },
     exitMaximizeInApp() {
       if (!snapshot.layout.maximized) return false;
-      updateLayout({ ...snapshot.layout, maximized: null });
+      transitionResize(body?.parentElement ?? null, () =>
+        updateLayout({ ...snapshot.layout, maximized: null }),
+      );
       return true;
     },
     toggleMaximizeInPanel(explicitId?: string) {
@@ -785,7 +788,8 @@ export function WorkspaceRoot({
   controls?: ReactNode;
 }) {
   const wide = useMediaQuery("(min-width: 768px)");
-  const [store] = useState(createDockStore);
+  const transitionResize = useWorkspaceResizeTransition();
+  const [store] = useState(() => createDockStore(transitionResize));
   if (!wide && !isElectron)
     return (
       <>
@@ -1038,6 +1042,7 @@ function DockFrame({
                   inert={isHiddenByZoom}
                   data-workspace-group={group.id}
                   data-workspace-owner={key}
+                  data-workspace-resize-window={group.active}
                   style={isHiddenByZoom ? undefined : { flex: `${weight} ${weight} 0%` }}
                   className={cn(
                     "workspace-window-card relative flex min-h-0 min-w-0 flex-col overflow-hidden",
@@ -1208,7 +1213,10 @@ function DockFrame({
           className="relative flex min-h-0 min-w-0 overflow-visible"
           style={{ gridArea: "companion" }}
         >
-          <div className="workspace-window-card workspace-window-surface-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div
+            data-workspace-resize-window={companionChatId}
+            className="workspace-window-card workspace-window-surface-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+          >
             {(() => {
               mounted.add(companionChatId);
               return (
@@ -1226,6 +1234,7 @@ function DockFrame({
           data-workspace-panel={layout.placements[activeMax.windowId]?.panel ?? "right"}
           data-workspace-maximized-stage="companion"
           className="workspace-window-card workspace-window-surface-right relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+          data-workspace-resize-window={activeMax.windowId}
           style={{ gridArea: "stage" }}
         >
           {(() => {
@@ -1245,6 +1254,7 @@ function DockFrame({
         data-workspace-panel={layout.placements[activeMax.windowId]?.panel ?? "main"}
         data-workspace-maximized-stage="full"
         className="workspace-window-card workspace-window-surface-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+        data-workspace-resize-window={activeMax.windowId}
         style={{ gridArea: "full" }}
       >
         {(() => {
@@ -1285,6 +1295,7 @@ function DockFrame({
         />
         <section
           aria-label={panelLabels.floating}
+          data-workspace-resize-window={activeFloatingId}
           data-workspace-panel="floating"
           className="workspace-window-surface-floating relative z-10 flex h-full max-h-[820px] w-full max-w-[1060px] min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border"
         >
@@ -1543,12 +1554,20 @@ function DockFrame({
           ref={(node) => store.setParking(node)}
           className="pointer-events-none absolute inset-0 -z-10"
         />
+        {windows
+          .filter((window) => !mounted.has(window.id) && window.id !== "route")
+          .map((window) => (
+            <div
+              key={window.id}
+              data-workspace-resize-window={window.id}
+              data-workspace-parked-window=""
+              className="workspace-window-card hidden overflow-hidden bg-background"
+              inert
+            >
+              <PortalMount node={window.container} className="h-full min-h-0 min-w-0" />
+            </div>
+          ))}
         <div hidden inert>
-          {windows
-            .filter((window) => !mounted.has(window.id) && window.id !== "route")
-            .map((window) => (
-              <PortalMount key={window.id} node={window.container} />
-            ))}
           {windows
             .filter((window) => window.id !== mainWindow?.id || !window.hasTitlebar)
             .map((window) => (

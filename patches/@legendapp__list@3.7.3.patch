@@ -1,0 +1,56 @@
+diff --git a/react.js b/react.js
+index 24cc6054d3fa59742c7f50457a18adf451128bbb..a74b16f4240e7c26c47addc52d1f939daa474de8 100644
+--- a/react.js
++++ b/react.js
+@@ -3598,6 +3598,7 @@ function setContainerLayoutBaseline(element, size) {
+ }
+ function measureContainerLayoutSize(element) {
+   const rect = element.getBoundingClientRect();
++  if (rect.width === 0 && rect.height === 0 && element.getClientRects().length === 0) return void 0;
+   if (Math.abs(rect.width - element.offsetWidth) >= 1 || Math.abs(rect.height - element.offsetHeight) >= 1) {
+     const style = getComputedStyle(element);
+     const height = Number.parseFloat(style.height);
+@@ -5838,6 +5839,7 @@ function measureContainersInLayoutEffect(ctx, targetContainerIds = null) {
+     if (itemKey !== void 0 && element && isContainerItemCurrent(ctx, containerId, itemKey)) {
+       const generation = (_b = ctx.state.containerItemGenerations[containerId]) != null ? _b : 0;
+       const size = measureContainerLayoutSize(element);
++      if (!size) continue;
+       setContainerLayoutBaseline(element, size);
+       measurements.push({
+         containerId,
+@@ -6488,6 +6490,7 @@ function processContainerLayout({ containerId, ctx, rectangle, ref, state }) {
+         const element = ref.current;
+         if (element) {
+           layout = measureContainerLayoutSize(element);
++          if (!layout) return;
+         }
+         applyLayout();
+       }
+diff --git a/react.mjs b/react.mjs
+index 2cf1995d97cd101244b08b2b055265add859e064..0a8427051ecefb80e9a274f115311d322888823f 100644
+--- a/react.mjs
++++ b/react.mjs
+@@ -3577,6 +3577,7 @@ function setContainerLayoutBaseline(element, size) {
+ }
+ function measureContainerLayoutSize(element) {
+   const rect = element.getBoundingClientRect();
++  if (rect.width === 0 && rect.height === 0 && element.getClientRects().length === 0) return void 0;
+   if (Math.abs(rect.width - element.offsetWidth) >= 1 || Math.abs(rect.height - element.offsetHeight) >= 1) {
+     const style = getComputedStyle(element);
+     const height = Number.parseFloat(style.height);
+@@ -5817,6 +5818,7 @@ function measureContainersInLayoutEffect(ctx, targetContainerIds = null) {
+     if (itemKey !== void 0 && element && isContainerItemCurrent(ctx, containerId, itemKey)) {
+       const generation = (_b = ctx.state.containerItemGenerations[containerId]) != null ? _b : 0;
+       const size = measureContainerLayoutSize(element);
++      if (!size) continue;
+       setContainerLayoutBaseline(element, size);
+       measurements.push({
+         containerId,
+@@ -6467,6 +6469,7 @@ function processContainerLayout({ containerId, ctx, rectangle, ref, state }) {
+         const element = ref.current;
+         if (element) {
+           layout = measureContainerLayoutSize(element);
++          if (!layout) return;
+         }
+         applyLayout();
+       }

@@ -276,6 +276,64 @@ it.layer(NodeServices.layer)("keybindings", (it) => {
     }).pipe(Effect.provide(layerKeybindings())),
   );
 
+  it.effect(
+    "upgrades the macOS palette and main focus shortcuts without overriding later custom rules",
+    () =>
+      Effect.gen(function* () {
+        const { keybindingsConfigPath } = yield* ServerConfig.ServerConfig;
+        const service = yield* Keybindings.Keybindings;
+        const oldPalette = {
+          key: "mod+k",
+          command: "commandPalette.toggle",
+          when: "!terminalFocus",
+        } as const;
+        const oldPin = {
+          key: "mod+shift+p",
+          command: "thread.pin",
+          when: "!terminalFocus",
+        } as const;
+        const focusAlias = {
+          key: "ctrl+2",
+          command: "workspace.focusPanel.main",
+          when: "isMac",
+        } as const;
+        const custom = {
+          key: "cmd+k",
+          command: "script.review.run",
+          when: "previewFocus",
+        } as const;
+        yield* writeKeybindingsConfig(keybindingsConfigPath, [
+          oldPalette,
+          oldPin,
+          focusAlias,
+          custom,
+        ]);
+        yield* service.syncDefaultKeybindingsOnStartup;
+        const rules = yield* readKeybindingsConfig(keybindingsConfigPath);
+        assert.deepInclude(rules, {
+          key: "mod+shift+p",
+          command: "commandPalette.toggle",
+          when: "isMac",
+        });
+        assert.deepInclude(rules, {
+          key: "mod+k",
+          command: "workspace.focusPanel.main",
+          when: "isMac",
+        });
+        assert.deepInclude(rules, focusAlias);
+        assert.notDeepInclude(rules, oldPalette);
+        assert.notDeepInclude(rules, oldPin);
+        assert.deepEqual(rules.at(-1), custom);
+
+        // An explicit choice after upgrade must survive the next start.
+        yield* writeKeybindingsConfig(keybindingsConfigPath, [oldPalette, oldPin]);
+        yield* service.syncDefaultKeybindingsOnStartup;
+        const restored = yield* readKeybindingsConfig(keybindingsConfigPath);
+        assert.deepInclude(restored, oldPalette);
+        assert.deepInclude(restored, oldPin);
+      }).pipe(Effect.provide(layerKeybindings())),
+  );
+
   it.effect("leaves a customized command without the late default", () =>
     Effect.gen(function* () {
       const { keybindingsConfigPath } = yield* ServerConfig.ServerConfig;
@@ -292,6 +350,28 @@ it.layer(NodeServices.layer)("keybindings", (it) => {
       assert.deepStrictEqual(
         persisted.filter((entry) => entry.command === "composer.sendBackground"),
         [custom],
+      );
+    }).pipe(Effect.provide(layerKeybindings())),
+  );
+
+  it.effect("preserves customized and unassigned Mac workspace bindings on upgrade", () =>
+    Effect.gen(function* () {
+      const { keybindingsConfigPath } = yield* ServerConfig.ServerConfig;
+      const service = yield* Keybindings.Keybindings;
+      const palette = { key: "alt+p", command: "commandPalette.toggle" } as const;
+      const focus = { key: "ctrl+2", command: "workspace.focusPanel.main", when: "false" } as const;
+      const pin = { key: "cmd+shift+p", command: "thread.pin", when: "isMac" } as const;
+      yield* writeKeybindingsConfig(keybindingsConfigPath, [palette, focus, pin]);
+      yield* service.syncDefaultKeybindingsOnStartup;
+      const persisted = yield* readKeybindingsConfig(keybindingsConfigPath);
+      assert.deepEqual(
+        persisted.filter(
+          (rule) =>
+            rule.command === palette.command ||
+            rule.command === focus.command ||
+            rule.command === pin.command,
+        ),
+        [palette, focus, pin],
       );
     }).pipe(Effect.provide(layerKeybindings())),
   );
@@ -319,6 +399,29 @@ it.layer(NodeServices.layer)("keybindings", (it) => {
       yield* writeKeybindingsConfig(keybindingsConfigPath, [existing]);
       yield* keybindings.syncDefaultKeybindingsOnStartup;
       assert.isTrue(yield* hasModEnter);
+    }).pipe(Effect.provide(layerKeybindings())),
+  );
+
+  it.effect("keeps the original palette usable until its platform-specific defaults fit", () =>
+    Effect.gen(function* () {
+      const { keybindingsConfigPath } = yield* ServerConfig.ServerConfig;
+      const service = yield* Keybindings.Keybindings;
+      const old = {
+        key: "mod+k",
+        command: "commandPalette.toggle",
+        when: "!terminalFocus",
+      } as const;
+      const filler = { key: "f1", command: "script.custom.run" } as const;
+      const full = [old, ...Array.from({ length: MAX_KEYBINDINGS_COUNT - 1 }, () => filler)];
+      yield* writeKeybindingsConfig(keybindingsConfigPath, full);
+      yield* service.syncDefaultKeybindingsOnStartup;
+      assert.deepEqual(yield* readKeybindingsConfig(keybindingsConfigPath), full);
+
+      yield* writeKeybindingsConfig(keybindingsConfigPath, full.slice(0, -1));
+      yield* service.syncDefaultKeybindingsOnStartup;
+      const upgraded = yield* readKeybindingsConfig(keybindingsConfigPath);
+      assert.notDeepInclude(upgraded, old);
+      assert.deepInclude(upgraded, { key: "mod+shift+p", command: old.command, when: "isMac" });
     }).pipe(Effect.provide(layerKeybindings())),
   );
 

@@ -68,6 +68,9 @@ describe("workspace window ownership", () => {
     };
     expect(restoreWorkspaceLayout(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
     expect(
+      restoreWorkspaceLayout({ ...saved, dismissed: ["route", "chat:active", "file"] }).dismissed,
+    ).toEqual(["file"]);
+    expect(
       restoreWorkspaceLayout({
         sizes: { left: -10, right: "wide", bottom: Infinity, companion: -5 },
         floating: { x: -500, height: null },

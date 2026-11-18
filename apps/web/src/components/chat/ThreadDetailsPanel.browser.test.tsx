@@ -16,6 +16,7 @@ const state = vi.hoisted(() => ({
   folder: "",
   pullRequests: [] as unknown[],
   configLoaded: true,
+  isRepo: false,
 }));
 
 vi.mock(import("~/state/entities"), async (importOriginal) => ({
@@ -57,27 +58,32 @@ vi.mock(import("~/state/entities"), async (importOriginal) => ({
         : [],
     )) as never,
 }));
-// Neither folder is a repository, which is what the server reports for both.
 vi.mock(import("~/state/vcs"), async (importOriginal) => {
   const actual = await importOriginal();
-  const notARepo = Atom.make(
-    AsyncResult.success({
-      isRepo: false,
-      hasPrimaryRemote: false,
-      isDefaultRef: false,
-      refName: null,
-      hasWorkingTreeChanges: false,
-      workingTree: { files: [], insertions: 0, deletions: 0 },
-      hasUpstream: false,
-      aheadCount: 0,
-      behindCount: 0,
-      aheadOfDefaultCount: 0,
-      pr: null,
-    }),
-  );
+  const status = (isRepo: boolean) =>
+    Atom.make(
+      AsyncResult.success({
+        isRepo,
+        hasPrimaryRemote: false,
+        isDefaultRef: false,
+        refName: isRepo ? "main" : null,
+        hasWorkingTreeChanges: false,
+        workingTree: { files: [], insertions: 0, deletions: 0 },
+        hasUpstream: false,
+        aheadCount: 0,
+        behindCount: 0,
+        aheadOfDefaultCount: 0,
+        pr: null,
+      }),
+    );
+  const notARepo = status(false);
+  const repo = status(true);
   return {
     ...actual,
-    vcsEnvironment: { ...actual.vcsEnvironment, status: (() => notARepo) as never },
+    vcsEnvironment: {
+      ...actual.vcsEnvironment,
+      status: (() => (state.isRepo ? repo : notARepo)) as never,
+    },
   };
 });
 
@@ -112,6 +118,7 @@ function setup(input: {
   configLoaded?: boolean;
 }) {
   state.configLoaded = input.configLoaded ?? true;
+  state.isRepo = false;
   state.workspaceRoot = input.workspaceRoot;
   state.folder = input.folder;
   state.pullRequests = input.pullRequests ?? [];
@@ -125,7 +132,13 @@ function setup(input: {
   };
 }
 
-function Panel({ fixture }: { fixture: ReturnType<typeof setup> }) {
+function Panel({
+  fixture,
+  isRepo = false,
+}: {
+  fixture: ReturnType<typeof setup>;
+  isRepo?: boolean;
+}) {
   const noop = () => {};
   const scriptResult = async () => ({ ok: true }) as never;
   return (
@@ -160,7 +173,7 @@ function Panel({ fixture }: { fixture: ReturnType<typeof setup> }) {
         openInShortcutEnabled={false}
         gitCwd={state.folder}
         workspaceMutationId={null}
-        isGitRepo={false}
+        isGitRepo={isRepo}
         envLocked
         availableEnvironments={[]}
         onEnvModeChange={noop}
@@ -191,16 +204,21 @@ it("offers no git controls in a No project thread, but shows its linked pull req
     .not.toBeInTheDocument();
 });
 
-it("shows a linked pull request in a folder that is not a git repository", async () => {
+it("shows linked pull requests in a plain folder and git actions once it is a repository", async () => {
   using fixture = setup({
     workspaceRoot: "/work/plain",
     folder: "/work/plain",
     pullRequests: [linkedPullRequest],
   });
-  await using _screen = await render(<Panel fixture={fixture} />);
+  await using screen = await render(<Panel fixture={fixture} />);
   await expect.element(page.getByRole("region", { name: "Workspace" })).toBeVisible();
   await expect.element(page.getByText("#27513")).toBeVisible();
-  await expect.element(page.getByRole("button", { name: "Initialize Git" })).toBeVisible();
+  await expect
+    .element(page.getByRole("button", { name: "Initialize Git" }))
+    .not.toBeInTheDocument();
+  state.isRepo = true;
+  await screen.rerender(<Panel fixture={fixture} isRepo />);
+  await expect.element(page.getByRole("group", { name: "Git actions" })).toBeVisible();
 });
 
 it("offers no Initialize Git before the server config says where No project lives", async () => {

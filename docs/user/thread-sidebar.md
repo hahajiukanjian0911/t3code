@@ -43,8 +43,8 @@ directory itself sits inside a Git checkout.
 When the work grows into something real, pick **Turn into project** from the
 thread's menu. The thread's folder becomes a project where it is, so nothing
 moves and the agent keeps working in the same place. Other threads in that folder
-move with it. Rename the project in its settings, and use **Initialize Git** to
-get branch and diff controls.
+move with it. Rename the project in its settings. If you want version control,
+run `git init` in the project folder to enable branch and diff controls.
 
 ### Start in the background
 
@@ -223,7 +223,7 @@ The linked pull request participates in automatic settlement.
 
 ## Find and reference work
 
-On web and desktop, open the command palette with `Cmd/Ctrl+K` to search threads
+On web and desktop, open the command palette with `Cmd+Shift+P` on macOS or `Ctrl+K` on Windows and Linux to search threads
 across connected environments by title, branch, pull request, or project.
 Threads you open often or recently rank higher, and for three weeks the thread
 you last picked for a query ranks higher when you type that query again.

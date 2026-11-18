@@ -392,7 +392,6 @@ msgstr "Workspace"
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
-#: src/components/GitActionsControl.tsx
 #: src/components/ProjectCloneToastCoordinator.tsx
 #: src/components/Sidebar.tsx
 #: src/components/Sidebar.tsx
@@ -1555,10 +1554,6 @@ msgstr "Editor opening is unavailable."
 #: src/components/chat/MarkdownFileLink.tsx
 msgid "Unable to open file"
 msgstr "Unable to open file"
-
-#: src/components/GitActionsControl.tsx
-msgid "Git initialization failed"
-msgstr "Git initialization failed"
 
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
@@ -4750,6 +4745,7 @@ msgstr "New model"
 
 #: src/components/chat/ModelListRow.tsx
 #: src/components/chat/ProviderModelPicker.tsx
+#: src/components/chat/ThreadDetailsUsage.tsx
 #: src/components/cloud/CloudEnvironmentConnectList.tsx
 #: src/components/files/AudioPreview.tsx
 #: src/components/settings/CodexSetupSection.tsx
@@ -5343,10 +5339,6 @@ msgstr "This merges #{0} using {1}."
 #: src/components/chat/ThreadDetailsUsage.tsx
 msgid "Limits"
 msgstr "Limits"
-
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "Context"
-msgstr "Context"
 
 #: src/components/chat/ThreadDetailsUsage.tsx
 msgid "Context window"
@@ -17422,14 +17414,6 @@ msgid "Behind upstream. Pull/rebase first."
 msgstr "Behind upstream. Pull/rebase first."
 
 #: src/components/GitActionsControl.tsx
-msgid "Initializing..."
-msgstr "Initializing..."
-
-#: src/components/GitActionsControl.tsx
-msgid "Initialize Git"
-msgstr "Initialize Git"
-
-#: src/components/GitActionsControl.tsx
 msgid "Default branch"
 msgstr "Default branch"
 
@@ -18931,21 +18915,6 @@ msgstr "Accessibility data"
 #: src/components/chat/SnapShotAttachmentDetails.tsx
 msgid "Captured window"
 msgstr "Captured window"
-
-#. 0: used
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "Context: {0}% used"
-msgstr "Context: {0}% used"
-
-#. 0: usedTokens
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "Context: {0} tokens used"
-msgstr "Context: {0} tokens used"
-
-#. 0: usage.usedTokens.toLocaleString("en-US"); 1: maxTokens.toLocaleString("en-US"); 2: " "
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "{0} of {1}{2} tokens"
-msgstr "{0} of {1}{2} tokens"
 
 #. 0: props.summary === null ? null \\: ( <span className="text-muted-foreground"> <span aria-hidden>· </span> {props.summary} </span> )
 #: src/components/chat/TimelineOverlays.tsx
@@ -22007,3 +21976,34 @@ msgstr "Move Window to Bottom Panel"
 #: src/components/CommandPalette.tsx
 msgid "Move Window to Floating Panel"
 msgstr "Move Window to Floating Panel"
+
+#: src/components/chat/ThreadDetailsUsage.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Context usage"
+msgstr "Context usage"
+
+#. 0: formatContextWindowTokens(usage.usedTokens)
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "{0} tokens"
+msgstr "{0} tokens"
+
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "Remaining tokens"
+msgstr "Remaining tokens"
+
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "Window limit"
+msgstr "Window limit"
+
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "Used tokens"
+msgstr "Used tokens"
+
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "The provider has not reported a window limit."
+msgstr "The provider has not reported a window limit."
+
+#. 0: threshold.toLocaleString(locale)
+#: src/components/chat/ThreadDetailsUsage.tsx
+msgid "Auto-compaction starts around {0} tokens."
+msgstr "Auto-compaction starts around {0} tokens."

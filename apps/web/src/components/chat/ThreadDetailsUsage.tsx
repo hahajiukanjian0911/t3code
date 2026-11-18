@@ -20,12 +20,13 @@ import { preferredUsageLimit } from "../usage/UsageLimitTrajectory.logic";
 import { UsageLimitTrajectoryHost } from "../usage/UsageLimitTrajectoryPanel";
 import { PROVIDER_PRESENTATION } from "../usage/usageProviders";
 import { useNowMinute } from "../../hooks/useNowMinute";
+import { useClientSettings } from "../../hooks/useSettings";
 import type { ContextWindowSnapshot } from "@t3tools/client-runtime/state/context-window";
 import { formatContextWindowTokens } from "../../lib/contextWindow";
 import { cn } from "../../lib/utils";
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "../ui/collapsible";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { readUsagePagePreferences, saveUsagePagePreferences } from "../usage/usagePagePreferences";
-import { formatContextWindowCompactionMessage } from "./compaction.logic";
 import { ThreadDetailsSection } from "./ThreadDetailsSection";
 
 export interface ThreadDetailsUsageInput {
@@ -36,8 +37,6 @@ export interface ThreadDetailsUsageInput {
   readonly sources: UsageLimitSourceSnapshots;
   readonly contextWindow: ContextWindowSnapshot | null;
 }
-
-type UsageTone = "error" | "warning" | null;
 
 export function ThreadDetailsUsage({
   environmentId,
@@ -73,7 +72,7 @@ export function ThreadDetailsUsage({
       title="Usage limits"
       showHeading={false}
     >
-      <div>
+      <div className="grid grid-cols-[fit-content(42%)_minmax(1.5rem,1fr)_4ch_auto] gap-x-1.5 text-xs">
         {pools.map((pool, index) => {
           const color =
             Object.values(PROVIDER_PRESENTATION).find((p) => p.driverKind === pool.driver)?.color ??
@@ -103,7 +102,7 @@ export function ThreadDetailsUsage({
             const rowLabel = logo ? label.replace(/^(?:Gemini|Others) · /, "") : label;
             return (
               <Fragment key={key}>
-                <div className="relative">
+                <div className="relative col-span-full grid grid-cols-subgrid">
                   <button
                     type="button"
                     aria-expanded={open}
@@ -111,11 +110,11 @@ export function ThreadDetailsUsage({
                       rowLabel === label ? undefined : `${label} ${window.remainingPercent}%`
                     }
                     onClick={() => setOverride(open ? null : key)}
-                    className="grid w-full grid-cols-[minmax(0,1.95fr)_minmax(1.5rem,1fr)_4ch_auto] items-center gap-1.5 rounded-md px-2.5 py-1 text-left text-xs hover:bg-accent"
+                    className="col-span-full grid grid-cols-subgrid items-center rounded-md px-2.5 py-1 text-left hover:bg-accent"
                   >
                     <span className={cn("flex min-w-0 items-center gap-1.5", first && "pl-5")}>
                       {!first && logo && <span className="shrink-0">{logo}</span>}
-                      <span className="min-w-0 break-words">{rowLabel}</span>
+                      <span className="min-w-0 wrap-anywhere">{rowLabel}</span>
                     </span>
                     <span
                       aria-hidden
@@ -149,22 +148,33 @@ export function ThreadDetailsUsage({
                   )}
                 </div>
                 {open && (
-                  <UsageLimitTrajectoryHost
-                    pool={label === window.label ? window : { ...window, label }}
-                    color={color}
-                    now={now}
-                    compact
-                    environmentId={environmentId}
-                  />
+                  <div className="col-span-full">
+                    <UsageLimitTrajectoryHost
+                      pool={label === window.label ? window : { ...window, label }}
+                      color={color}
+                      now={now}
+                      compact
+                      environmentId={environmentId}
+                    />
+                  </div>
                 )}
               </Fragment>
             );
           });
         })}
         {notice && (
-          <div className="grid grid-cols-[auto_1fr_auto] text-xs">
-            <UsageRow label="Limits" fill={null} tone={null} value="Unavailable" tooltip={notice} />
-          </div>
+          <Tooltip>
+            <TooltipTrigger
+              render={<div tabIndex={0} />}
+              className="col-span-full flex h-6 items-center justify-between rounded-md px-2.5 text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            >
+              <span>Limits</span>
+              <span>Unavailable</span>
+            </TooltipTrigger>
+            <TooltipPopup side="left" sideOffset={16}>
+              {notice}
+            </TooltipPopup>
+          </Tooltip>
         )}
       </div>
     </ThreadDetailsSection>
@@ -183,131 +193,88 @@ export function ThreadDetailsContext({ usage }: { readonly usage: ContextWindowS
     maxTokens !== null && threshold !== null && threshold > 0 && threshold < maxTokens
       ? (threshold / maxTokens) * 100
       : null;
-  const usedTokens = formatContextWindowTokens(usage.usedTokens);
+  const locale = useClientSettings((settings) => settings.uiLocale);
   return (
     <ThreadDetailsSection
       headingId="thread-details-context-heading"
       title="Context window"
       showHeading={false}
     >
-      <div className="grid grid-cols-[auto_minmax(3rem,1fr)_auto] gap-x-3 text-xs">
-        <UsageRow
-          label="Context"
-          fill={used}
-          tone={used === null ? null : used >= 90 ? "error" : used >= 80 ? "warning" : null}
-          tick={tick}
-          muted
-          value={
-            maxTokens !== null
-              ? `${usedTokens} / ${formatContextWindowTokens(maxTokens)}`
-              : usedTokens
-          }
-          ariaValue={used !== null ? `${used}% used` : `${usedTokens} tokens used`}
-          tooltip={
-            <>
-              <span className="text-foreground">
-                {used !== null ? `Context: ${used}% used` : `Context: ${usedTokens} tokens used`}
-              </span>
-              {maxTokens !== null ? (
-                <span className="text-muted-foreground">
-                  {usage.usedTokens.toLocaleString("en-US")} of {maxTokens.toLocaleString("en-US")}{" "}
-                  tokens
-                </span>
-              ) : null}
-              {threshold !== null && threshold > 0 ? (
-                <span className="text-muted-foreground">
-                  {formatContextWindowCompactionMessage(threshold)}
-                </span>
-              ) : null}
-            </>
-          }
-        />
-      </div>
-    </ThreadDetailsSection>
-  );
-}
-
-/** One label, hairline, and value row; the whole row opens the details tooltip. */
-function UsageRow({
-  label,
-  fill,
-  tone,
-  tick = null,
-  value,
-  ariaValue = value,
-  tooltip,
-  muted = false,
-}: {
-  readonly label: string;
-  /** Bar fill from 0 to 100. Null hides the bar. */
-  readonly fill: number | null;
-  readonly tone: UsageTone;
-  /** A marker on the bar, from 0 to 100. */
-  readonly tick?: number | null;
-  readonly value: string;
-  readonly ariaValue?: string;
-  readonly tooltip: ReactNode;
-  readonly muted?: boolean;
-}) {
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <div
-            tabIndex={0}
-            aria-label={`${label}: ${ariaValue}`}
-            className="col-span-3 grid h-6 cursor-default grid-cols-subgrid items-center rounded-lg px-2.5 outline-none hover:bg-black/[0.035] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring data-popup-open:bg-black/[0.035] dark:hover:bg-white/[0.08] dark:data-popup-open:bg-white/[0.08]"
-          />
-        }
-      >
-        <span className="max-w-28 truncate text-muted-foreground">{label}</span>
-        {fill !== null ? (
-          <span className="relative h-[3px] rounded-full bg-muted-foreground/30 dark:bg-muted-foreground/20">
-            {fill > 0 ? (
+      <Collapsible>
+        <CollapsibleTrigger className="group flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-left text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring">
+          <span>Context usage</span>
+          {used !== null ? (
+            <span
+              aria-hidden
+              className="relative h-[3px] min-w-0 flex-1 rounded-full bg-muted-foreground/20"
+            >
               <span
                 className={cn(
-                  "absolute inset-y-0 left-0 rounded-full",
-                  tone === "error"
-                    ? "bg-error"
-                    : tone === "warning"
-                      ? "bg-warning"
-                      : muted
-                        ? "bg-muted-foreground"
-                        : "bg-foreground/80",
+                  "block h-full rounded-full",
+                  used >= 90 ? "bg-error" : used >= 80 ? "bg-warning" : "bg-muted-foreground",
                 )}
-                style={{ width: `max(${fill}%, 6px)` }}
+                style={{ width: `${used}%` }}
               />
-            ) : null}
-            {tick !== null ? (
-              <span
-                aria-hidden
-                className="absolute -top-[3px] h-[9px] w-px -translate-x-1/2 bg-foreground/60"
-                style={{ left: `${tick}%` }}
-              />
-            ) : null}
-          </span>
-        ) : null}
-        <span
-          className={cn(
-            // Text-only rows span the bar column so they never widen the shared value column.
-            "text-end font-medium tabular-nums",
-            fill === null && "col-span-2",
-            tone === "error"
-              ? "text-error-foreground"
-              : tone === "warning"
-                ? "text-warning-foreground"
-                : fill === null
-                  ? "text-muted-foreground"
+              {tick !== null && (
+                <span
+                  className="absolute -top-[3px] h-[9px] w-px -translate-x-1/2 bg-foreground/60"
+                  style={{ left: `${tick}%` }}
+                />
+              )}
+            </span>
+          ) : null}
+          <span
+            className={cn(
+              "ml-auto text-end tabular-nums",
+              used !== null && used >= 90
+                ? "text-error-foreground"
+                : used !== null && used >= 80
+                  ? "text-warning-foreground"
                   : "text-foreground/80",
-          )}
-        >
-          {value}
-        </span>
-      </TooltipTrigger>
-      {/* Rows sit 8px inside the card; clear its edge instead of overlapping it. */}
-      <TooltipPopup side="left" sideOffset={16}>
-        <div className="flex flex-col gap-0.5">{tooltip}</div>
-      </TooltipPopup>
-    </Tooltip>
+            )}
+          >
+            {used === null ? <>{formatContextWindowTokens(usage.usedTokens)} tokens</> : `${used}%`}
+          </span>
+          <ChevronRightIcon
+            aria-hidden
+            className="size-3 shrink-0 text-muted-foreground group-aria-expanded:rotate-90"
+          />
+        </CollapsibleTrigger>
+        <CollapsiblePanel animate={false} data-thread-details-context-overflow>
+          <div className="space-y-2 px-2.5 pt-1 pb-1 text-xs">
+            <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 text-muted-foreground">
+              <dt>Used tokens</dt>
+              <dd className="text-end text-foreground tabular-nums">
+                {usage.usedTokens.toLocaleString(locale)}
+              </dd>
+              {maxTokens !== null && (
+                <>
+                  {usage.remainingTokens !== null && (
+                    <>
+                      <dt>Remaining tokens</dt>
+                      <dd className="text-end text-foreground tabular-nums">
+                        {usage.remainingTokens.toLocaleString(locale)}
+                      </dd>
+                    </>
+                  )}
+                  <dt>Window limit</dt>
+                  <dd className="text-end text-foreground tabular-nums">
+                    {maxTokens.toLocaleString(locale)}
+                  </dd>
+                </>
+              )}
+            </dl>
+            {maxTokens === null && (
+              <p className="text-muted-foreground">The provider has not reported a window limit.</p>
+            )}
+            {threshold !== null && threshold > 0 && (
+              <p className="text-muted-foreground">
+                Auto-compaction starts around {threshold.toLocaleString(locale)} tokens.
+              </p>
+            )}
+          </div>
+        </CollapsiblePanel>
+      </Collapsible>
+    </ThreadDetailsSection>
   );
 }

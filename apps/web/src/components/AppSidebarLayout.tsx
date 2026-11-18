@@ -522,7 +522,7 @@ export function AppSidebarLayout({
               </DockableSidebar>
             </>
           ) : null}
-          <WorkspaceWindow id="route" title={routeTitle} panel="main">
+          <WorkspaceWindow id="route" title={routeTitle} panel="main" closable={false}>
             {children}
           </WorkspaceWindow>
         </WorkspaceRoot>

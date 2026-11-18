@@ -8,9 +8,11 @@ import { openCommandPalette } from "../commandPaletteBus";
 import { useCommandPaletteStore } from "../commandPaletteStore";
 import { LAST_USED_PROJECT_STORAGE_KEY } from "../hooks/useHandleNewThread";
 import { removeLocalStorageItem } from "../hooks/useLocalStorage";
+import { installCommandPaletteCommands } from "../shortcuts/commandPaletteCommands";
 import { makeThreadFixture } from "../test-fixtures";
 import type { Project, Thread } from "../types";
 import { CommandPalette } from "./CommandPalette";
+import { WorkspaceRoot, WorkspaceWindow } from "./workspace/WorkspaceDock";
 
 const entities = vi.hoisted(() => ({
   projects: [] as ReadonlyArray<Project>,
@@ -21,7 +23,8 @@ const entities = vi.hoisted(() => ({
 vi.mock("../state/server", async (original) => {
   const actual = await original<typeof import("../state/server")>();
   const { Atom } = await import("effect/reactivity");
-  const { compileResolvedKeybindingsConfig } = await import("@t3tools/shared/keybindings");
+  const { compileResolvedKeybindingsConfig, DEFAULT_RESOLVED_KEYBINDINGS } =
+    await import("@t3tools/shared/keybindings");
   const { THREAD_JUMP_KEYBINDING_COMMANDS } = await import("@t3tools/contracts");
   // The default jump bindings are desktop-only; these hold in the browser too.
   const jumpBindings = compileResolvedKeybindingsConfig(
@@ -30,7 +33,10 @@ vi.mock("../state/server", async (original) => {
       command,
     })),
   );
-  return { ...actual, primaryServerKeybindingsAtom: Atom.make(jumpBindings) };
+  return {
+    ...actual,
+    primaryServerKeybindingsAtom: Atom.make([...DEFAULT_RESOLVED_KEYBINDINGS, ...jumpBindings]),
+  };
 });
 vi.mock("../hooks/useHandleNewThread", async (original) => {
   const actual = await original<typeof import("../hooks/useHandleNewThread")>();
@@ -75,6 +81,52 @@ function makeProject(title: string): Project {
 }
 
 describe("CommandPalette open intents", () => {
+  it.each([1200, 600])(
+    "opens the macOS palette from a terminal and returns to the selected draft text at %ipx",
+    async (width) => {
+      setup();
+      using _platform = vi.spyOn(navigator, "platform", "get").mockReturnValue("MacIntel");
+      await page.viewport(width, 800);
+      await using screen = await render(
+        <CommandPalette>
+          <WorkspaceRoot>
+            <WorkspaceWindow id="chat:focus-test" title="Chat" panel="main" selected>
+              <div data-workspace-area="composer">
+                <textarea
+                  aria-label="Draft"
+                  data-testid="composer-editor"
+                  defaultValue="keep this draft"
+                />
+              </div>
+            </WorkspaceWindow>
+            <WorkspaceWindow id="drawer:focus-test" title="Terminal" panel="bottom">
+              <textarea aria-label="Terminal input" data-terminal-owner="drawer" />
+            </WorkspaceWindow>
+          </WorkspaceRoot>
+        </CommandPalette>,
+      );
+      using commands = new DisposableStack();
+      commands.defer(installCommandPaletteCommands(screen.router!));
+      const draft = page.getByRole("textbox", { name: "Draft" });
+      const terminal = page.getByRole("textbox", { name: "Terminal input" });
+      const search = page.getByPlaceholder("Search commands, projects, and threads...");
+      const editor = draft.element() as HTMLTextAreaElement;
+      editor.focus();
+      editor.setSelectionRange(5, 9);
+      (terminal.element() as HTMLTextAreaElement).focus();
+      await userEvent.keyboard("{Meta>}k{/Meta}");
+      await expect.element(draft).toHaveFocus();
+      await expect.element(terminal).toBeVisible();
+      (terminal.element() as HTMLTextAreaElement).focus();
+      await userEvent.keyboard("{Meta>}{Shift>}p{/Shift}{/Meta}");
+      await expect.element(search).toHaveFocus();
+      await userEvent.keyboard("{Meta>}k{/Meta}");
+      await expect.element(search).not.toBeInTheDocument();
+      await expect.element(draft).toHaveFocus();
+      expect([editor.selectionStart, editor.selectionEnd]).toEqual([5, 9]);
+    },
+  );
+
   it("drags a searched thread into the current composer without navigating", async () => {
     const environmentId = EnvironmentId.make("remote");
     const threadId = ThreadId.make("dragged-thread");

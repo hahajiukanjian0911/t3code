@@ -237,6 +237,35 @@ describe("effectiveShortcutsForCommand", () => {
   });
 });
 
+it.each([
+  ["MacIntel", false, "workspace.focusPanel.main", "commandPalette.toggle"],
+  ["MacIntel", true, "workspace.focusPanel.main", "commandPalette.toggle"],
+  ["Win32", false, "commandPalette.toggle", "thread.pin"],
+  ["Linux", true, null, null],
+] as const)(
+  "resolves the palette and focus keys on %s with terminal focus %s",
+  (platform, terminalFocus, onK, onShiftP) => {
+    const modifiers = platform === "MacIntel" ? { metaKey: true } : { ctrlKey: true };
+    const options = { platform, context: { terminalFocus } };
+    assert.equal(
+      resolveShortcutCommand(
+        event({ ...modifiers, key: "k" }),
+        DEFAULT_RESOLVED_KEYBINDINGS,
+        options,
+      ),
+      onK,
+    );
+    assert.equal(
+      resolveShortcutCommand(
+        event({ ...modifiers, key: "P", shiftKey: true }),
+        DEFAULT_RESOLVED_KEYBINDINGS,
+        options,
+      ),
+      onShiftP,
+    );
+  },
+);
+
 describe("settle thread shortcut", () => {
   it("does not intercept the terminal", () => {
     assert.isNull(

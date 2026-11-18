@@ -28,6 +28,7 @@ In a chat workspace, move focus toward a neighboring window with `Ctrl+Command` 
 or `Ctrl+Alt` on Windows and Linux, plus an arrow key or `H/J/K/L`. Add `M` to the same
 modifiers to maximize or restore a split within its panel. Press `Ctrl+1/2/3/4` on macOS
 or `Alt+1/2/3/4` elsewhere to focus the left panel, main composer, right panel or bottom panel.
+On macOS, `Cmd+K` returns to the main composer with the other panels still open.
 To move a tool window, hold the directional focus modifiers plus Shift, then press `H` for
 left, `L` for right, `J` for bottom or Space to float it.
 

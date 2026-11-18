@@ -32,7 +32,6 @@ import {
   CloudDownloadIcon,
   CloudUploadIcon,
   FileDiffIcon,
-  GitBranchPlusIcon,
   GitCommitIcon,
   InfoIcon,
   LockIcon,
@@ -90,7 +89,6 @@ import {
   useGitStackedAction,
   useSourceControlActionRunning,
   useSourceControlPublishRepositoryAction,
-  useVcsInitAction,
   useVcsPullAction,
 } from "../state/sourceControlActions";
 import { useQuietThreadProjection, useQuietThreadShell } from "~/state/entities";
@@ -1106,7 +1104,6 @@ export default function GitActionsControl({
   const allSelected = excludedFiles.size === 0;
   const noneSelected = selectedFiles.length === 0;
 
-  const initAction = useVcsInitAction(sourceControlScope);
   const runImmediateGitAction = useGitStackedAction(sourceControlScope);
   const pullAction = useVcsPullAction(sourceControlScope);
   const isGitActionRunning = useSourceControlActionRunning(
@@ -1471,23 +1468,6 @@ export default function GitActionsControl({
   const refreshStatusForEmptyMenu = () =>
     requestVcsStatusRefresh(refreshVcsStatus, activeEnvironmentId, gitCwd);
 
-  const initializeGit = () => {
-    void (async () => {
-      const result = await initAction.run();
-      if (result._tag === "Success" || isAtomCommandInterrupted(result)) {
-        return;
-      }
-      const error = squashAtomCommandFailure(result);
-      toastManager.add(
-        stackedThreadToast({
-          type: "error",
-          title: "Git initialization failed",
-          description: error instanceof Error ? error.message : "An error occurred.",
-          ...(threadToastData !== undefined ? { data: threadToastData } : {}),
-        }),
-      );
-    })();
-  };
   const gitItems = (
     <>
       {gitActionMenuItems.map((item) => {
@@ -1554,25 +1534,13 @@ export default function GitActionsControl({
     </>
   );
 
-  if (!gitCwd) return null;
+  if (!gitCwd || !isRepo) return null;
 
   return (
     <>
-      {!showActions ? null : !isRepo ? (
-        <ThreadDetailsControl
-          size="xs"
-          variant="ghost"
-          part="row"
-          panel
-          disabled={!canWriteSourceControl || initAction.isPending}
-          onClick={initializeGit}
-        >
-          <GitBranchPlusIcon className="size-3.5" aria-hidden />
-          <span className={cn("ml-0.5", THREAD_DETAILS_PANEL_LABEL_CLASS)}>
-            {initAction.isPending ? "Initializing..." : "Initialize Git"}
-          </span>
-        </ThreadDetailsControl>
-      ) : quietEmptyDraft || (compact && !gitActionProgress && !visibleInlineSuccess) ? null : (
+      {!showActions ||
+      quietEmptyDraft ||
+      (compact && !gitActionProgress && !visibleInlineSuccess) ? null : (
         <div
           role="group"
           aria-label="Git actions"
@@ -1709,7 +1677,7 @@ export default function GitActionsControl({
         </div>
       )}
 
-      {showChanges && isRepo && !quietEmptyDraft ? (
+      {showChanges && !quietEmptyDraft ? (
         <Tooltip>
           <TooltipTrigger
             render={

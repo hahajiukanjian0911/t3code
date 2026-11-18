@@ -429,16 +429,16 @@ export function requestWorkspaceContentFocus() {
   requestWorkspaceFocus({ area: "content" });
 }
 
-let pendingPaletteDirection: 1 | -1 | undefined;
-export function queueWorkspaceFocusFromPalette(direction: 1 | -1) {
-  pendingPaletteDirection = direction;
+let pendingPaletteFocus: (() => void) | undefined;
+export function queueWorkspaceFocusFromPalette(target: 1 | -1 | (() => void)) {
+  pendingPaletteFocus =
+    typeof target === "function" ? target : () => controller?.move(target, undefined, true);
 }
 
 /** Runs at the palette's normal focus restoration milestone, after its focus trap closes. */
 export function restoreWorkspaceFocusFromPalette(): boolean {
-  if (pendingPaletteDirection === undefined) return false;
-  const direction = pendingPaletteDirection;
-  pendingPaletteDirection = undefined;
-  window.requestAnimationFrame(() => controller?.move(direction, undefined, true));
+  if (!pendingPaletteFocus) return false;
+  window.requestAnimationFrame(pendingPaletteFocus);
+  pendingPaletteFocus = undefined;
   return true;
 }

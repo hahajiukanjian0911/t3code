@@ -5,10 +5,11 @@ import {
   type ServerProvider,
   type ServerProviderUsageWindow,
 } from "@t3tools/contracts";
+import { deriveLatestContextWindowSnapshot } from "@t3tools/client-runtime/state/context-window";
 import { expect, it, vi } from "vite-plus/test";
 import { userEvent } from "vite-plus/test/browser";
 import { render } from "../../../test/render";
-import { ThreadDetailsUsage } from "./ThreadDetailsUsage";
+import { ThreadDetailsContext, ThreadDetailsUsage } from "./ThreadDetailsUsage";
 
 vi.mock("../../hooks/useNowMinute", () => ({ useNowMinute: () => "2026-11-18T14:00" }));
 
@@ -90,4 +91,33 @@ it("lists available windows and opens the selected model's quota in place", asyn
     await screen.rerender(view(agy, model));
     await expect.element(shared).toHaveAttribute("aria-expanded", "true");
   }
+});
+
+it("discloses the thread's context usage and shows only reported limits", async () => {
+  const report = { usedTokens: 215_000, updatedAt: "2026-11-18T14:00:00Z" };
+  const usage = deriveLatestContextWindowSnapshot([], {
+    ...report,
+    maxTokens: 258_000,
+    autoCompactThreshold: 240_000,
+  })!;
+  await using screen = await render(<ThreadDetailsContext usage={usage} />);
+  const toggle = screen.getByRole("button", { name: /Context usage/ });
+  await expect.element(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect.element(toggle.getByText("83%", { exact: true })).toBeVisible();
+  await userEvent.click(toggle);
+  await expect.element(screen.getByText("215,000", { exact: true })).toBeVisible();
+  await expect.element(screen.getByText("43,000", { exact: true })).toBeVisible();
+  await expect.element(screen.getByText("258,000", { exact: true })).toBeVisible();
+  await expect.element(screen.getByText(/240,000/)).toBeVisible();
+  await userEvent.keyboard("{Enter}");
+  await expect.element(toggle).toHaveAttribute("aria-expanded", "false");
+  await screen.rerender(
+    <ThreadDetailsContext usage={deriveLatestContextWindowSnapshot([], report)!} />,
+  );
+  await expect.element(toggle.getByText("215k tokens", { exact: true })).toBeVisible();
+  await userEvent.keyboard(" ");
+  await expect.element(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect.element(screen.getByText("215,000", { exact: true })).toBeVisible();
+  await expect.element(screen.getByText("Remaining tokens")).not.toBeInTheDocument();
+  await expect.element(screen.getByText("Window limit")).not.toBeInTheDocument();
 });

@@ -992,6 +992,20 @@ describe("PreviewManager", () => {
         );
         expect(focus).toHaveBeenCalledOnce();
         expect(send).toHaveBeenCalledTimes(2);
+        for (const [command, chord, letter, shift] of [
+          ["workspace.focusPanel.main", "mod+k", "k", false],
+          ["commandPalette.toggle", "mod+shift+p", "P", true],
+        ] as const) {
+          focus.mockClear();
+          send.mockClear();
+          yield* manager.setForwardedShortcuts([
+            { command, shortcut: parseKeybindingShortcut(chord)! },
+          ]);
+          beforeInput({ preventDefault } as never, { ...key, key: letter, shift } as never);
+          expect(focus).toHaveBeenCalledOnce();
+          expect(send).toHaveBeenCalledExactlyOnceWith("desktop:menu-action", command);
+          expect(focus.mock.invocationCallOrder[0]).toBeLessThan(send.mock.invocationCallOrder[0]!);
+        }
         send.mockClear();
         yield* manager.setForwardedShortcuts([{ command: "view.reopenClosed", shortcut }]);
 

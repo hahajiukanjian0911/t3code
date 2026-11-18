@@ -1077,10 +1077,37 @@ const ConversationTimeline = memo(function ConversationTimeline({
       if (viewportElement) measureTimelineGutter(viewportElement);
     });
   };
+  const followsEnd =
+    liveFollowEnabled &&
+    !anchoredEndSpace &&
+    !citationPositioning &&
+    fullscreenAppRowId === null &&
+    !(restoringThreadPosition && rememberedPosition?.atEnd === false);
+  const pinEndAfterResize = useStableCallback(() => {
+    const list = listRef.current;
+    if (!followsEnd || restoringThreadPosition || findActive || !list?.getState().isFollowingEnd)
+      return;
+    // Resizing rewraps many rows together. Follow the new end before paint so the chat
+    // doesn't animate through earlier messages after the panel stops.
+    const node = list.getScrollableNode();
+    node?.scrollTo({ top: node.scrollHeight, behavior: "instant" });
+  });
   const attachTimelineViewportElement = (viewportElement: HTMLDivElement | null) => {
     setTimelineViewportElement(viewportElement);
     if (!viewportElement) return;
-    const stopObserving = observeResize(viewportElement, () => {
+    let previousSize: DOMRectReadOnly | undefined;
+    const stopObserving = observeResize(viewportElement, ([entry]) => {
+      const size = entry?.contentRect;
+      if (
+        size &&
+        previousSize &&
+        size.width > 0 &&
+        size.height > 0 &&
+        (size.width !== previousSize.width || size.height !== previousSize.height)
+      ) {
+        pinEndAfterResize();
+      }
+      previousSize = size;
       measureTimelineGutter(viewportElement);
       scheduleMinimapRefresh();
     });
@@ -1450,11 +1477,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
               {...(anchoredEndSpace ? { anchoredEndSpace } : {})}
               contentInsetEndAdjustment={anchoredEndSpace ? contentInsetEndAdjustment : 0}
               maintainScrollAtEnd={
-                citationPositioning ||
-                (restoringThreadPosition && rememberedPosition?.atEnd === false) ||
-                anchoredEndSpace ||
-                !liveFollowEnabled ||
-                fullscreenAppRowId !== null
+                !followsEnd
                   ? false
                   : isWorking && !prefersReducedMotion && settlingListIdentity === null
                     ? TIMELINE_MAINTAIN_SCROLL_AT_END_SMOOTH

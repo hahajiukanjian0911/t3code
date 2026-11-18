@@ -105,7 +105,8 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
   const serverConfig = useServerConfigs().get(props.environmentId);
   // A No project thread's folder sits inside the shared scratch root, so it must never get git.
   // Until the config and project load, a No project thread looks like any other folder.
-  const offersGit =
+  const hasProjectRepository =
+    props.isGitRepo &&
     props.gitCwd !== null &&
     serverConfig !== undefined &&
     project !== null &&
@@ -169,13 +170,13 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
           environment: density === "full" && visible.environment,
           openIn: density !== "essential" && visible.openIn && props.showOpenInPicker,
           scripts: visible.scripts && props.activeProjectScripts !== undefined,
-          branch: offersGit && props.isGitRepo && visible.branch,
+          branch: hasProjectRepository && visible.branch,
           // Without a branch selector, linked pull requests still need somewhere to show.
-          pullRequests: !(offersGit && props.isGitRepo) && visible.branch,
+          pullRequests: !hasProjectRepository && visible.branch,
           git:
-            offersGit &&
+            hasProjectRepository &&
             props.activeProjectName !== undefined &&
-            (visible.gitActions || (visible.changes && props.isGitRepo)),
+            (visible.gitActions || visible.changes),
         };
         return (
           <>

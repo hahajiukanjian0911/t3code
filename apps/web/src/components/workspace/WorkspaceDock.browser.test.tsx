@@ -720,6 +720,13 @@ it("progressively maximizes non-chat windows (companion chat left -> full app) v
           <button>Thread item</button>
         </WorkspaceWindow>
         <WorkspaceWindow id="chat:main" title="Conversation" panel="main" selected>
+          <div
+            aria-label="Conversation history"
+            role="region"
+            className="messages-timeline-scroll min-h-0 flex-1 overflow-y-auto"
+          >
+            <div className="h-[2000px]" />
+          </div>
           <input aria-label="chat draft" defaultValue="keep chat alive" />
         </WorkspaceWindow>
         <WorkspaceWindow id="surface:file" title="README.md" panel="right">
@@ -738,6 +745,9 @@ it("progressively maximizes non-chat windows (companion chat left -> full app) v
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
   expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull();
 
+  const history = screen.getByRole("region", { name: "Conversation history" }).element();
+  history.scrollTop = 420;
+
   // 2. Non-chat window (`surface:file`): 1st Shift+Esc -> Stage 1 (companion chat on left, file on right stage).
   fileInput.focus();
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
@@ -754,6 +764,7 @@ it("progressively maximizes non-chat windows (companion chat left -> full app) v
     '[data-workspace-maximized-stage="companion"]',
   )!;
   expect(companionChat.contains(chatInput)).toBe(true);
+  expect(history.scrollTop).toBe(420);
   expect(stageSection.contains(fileInput)).toBe(true);
   expect(
     Math.round(
@@ -781,6 +792,7 @@ it("progressively maximizes non-chat windows (companion chat left -> full app) v
     expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull(),
   );
   expect(threadBtn.checkVisibility()).toBe(true);
+  expect(history.scrollTop).toBe(420);
   expect(chatInput).toBe(screen.getByRole("textbox", { name: "chat draft" }).element());
   expect(fileInput).toBe(screen.getByRole("textbox", { name: "file editor" }).element());
 

@@ -4,6 +4,7 @@ import {
   useClientSettings,
 } from "../../hooks/useSettings";
 import { MenuCheckboxItem, MenuGroup, MenuGroupLabel, MenuItem, MenuSeparator } from "../ui/menu";
+import { useUiLabel } from "../../i18n/staticUiLabels";
 import {
   isDefaultThreadDetailsVisibility,
   resolveThreadDetailsVisibility,
@@ -15,6 +16,7 @@ import {
 /** Menu body that shows and hides thread details items. The card's context menu and Settings share it. */
 export function ThreadDetailsItemsMenuItems() {
   const visibility = useClientSettings(resolveThreadDetailsVisibility);
+  const uiLabel = useUiLabel();
   return (
     <>
       <MenuGroup>
@@ -29,7 +31,7 @@ export function ThreadDetailsItemsMenuItems() {
               })
             }
           >
-            {item.label}
+            {uiLabel(item.label)}
           </MenuCheckboxItem>
         ))}
       </MenuGroup>

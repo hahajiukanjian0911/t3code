@@ -47,6 +47,7 @@ import { toastManager } from "./ui/toast";
 import { readIssueListPreferences } from "./issue/issueListPreferences";
 
 const PREVIEW_FORWARDED_COMMANDS = [
+  "commandPalette.toggle",
   "workspace.focusNext",
   "workspace.focusPrevious",
   ...WORKSPACE_PLACEMENT_COMMANDS,

@@ -203,7 +203,7 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
     order: strings(input.order),
     hidden: flags(input.hidden),
     vertical: flags(input.vertical),
-    dismissed: strings(input.dismissed),
+    dismissed: strings(input.dismissed).filter((id) => !isChatWorkspaceWindowId(id)),
     groupWeights,
     panelZoomedGroup,
     maximized,
