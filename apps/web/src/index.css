@@ -536,24 +536,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 
   &[inert] {
     transform: translateX(calc(-100% - 2 * var(--workspace-seam)));
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    [data-panel-animations="true"] & {
-      will-change: transform;
-      transition: transform var(--panel-animation-duration) var(--ease-drawer);
-
-      &[inert] {
-        transition-delay: 1ms;
-      }
-    }
-  }
-}
-
-/* Release the chat width in one step on the next animation tick, as the sidebar starts moving. */
-@media (prefers-reduced-motion: no-preference) {
-  [data-panel-animations="true"] [data-thread-sidebar-closed] {
-    transition: padding-left 1ms step-end;
+    opacity: 0;
   }
 }
 

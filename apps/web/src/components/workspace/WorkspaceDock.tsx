@@ -35,6 +35,7 @@ import { cn } from "../../lib/utils";
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import { Button } from "../ui/button";
 import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "../ui/menu";
+import { useDockedSidebarMotion } from "./useDockedSidebarMotion";
 import {
   advanceWorkspaceMaximizeInApp,
   canMaximizeWorkspaceWindowInApp,
@@ -903,6 +904,11 @@ function DockFrame({
     floatingVisible = panelVisible("floating");
   const dockedThreads = groups.left.length === 1 && groups.left[0]?.active === "threads";
   const leftGridColumn = left && !dockedThreads;
+  useDockedSidebarMotion(
+    store.getBody,
+    dockedThreads && !activeMax ? left : null,
+    layout.sizes.left,
+  );
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- install dismissal before the restored floating window can receive its next key.
   useLayoutEffect(() => {
     if (!floatingVisible) return;
@@ -1340,7 +1346,7 @@ function DockFrame({
             ? activeMax.stage === "companion"
               ? `${layout.sizes.companion}px minmax(0,1fr)`
               : "max-content minmax(0,1fr)"
-            : `${left ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr)${right ? ` ${layout.sizes.right}px` : ""}`,
+            : `${left && (!dockedThreads || leftTabs.length > 0) ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr)${right ? ` ${layout.sizes.right}px` : ""}`,
         }}
         data-workspace-titlebar=""
         onDoubleClick={(event) => {
@@ -1432,7 +1438,6 @@ function DockFrame({
       {controls}
       <div
         ref={(node) => store.setBody(node)}
-        data-thread-sidebar-closed={!activeMax && dockedThreads && !left ? "" : undefined}
         className="relative grid min-h-0 flex-1 gap-(--workspace-seam) overflow-hidden px-(--workspace-seam) pb-(--workspace-seam)"
         style={
           activeMax
@@ -1451,10 +1456,6 @@ function DockFrame({
                   gridTemplateAreas: `"full"`,
                 }
             : {
-                paddingLeft:
-                  dockedThreads && left
-                    ? `calc(${layout.sizes.left}px + 2 * var(--workspace-seam))`
-                    : undefined,
                 gridTemplateColumns: [
                   leftGridColumn ? `${layout.sizes.left}px` : null,
                   "minmax(0,1fr)",
