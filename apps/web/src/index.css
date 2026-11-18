@@ -540,6 +540,31 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   }
 }
 
+/* Each track reserves the visible part of the panel plus its inner resize seam. */
+@property --workspace-right-track {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --workspace-bottom-track {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+.workspace-docked-right {
+  justify-self: start;
+  margin-left: var(--workspace-seam);
+}
+.workspace-docked-bottom {
+  align-self: start;
+  margin-top: var(--workspace-seam);
+}
+:is(.workspace-docked-right, .workspace-docked-bottom, [data-workspace-titlebar-right])[inert]:not(
+    [data-dock-moving]
+  ) {
+  display: none;
+}
+
 @utility workspace-titlebar-tabs-fade {
   -webkit-mask-image: linear-gradient(
     to right,

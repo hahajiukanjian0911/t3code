@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
+import { notifyWorkspaceLayout } from "../../lib/workspaceLayoutEvents";
 import { usePanelAnimationSettings } from "../../panelAnimations";
 
 interface Spring {
@@ -13,10 +14,11 @@ function step(spring: Spring, target: number, dt: number, frequency: number, dam
   spring.value += spring.velocity * dt;
 }
 
-export function useDockedSidebarMotion(
+export function useDockedPanelMotion(
   getBody: () => HTMLDivElement | null,
+  edge: "left" | "right" | "bottom",
   open: boolean | null,
-  width: number,
+  size: number,
 ) {
   const { active, durationMs } = usePanelAnimationSettings();
   const motion = useRef<{ position: Spring; opacity: Spring } | null>(null);
@@ -24,8 +26,8 @@ export function useDockedSidebarMotion(
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Synchronize the panel and its live layout before paint, retaining both spring velocities on reversal.
   useLayoutEffect(() => {
     const body = getBody();
-    const sidebar = body?.querySelector<HTMLElement>(":scope > .workspace-docked-sidebar");
-    if (open === null || !body || !sidebar) {
+    const panel = body?.querySelector<HTMLElement>(`:scope > [data-workspace-panel="${edge}"]`);
+    if (open === null || !body || !panel) {
       motion.current = null;
       return;
     }
@@ -39,21 +41,45 @@ export function useDockedSidebarMotion(
     }
     const { position, opacity } = motion.current;
     let frame = 0;
+    const header =
+      edge === "right"
+        ? body.parentElement?.querySelector<HTMLElement>("[data-workspace-titlebar]")
+        : null;
+    const tabs = header?.querySelector<HTMLElement>("[data-workspace-titlebar-right]");
+    const track = `--workspace-${edge}-track`;
+    const reserve = (p: number) => {
+      if (edge === "left") {
+        body.style.paddingLeft = p ? `calc(${size * p}px + ${1 + p} * var(--workspace-seam))` : "";
+      } else {
+        const space = p ? `calc(${size * p}px + ${p} * var(--workspace-seam))` : "";
+        body.style.setProperty(track, space);
+        header?.style.setProperty(track, space);
+      }
+    };
     const paint = () => {
-      const p = position.value;
-      body.style.paddingLeft = `calc(${width * p}px + ${1 + p} * var(--workspace-seam))`;
-      sidebar.style.transform = `translate3d(calc(${p - 1} * (100% + 2 * var(--workspace-seam))), 0, 0)`;
-      sidebar.style.opacity = String(opacity.value);
+      reserve(Math.max(0, Math.min(1, position.value)));
+      if (edge === "left") {
+        panel.style.transform = `translate3d(calc(${position.value - 1} * (100% + 2 * var(--workspace-seam))), 0, 0)`;
+      }
+      panel.style.opacity = String(opacity.value);
+      if (tabs) tabs.style.opacity = panel.style.opacity;
+      notifyWorkspaceLayout();
     };
     const settle = () => {
       position.value = opacity.value = target;
       position.velocity = opacity.velocity = 0;
-      body.style.paddingLeft = open ? `calc(${width}px + 2 * var(--workspace-seam))` : "";
-      sidebar.style.transform = "";
-      sidebar.style.opacity = "";
+      reserve(target);
+      panel.removeAttribute("data-dock-moving");
+      tabs?.removeAttribute("data-dock-moving");
+      panel.style.transform = "";
+      panel.style.opacity = "";
+      if (tabs) tabs.style.opacity = "";
+      notifyWorkspaceLayout();
     };
 
     if (active && (position.value !== target || position.velocity !== 0)) {
+      panel.setAttribute("data-dock-moving", "");
+      tabs?.setAttribute("data-dock-moving", "");
       const start = performance.now();
       let previous = start;
       const tick = (now: number) => {
@@ -79,9 +105,12 @@ export function useDockedSidebarMotion(
     }
     return () => {
       cancelAnimationFrame(frame);
-      body.style.paddingLeft = "";
-      sidebar.style.transform = "";
-      sidebar.style.opacity = "";
+      reserve(0);
+      panel.removeAttribute("data-dock-moving");
+      tabs?.removeAttribute("data-dock-moving");
+      panel.style.transform = "";
+      panel.style.opacity = "";
+      if (tabs) tabs.style.opacity = "";
     };
-  }, [getBody, open, width, active, durationMs]);
+  }, [getBody, edge, open, size, active, durationMs]);
 }

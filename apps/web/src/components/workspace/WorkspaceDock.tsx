@@ -35,7 +35,7 @@ import { cn } from "../../lib/utils";
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import { Button } from "../ui/button";
 import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "../ui/menu";
-import { useDockedSidebarMotion } from "./useDockedSidebarMotion";
+import { useDockedPanelMotion } from "./useDockedPanelMotion";
 import {
   advanceWorkspaceMaximizeInApp,
   canMaximizeWorkspaceWindowInApp,
@@ -810,6 +810,12 @@ function workspacePanelLabel(): Record<WorkspacePanel, string> {
     floating: "Floating panel",
   };
 }
+function useLastDockWindow(active: string | undefined) {
+  const [last, setLast] = useState(active);
+  if (active !== undefined && active !== last) setLast(active);
+  return active ?? last;
+}
+
 function DockFrame({
   store,
   children,
@@ -904,11 +910,14 @@ function DockFrame({
     floatingVisible = panelVisible("floating");
   const dockedThreads = groups.left.length === 1 && groups.left[0]?.active === "threads";
   const leftGridColumn = left && !dockedThreads;
-  useDockedSidebarMotion(
+  useDockedPanelMotion(
     store.getBody,
+    "left",
     dockedThreads && !activeMax ? left : null,
     layout.sizes.left,
   );
+  useDockedPanelMotion(store.getBody, "right", activeMax ? null : right, layout.sizes.right);
+  useDockedPanelMotion(store.getBody, "bottom", activeMax ? null : bottom, layout.sizes.bottom);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- install dismissal before the restored floating window can receive its next key.
   useLayoutEffect(() => {
     if (!floatingVisible) return;
@@ -947,42 +956,69 @@ function DockFrame({
         </div>
       );
     });
+  const lastRightWindow = useLastDockWindow(groups.right[0]?.active);
+  const lastBottomWindow = useLastDockWindow(groups.bottom[0]?.active);
   const panel = (key: Exclude<WorkspacePanel, "floating">) => {
-    if (groups[key].length === 0 && key !== "main") return null;
+    if (key === "left" && groups.left.length === 0) return null;
+    let panelGroups = groups[key];
+    if ((key === "right" || key === "bottom") && panelGroups.length === 0) {
+      // A window shortcut dismisses the last tab before its dock finishes sliding out.
+      const id = key === "right" ? lastRightWindow : lastBottomWindow;
+      const placement = id && layout.placements[id];
+      if (
+        id &&
+        placement &&
+        placement.panel === key &&
+        snapshot.windows[id]?.available &&
+        layout.dismissed.includes(id)
+      ) {
+        panelGroups = [{ id: placement.group, windows: [id], active: id }];
+      }
+    }
     const zoomedId = layout.panelZoomedGroup[key];
     const visibleGroups =
-      zoomedId && groups[key].some((group) => group.id === zoomedId)
-        ? groups[key].filter((group) => group.id === zoomedId)
-        : groups[key];
+      zoomedId && panelGroups.some((group) => group.id === zoomedId)
+        ? panelGroups.filter((group) => group.id === zoomedId)
+        : panelGroups;
     const isVertical = Boolean(layout.vertical[key]);
     const threadSidebar = key === "left" && dockedThreads;
     return (
       <section
         key={key}
-        hidden={!threadSidebar && !panelVisible(key)}
+        hidden={key === "left" && !threadSidebar && !left}
         inert={!panelVisible(key)}
         aria-label={panelLabels[key]}
         data-workspace-panel={key}
         data-workspace-panel-zoomed={
-          zoomedId && visibleGroups.length === 1 && groups[key].length > 1 ? "" : undefined
+          zoomedId && visibleGroups.length === 1 && panelGroups.length > 1 ? "" : undefined
         }
         data-workspace-group={key === "main" && groups.main.length === 0 ? "main" : undefined}
         data-workspace-owner={key === "main" && groups.main.length === 0 ? "main" : undefined}
         className={cn(
           "relative flex min-h-0 min-w-0 overflow-visible",
           threadSidebar && "workspace-docked-sidebar",
+          key === "right" && "workspace-docked-right",
+          key === "bottom" && "workspace-docked-bottom",
           key === "main" &&
             groups.main.length === 0 &&
             "workspace-window-card workspace-window-surface-main",
         )}
-        style={threadSidebar ? { width: layout.sizes.left } : { gridArea: key }}
+        style={{
+          gridArea: threadSidebar ? undefined : key,
+          width: threadSidebar
+            ? layout.sizes.left
+            : key === "right"
+              ? layout.sizes.right
+              : undefined,
+          height: key === "bottom" ? layout.sizes.bottom : undefined,
+        }}
       >
         <div className={cn("relative flex min-h-0 min-w-0 flex-1", isVertical && "flex-col")}>
-          {groups[key].map((group) => {
+          {panelGroups.map((group) => {
             const isHiddenByZoom =
               Boolean(zoomedId) &&
               visibleGroups.length === 1 &&
-              groups[key].length > 1 &&
+              panelGroups.length > 1 &&
               group.id !== zoomedId;
             const visibleIdx = visibleGroups.findIndex((item) => item.id === group.id);
             const weight = layout.groupWeights[group.id] ?? 1;
@@ -1034,7 +1070,10 @@ function DockFrame({
   };
   const headerWindows = workspacePanels.flatMap((key) => {
     const members = groups[key].flatMap((group) => group.windows);
-    if (!panelVisible(key) || (members.length < 2 && key !== "right" && key !== "bottom"))
+    if (
+      (!panelVisible(key) && key !== "right") ||
+      (members.length < 2 && key !== "right" && key !== "bottom")
+    )
       return [];
     return members.map((id) => ({ id, group: layout.placements[id]!.group, key }));
   });
@@ -1342,11 +1381,12 @@ function DockFrame({
       <header
         className="drag-region relative grid h-[34px] min-h-[34px] shrink-0 items-center gap-(--workspace-seam) px-(--workspace-seam) wco:pr-(--workspace-native-controls-inset)"
         style={{
+          columnGap: activeMax ? undefined : 0,
           gridTemplateColumns: activeMax
             ? activeMax.stage === "companion"
               ? `${layout.sizes.companion}px minmax(0,1fr)`
               : "max-content minmax(0,1fr)"
-            : `${left && (!dockedThreads || leftTabs.length > 0) ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr)${right ? ` ${layout.sizes.right}px` : ""}`,
+            : `${left && (!dockedThreads || leftTabs.length > 0) ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr) var(--workspace-right-track)`,
         }}
         data-workspace-titlebar=""
         onDoubleClick={(event) => {
@@ -1372,6 +1412,7 @@ function DockFrame({
         <div
           className={cn(
             "flex h-full min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]",
+            !activeMax && "ml-(--workspace-seam)",
             !right && "pr-16 workspace-titlebar-tabs-fade",
           )}
           data-workspace-titlebar-content=""
@@ -1404,9 +1445,11 @@ function DockFrame({
           ) : null}
           {renderTabs(headerWindows.filter((window) => window.key === "bottom"))}
         </div>
-        {right ? (
+        {!activeMax ? (
           <div
-            className="flex h-full min-w-0 items-center overflow-x-auto pr-16 workspace-titlebar-tabs-fade [scrollbar-width:none]"
+            className="flex h-full min-w-0 items-center overflow-x-auto pl-(--workspace-seam) pr-16 workspace-titlebar-tabs-fade [scrollbar-width:none]"
+            inert={!right}
+            aria-hidden={!right || undefined}
             data-workspace-titlebar-right=""
           >
             {renderTabs(headerWindows.filter((window) => window.key === "right"))}
@@ -1438,7 +1481,7 @@ function DockFrame({
       {controls}
       <div
         ref={(node) => store.setBody(node)}
-        className="relative grid min-h-0 flex-1 gap-(--workspace-seam) overflow-hidden px-(--workspace-seam) pb-(--workspace-seam)"
+        className="relative grid min-h-0 flex-1 gap-(--workspace-seam) overflow-clip px-(--workspace-seam) pb-(--workspace-seam)"
         style={
           activeMax
             ? activeMax.stage === "companion" &&
@@ -1456,17 +1499,12 @@ function DockFrame({
                   gridTemplateAreas: `"full"`,
                 }
             : {
-                gridTemplateColumns: [
-                  leftGridColumn ? `${layout.sizes.left}px` : null,
-                  "minmax(0,1fr)",
-                  right ? `${layout.sizes.right}px` : null,
-                ]
-                  .filter(Boolean)
-                  .join(" "),
-                gridTemplateRows: bottom
-                  ? `minmax(0,1fr) ${layout.sizes.bottom}px`
-                  : "minmax(0,1fr)",
-                gridTemplateAreas: `"${leftGridColumn ? "left " : ""}main${right ? " right" : ""}"${bottom ? ` "${leftGridColumn ? "left " : ""}bottom${right ? " right" : ""}"` : ""}`,
+                gap: 0,
+                gridTemplateColumns: `${leftGridColumn ? `${layout.sizes.left}px var(--workspace-seam) ` : ""}minmax(0,1fr) var(--workspace-right-track)`,
+                gridTemplateRows: "minmax(0,1fr) var(--workspace-bottom-track)",
+                gridTemplateAreas: leftGridColumn
+                  ? '"left . main right" "left . bottom right"'
+                  : '"main right" "bottom right"',
               }
         }
       >

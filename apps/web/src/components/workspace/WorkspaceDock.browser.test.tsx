@@ -339,6 +339,7 @@ it.each(["panel", "window"])(
         ? screen.getByRole("button", { name: "Toggle Bottom panel" })
         : screen.getByRole("button", { name: "Toggle terminal window" });
     await userEvent.click(control());
+    expect(input.closest('[data-workspace-panel="bottom"]')?.hasAttribute("inert")).toBe(true);
     await screen.rerender(ui(false));
     await screen.rerender(ui(true));
     expect(input.checkVisibility()).toBe(false);
