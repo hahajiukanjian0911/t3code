@@ -607,18 +607,19 @@ it("a shortcut conditioned on rightPanelOpen sees the thread's open right panel"
   const composer = page.getByTestId("composer-editor");
   await expect.element(composer).toBeVisible();
   const toggle = page.getByRole("button", { name: "Toggle Right panel", exact: true });
-  await expect.element(toggle).toHaveAttribute("aria-pressed", "false");
-  await toggle.click();
+  await expect.element(toggle).toHaveAttribute("aria-pressed", "true");
   await expect.element(page.getByRole("tab", { name: "Details", exact: true })).toBeVisible();
-  await expect.element(page.getByRole("tab", { name: "Files", exact: true })).toBeVisible();
   await expect
     .element(page.getByRole("button", { name: "Toggle thread details panel" }))
     .not.toBeInTheDocument();
   await composer.click();
   await userEvent.keyboard("{Control>}t{/Control}");
-  await expect.element(page.getByRole("menuitem", { name: /Files/ })).toBeVisible();
+  const files = page.getByRole("menuitem", { name: /Files/ });
+  await expect.element(files).toBeVisible();
   await expect.element(toggle).toHaveAttribute("aria-pressed", "true");
-  await userEvent.keyboard("{Escape}");
+  await files.click();
+  await expect.element(page.getByRole("tab", { name: "Files", exact: true })).toBeVisible();
+  await expect.element(page.getByRole("tab", { name: "Details", exact: true })).toBeVisible();
   await toggle.click();
   await expect.element(toggle).toHaveAttribute("aria-pressed", "false");
   await composer.click();

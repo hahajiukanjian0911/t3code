@@ -13,6 +13,7 @@ import { createPortal } from "react-dom";
 import { useAtomValue } from "@effect/atom-react";
 import { collectComposerPromptInlineTokens } from "~/composer-editor-mentions";
 import { useStableCallback } from "~/hooks/useStableCallback";
+import { randomUUID } from "~/lib/utils";
 import { ComposerFileMentionChip } from "../ComposerFileMentionChip";
 import type {
   ComposerCitationCommentRequest,
@@ -28,7 +29,7 @@ import { ModelMentionChip, modelMentionKey, modelMentionKeysAtom } from "../chat
 import { SkillChipPopover, skillPopoverDescription } from "../chat/SkillInlineText";
 
 type Token = ReturnType<typeof collectComposerPromptInlineTokens>[number];
-type Portal = { host: HTMLElement; token: Token; id: number };
+type Portal = { host: HTMLElement; token: Token; id: string };
 type OpenCitation = { at: number; source: string; request?: ComposerCitationCommentRequest };
 
 export function inComposerNode(state: EditorState, pos: number, names: readonly string[]) {
@@ -82,12 +83,11 @@ export function useComposerVimChips(
   const [open, setOpen] = useState<OpenCitation | null>(null);
   const draft = useRef<string | null>(null);
   const [extension] = useState(() => {
-    let nextId = 0;
     const mount = (token: Token) => {
       const host = document.createElement("span");
       host.className = "inline-flex max-w-full align-baseline";
       host.contentEditable = "false";
-      const portal = { host, token, id: nextId++ };
+      const portal = { host, token, id: randomUUID() };
       setPortals((current) => [...current, portal]);
       return host;
     };
