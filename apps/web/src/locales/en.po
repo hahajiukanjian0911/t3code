@@ -138,6 +138,7 @@ msgstr "{0} of {1} {2}"
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
 #: src/components/PullRequestThreadDialog.tsx
+#: src/components/SavedViewsMenu.tsx
 #: src/components/chat/AssistantCitationCommentEditor.tsx
 #: src/components/chat/ChatOverlayHosts.tsx
 #: src/components/chat/ChatOverlayHosts.tsx
@@ -153,6 +154,7 @@ msgstr "{0} of {1} {2}"
 #: src/components/desktop/SshPasswordPromptDialog.tsx
 #: src/components/device/DeviceSetup.tsx
 #: src/components/diffs/DiffCommentAnnotation.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/projectScriptEditor.tsx
 #: src/components/projectScriptEditor.tsx
 #: src/components/pullRequest/LinkPullRequestDialog.tsx
@@ -420,6 +422,7 @@ msgstr "Workspace"
 #: src/components/chat/MarkdownFileLink.tsx
 #: src/components/chat/MarkdownFileLink.tsx
 #: src/components/chat/MarkdownFileLink.tsx
+#: src/components/chat/QueuedRunsControl.tsx
 #: src/components/chat/UsageLimitRecoveryBanner.tsx
 #: src/components/chat/useProjectCloneBanner.tsx
 #: src/components/chat/useThreadLifecycle.tsx
@@ -504,6 +507,7 @@ msgstr "Run context: {0}"
 #: src/components/onboarding/WelcomePage.tsx
 #: src/components/onboarding/WelcomePage.tsx
 #: src/components/onboarding/WelcomePage.tsx
+#: src/components/settings/IssueTrackerSettings.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Projects"
 msgstr "Projects"
@@ -1846,6 +1850,7 @@ msgstr "Pull request"
 
 #: src/components/RightPanelTabs.tsx
 #: src/components/RightPanelTabs.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 msgid "Linked pull requests"
 msgstr "Linked pull requests"
 
@@ -2821,6 +2826,8 @@ msgstr "Nightly artwork"
 
 #: src/components/AddProjectToMachineDialog.tsx
 #: src/components/device/DeviceToolVersions.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestGhosts.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
@@ -4716,6 +4723,8 @@ msgstr "Expand diagram"
 #: src/components/device/DevicePanel.tsx
 #: src/components/device/DevicePanel.tsx
 #: src/components/files/AudioPreview.tsx
+#: src/components/issue/IssuesPage.tsx
+#: src/components/issue/IssuesPage.tsx
 #: src/components/onboarding/FirstRunGate.tsx
 #: src/components/onboarding/WelcomePage.tsx
 #: src/components/onboarding/WelcomePage.tsx
@@ -4725,6 +4734,7 @@ msgstr "Expand diagram"
 #: src/components/pullRequest/PullRequestsPage.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/DeviceSourcesSettings.tsx
+#: src/components/settings/IssueTrackerSettings.tsx
 #: src/components/sidebar/SidebarUpdateCapsule.tsx
 #: src/components/sidebar/SidebarUpdateCapsule.tsx
 msgid "Retry"
@@ -4820,6 +4830,8 @@ msgstr "Read only. These subagents cannot take messages."
 #: src/components/files/FileBrowserPanel.tsx
 #: src/components/files/FilePreviewPanel.tsx
 #: src/components/files/FilePreviewPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssuesPage.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 msgid "Loading…"
@@ -5706,6 +5718,7 @@ msgid "What went wrong?"
 msgstr "What went wrong?"
 
 #: src/components/chat/TimelineWorkGroupRows.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "Activity"
 msgstr "Activity"
@@ -7993,7 +8006,7 @@ msgstr "Reset price for {0} to automatic"
 msgid "Blank cache rates use the input price. Enter 0 for free tokens. A mapped model’s usage counts as the model it maps to. {0}"
 msgstr "Blank cache rates use the input price. Enter 0 for free tokens. A mapped model’s usage counts as the model it maps to. {0}"
 
-#: src/components/pullRequest/PullRequestChangeBreakdownStat.tsx
+#: src/components/pullRequest/ChangeBreakdownGrid.tsx
 #: src/components/usage/UsagePage.tsx
 #: src/components/usage/UsageProviderChart.tsx
 #: src/components/usage/UsageProviderChart.tsx
@@ -8263,6 +8276,7 @@ msgstr "Loading breakdown"
 msgid "Could not post the comment"
 msgstr "Could not post the comment"
 
+#: src/components/issue/IssueCommentComposer.tsx
 #: src/components/pullRequest/PullRequestCommentForm.tsx
 msgid "Leave a comment"
 msgstr "Leave a comment"
@@ -8296,6 +8310,7 @@ msgstr "Review {0}"
 msgid "Comment on {0}"
 msgstr "Comment on {0}"
 
+#: src/components/issue/IssueCommentComposer.tsx
 #: src/components/pullRequest/PullRequestCommentForm.tsx
 #: src/components/pullRequest/PullRequestComposer.tsx
 msgid "Comment"
@@ -8598,10 +8613,12 @@ msgstr "Could not put {0} on"
 msgid "The host refused it. Check that you have triage access on this repository."
 msgstr "The host refused it. Check that you have triage access on this repository."
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestLabelPicker.tsx
 msgid "Applied"
 msgstr "Applied"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestLabelPicker.tsx
 msgid "Change labels"
 msgstr "Change labels"
@@ -8665,6 +8682,8 @@ msgstr "Labels loading"
 msgid "<0/> Labels"
 msgstr "<0/> Labels"
 
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestGhosts.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
 msgid "Description"
@@ -8693,12 +8712,12 @@ msgstr "Loading {0} conversation"
 msgid "<0/> Open on {0}"
 msgstr "<0/> Open on {0}"
 
-#: src/components/pullRequest/PullRequestListFilters.tsx
+#: src/components/pullRequest/PullRequestsPage.tsx
 msgid "Search pull requests, or label:bug"
 msgstr "Search pull requests, or label:bug"
 
-#: src/components/pullRequest/PullRequestListFilters.tsx
 #: src/components/pullRequest/PullRequestsColumn.tsx
+#: src/components/pullRequest/PullRequestsPage.tsx
 msgid "Search pull requests"
 msgstr "Search pull requests"
 
@@ -8711,6 +8730,7 @@ msgstr "· Unavailable"
 msgid "Search authors"
 msgstr "Search authors"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "<0/> Anyone"
 msgstr "<0/> Anyone"
@@ -8719,25 +8739,33 @@ msgstr "<0/> Anyone"
 msgid "Author"
 msgstr "Author"
 
+#: src/components/issue/IssueListFilterPickers.tsx
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "Search labels"
 msgstr "Search labels"
 
+#: src/components/issue/IssueDetailGhost.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
 msgid "Labels"
 msgstr "Labels"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Filters"
 msgstr "Filters"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "State"
 msgstr "State"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "Involvement"
 msgstr "Involvement"
@@ -9001,6 +9029,7 @@ msgstr "{0} description"
 msgid "Describe this {0}"
 msgstr "Describe this {0}"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
 msgid "Edit description"
 msgstr "Edit description"
@@ -9103,6 +9132,7 @@ msgstr "The title could not be saved"
 msgid "The host refused the new title."
 msgstr "The host refused the new title."
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestTitleEditor.tsx
 msgid "Edit title"
 msgstr "Edit title"
@@ -9225,6 +9255,7 @@ msgid "Narrow your search to find more pull requests."
 msgstr "Narrow your search to find more pull requests."
 
 #: src/components/AddProjectToMachineDialog.tsx
+#: src/components/issue/IssuesPage.tsx
 #: src/components/pullRequest/PullRequestsPage.tsx
 msgid "All"
 msgstr "All"
@@ -10417,8 +10448,10 @@ msgid "No custom options. The composer uses the provider's default options."
 msgstr "No custom options. The composer uses the provider's default options."
 
 #: src/browser/ServerBrowserSurface.tsx
+#: src/components/SavedViewsMenu.tsx
 #: src/components/chat/AssistantCitationCommentEditor.tsx
 #: src/components/chat/ProposedPlanCard.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestMarkdownEditor.tsx
 #: src/components/pullRequest/PullRequestTitleEditor.tsx
 #: src/components/settings/AcpSessionManagementSection.tsx
@@ -11216,7 +11249,7 @@ msgstr "When expression"
 msgid "Fix the expression above to continue editing visually."
 msgstr "Fix the expression above to continue editing visually."
 
-#. 0: commandLabel(row.command); 1: formatShortcutLabel(row.binding.shortcut)
+#. 0: commandLabel(row.command); 1: row.isUnassigned ? "Unassigned" \\: formatShortcutLabel(row.binding.shortcut)
 #: src/components/settings/KeybindingsSettings.tsx
 msgid "Edit shortcut for {0}: {1}"
 msgstr "Edit shortcut for {0}: {1}"
@@ -11228,6 +11261,8 @@ msgstr "Edit shortcut for {0}: {1}"
 msgid "Keybinding for {0}"
 msgstr "Keybinding for {0}"
 
+#: src/components/settings/KeybindingsSettings.tsx
+#: src/components/settings/KeybindingsSettings.tsx
 #: src/components/settings/KeybindingsSettings.tsx
 #: src/components/settings/KeybindingsSettings.tsx
 msgid "Unassigned"
@@ -13766,7 +13801,9 @@ msgstr "Available"
 msgid "Coming Soon"
 msgstr "Coming Soon"
 
+#. 0: tracker.displayName
 #. 0: item.label
+#: src/components/settings/IssueTrackerSettings.tsx
 #: src/components/settings/SourceControlSettings.tsx
 msgid "Toggle {0} details"
 msgstr "Toggle {0} details"
@@ -14893,11 +14930,6 @@ msgstr "Each model starts in its own worktree."
 msgid "Setup Required"
 msgstr "Setup Required"
 
-#: src/components/CommandPalette.tsx
-#: src/components/GitActionsControl.tsx
-msgid "Open Settings -> Source control to configure this provider."
-msgstr "Open Settings -> Source control to configure this provider."
-
 #. 0: props.pathPreview
 #: src/components/CommandPaletteAddProject.tsx
 msgid "Creates {0}"
@@ -15683,10 +15715,12 @@ msgstr "No authors found"
 msgid "Couldn't search authors on the host"
 msgstr "Couldn't search authors on the host"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "Anyone"
 msgstr "Anyone"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "No labels found"
 msgstr "No labels found"
@@ -15695,6 +15729,7 @@ msgstr "No labels found"
 msgid "Couldn't search labels on the host"
 msgstr "Couldn't search labels on the host"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "Any"
 msgstr "Any"
@@ -15806,14 +15841,17 @@ msgstr "Loading stack…"
 msgid "This pull request is no longer in a stack."
 msgstr "This pull request is no longer in a stack."
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestThreadLinks.tsx
 msgid "Unlink from this thread"
 msgstr "Unlink from this thread"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestThreadLinks.tsx
 msgid "Link to this thread"
 msgstr "Link to this thread"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestThreadLinks.tsx
 msgid "Link to thread"
 msgstr "Link to thread"
@@ -15888,6 +15926,7 @@ msgstr "Watch for changes"
 msgid "Dismiss from thread"
 msgstr "Dismiss from thread"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/ThreadPullRequestsPanel.tsx
 msgid "Unlink from thread"
 msgstr "Unlink from thread"
@@ -16325,6 +16364,7 @@ msgstr "Importing"
 msgid "Deleting"
 msgstr "Deleting"
 
+#: src/components/issue/IssuesPage.tsx
 #: src/components/settings/AcpSessionManagementSection.tsx
 msgid "Load more"
 msgstr "Load more"
@@ -17350,7 +17390,9 @@ msgid "Remote \"{0}\" is set up. Make a commit and push it to share your code."
 msgstr "Remote \"{0}\" is set up. Make a commit and push it to share your code."
 
 #. 0: publishProviderLabel
+#. 0: tracker.providerName
 #: src/components/GitActionsControl.tsx
+#: src/components/issue/IssueDetailGhost.tsx
 msgid "Open on {0}"
 msgstr "Open on {0}"
 
@@ -17397,6 +17439,8 @@ msgid "({0} of {1})"
 msgstr "({0} of {1})"
 
 #: src/components/GitActionsControl.tsx
+#: src/components/issue/IssueDetailGhost.tsx
+#: src/components/issue/IssueDetailGhost.tsx
 msgid "none"
 msgstr "none"
 
@@ -20077,12 +20121,7 @@ msgstr "See your agents, import projects, and set up your phone."
 msgid "<0/> ( {0}% error)"
 msgstr "<0/> ( {0}% error)"
 
-#. 0.0: seconds
-#: src/components/settings/SpeechModelComparison.tsx
-msgid "<0>{0} s</0> / 30 s"
-msgstr "<0>{0} s</0> / 30 s"
-
-#. 0: " "; 1: tier === "cpu" && data && data.secondsPer30s.cpu === undefined ? ( "update server" ) \\: seconds == null ? ( "not benchmarked" ) \\: ( <> <strong className="font-medium text-foreground">{seconds} s</strong> / 30 s </> )
+#. 0: " "; 1: seconds === undefined ? ( "update server for this benchmark" ) \\: seconds === null ? ( "not benchmarked" ) \\: ( <> <strong className="font-medium text-foreground"> {Number(seconds.toFixed(2))} s </strong>{" "} / 30 s </> )
 #: src/components/settings/SpeechModelComparison.tsx
 msgid "Speed:{0} {1}"
 msgstr "Speed:{0} {1}"
@@ -20223,10 +20262,6 @@ msgstr "{0} models"
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Recommended"
 msgstr "Recommended"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "A good default pick for the languages it covers."
-msgstr "A good default pick for the languages it covers."
 
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Live preview"
@@ -21051,11 +21086,6 @@ msgstr "Already downloaded elsewhere? Paste the model file or folder path"
 msgid "Use existing"
 msgstr "Use existing"
 
-#. 0: status.benchmarkTier === "cpu" ? "CPU" \\: "GPU"
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Grades are error rates and speed is seconds per 30 s of audio, from Handy’s benchmark {0}."
-msgstr "Grades are error rates and speed is seconds per 30 s of audio, from Handy’s benchmark {0}."
-
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Say a sentence. Cleanup is skipped, so you see exactly what the model heard."
 msgstr "Say a sentence. Cleanup is skipped, so you see exactly what the model heard."
@@ -21350,6 +21380,428 @@ msgstr "1 merge loaded"
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "{0} merges loaded"
 msgstr "{0} merges loaded"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Source control & issues"
+msgstr "Source control & issues"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Terminal close confirmation"
+msgstr "Terminal close confirmation"
+
+#: src/components/settings/IssueTrackerSettings.tsx
+#: src/components/settings/IssueTrackerSettings.tsx
+#: src/components/settings/IssueTrackerSettings.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Issue trackers"
+msgstr "Issue trackers"
+
+#: src/components/CommandPalette.tsx
+#: src/components/GitActionsControl.tsx
+msgid "Open Settings -> Source control & issues to configure this provider."
+msgstr "Open Settings -> Source control & issues to configure this provider."
+
+#: src/components/CommandPalette.tsx
+msgid "Open issues"
+msgstr "Open issues"
+
+#: src/components/GitActionsControl.tsx
+msgid "Include all files"
+msgstr "Include all files"
+
+#. 0: file.path
+#: src/components/GitActionsControl.tsx
+msgid "Include {0}"
+msgstr "Include {0}"
+
+#. 0: kind.shortNoun
+#: src/components/SavedViewsMenu.tsx
+msgid "Could not save {0} views"
+msgstr "Could not save {0} views"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Local storage is unavailable or full. Try again after freeing space or allowing storage."
+msgstr "Local storage is unavailable or full. Try again after freeing space or allowing storage."
+
+#: src/components/SavedViewsMenu.tsx
+msgid "This saved view was removed"
+msgstr "This saved view was removed"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Your name has been kept. Save it as a new view or cancel."
+msgstr "Your name has been kept. Save it as a new view or cancel."
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Views"
+msgstr "Views"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Modified view"
+msgstr "Modified view"
+
+#. 0: kind.noun
+#. 0: kind.noun
+#: src/components/SavedViewsMenu.tsx
+#: src/components/SavedViewsMenu.tsx
+msgid "Saved {0} views"
+msgstr "Saved {0} views"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Update saved view"
+msgstr "Update saved view"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Rename view…"
+msgstr "Rename view…"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Delete view"
+msgstr "Delete view"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "<0/> Save current view…"
+msgstr "<0/> Save current view…"
+
+#. 0: kind.shortNoun
+#: src/components/SavedViewsMenu.tsx
+msgid "Rename {0} view"
+msgstr "Rename {0} view"
+
+#. 0: kind.shortNoun
+#: src/components/SavedViewsMenu.tsx
+msgid "Save {0} view"
+msgstr "Save {0} view"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Save your search, filters, and sort order on this device."
+msgstr "Save your search, filters, and sort order on this device."
+
+#: src/components/SavedViewsMenu.tsx
+msgid "View name"
+msgstr "View name"
+
+#: src/components/Sidebar.tsx
+msgid "Couldn't search thread messages"
+msgstr "Couldn't search thread messages"
+
+#: src/components/issue/IssueCommentComposer.tsx
+msgid "The comment could not be posted"
+msgstr "The comment could not be posted"
+
+#: src/components/issue/IssueCommentComposer.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "The tracker refused it."
+msgstr "The tracker refused it."
+
+#: src/components/issue/IssueCommentComposer.tsx
+msgid "Add a comment"
+msgstr "Add a comment"
+
+#: src/components/issue/IssueCommentComposer.tsx
+msgid "Posting comment"
+msgstr "Posting comment"
+
+#. 0: formatRelativeTimeLabel(seed.closedAt)
+#. 0: formatRelativeTimeLabel(detail.closedAt)
+#: src/components/issue/IssueDetailGhost.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "closed {0}"
+msgstr "closed {0}"
+
+#. 0: formatRelativeTimeLabel(seed.createdAt)
+#. 0: formatRelativeTimeLabel(detail.createdAt)
+#: src/components/issue/IssueDetailGhost.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "opened {0}"
+msgstr "opened {0}"
+
+#: src/components/issue/IssueDetailGhost.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Assignees"
+msgstr "Assignees"
+
+#: src/components/issue/IssueDetailGhost.tsx
+msgid "Loading issue"
+msgstr "Loading issue"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Could not unlink the issue"
+msgstr "Could not unlink the issue"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Could not link the issue"
+msgstr "Could not link the issue"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "The server refused it."
+msgstr "The server refused it."
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Could not change labels"
+msgstr "Could not change labels"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "This tracker has no labels."
+msgstr "This tracker has no labels."
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Could not change assignees"
+msgstr "Could not change assignees"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Assigned"
+msgstr "Assigned"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Change assignees"
+msgstr "Change assignees"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Nobody can be assigned here."
+msgstr "Nobody can be assigned here."
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Closes this issue"
+msgstr "Closes this issue"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Could not load this issue"
+msgstr "Could not load this issue"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Older comments could not be read"
+msgstr "Older comments could not be read"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "The issue could not be updated"
+msgstr "The issue could not be updated"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "The state could not be changed"
+msgstr "The state could not be changed"
+
+#. 0: currentState.label
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Issue state, {0}"
+msgstr "Issue state, {0}"
+
+#. 0: detail.displayKey; 1: tracker.providerName
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Open {0} on {1}"
+msgstr "Open {0} on {1}"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Refresh issue"
+msgstr "Refresh issue"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Issue title"
+msgstr "Issue title"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Read-only"
+msgstr "Read-only"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Load older comments"
+msgstr "Load older comments"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Nothing has happened here yet."
+msgstr "Nothing has happened here yet."
+
+#. 0: detail.commentCount
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Activity ({0})"
+msgstr "Activity ({0})"
+
+#. 0: props.labels.length
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "{0} labels"
+msgstr "{0} labels"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "Assignee"
+msgstr "Assignee"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "The labels could not be read"
+msgstr "The labels could not be read"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "More labels exist than are listed here."
+msgstr "More labels exist than are listed here."
+
+#: src/components/issue/IssueListFilterPickers.tsx
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "Search people"
+msgstr "Search people"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "The people could not be read"
+msgstr "The people could not be read"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "More people exist than are listed here."
+msgstr "More people exist than are listed here."
+
+#: src/components/chat/RightPanelSurfaceContent.tsx
+#: src/components/issue/IssuesPage.tsx
+msgid "Issues unavailable"
+msgstr "Issues unavailable"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "No trackers to read"
+msgstr "No trackers to read"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Add a project whose remote is on a supported tracker."
+msgstr "Add a project whose remote is on a supported tracker."
+
+#. 0: list.error
+#: src/components/issue/IssuesPage.tsx
+msgid "{0} Showing the issues that loaded."
+msgstr "{0} Showing the issues that loaded."
+
+#: src/components/issue/IssuesPage.tsx
+msgid "This tracker cannot be read right now."
+msgstr "This tracker cannot be read right now."
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Nothing matches that."
+msgstr "Nothing matches that."
+
+#: src/components/issue/IssuesPage.tsx
+msgid "No issues under these filters."
+msgstr "No issues under these filters."
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Issues"
+msgstr "Issues"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Issues breadcrumb"
+msgstr "Issues breadcrumb"
+
+#: src/components/issue/IssuesPage.tsx
+#: src/components/issue/IssuesPage.tsx
+msgid "Search issues"
+msgstr "Search issues"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Sort issues"
+msgstr "Sort issues"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Filter by tracker"
+msgstr "Filter by tracker"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Refresh issues"
+msgstr "Refresh issues"
+
+#: src/components/chat/QueuedRunsControl.tsx
+msgid "Could not send queued message"
+msgstr "Could not send queued message"
+
+#. 0: link.displayKey; 1: link.title
+#: src/components/chat/ThreadDetailsIssueRows.tsx
+msgid "Issue {0}: {1}"
+msgstr "Issue {0}: {1}"
+
+#: src/components/settings/EnvironmentRoutesList.tsx
+msgid "Sign-in refused"
+msgstr "Sign-in refused"
+
+#: src/components/settings/EnvironmentRoutesList.tsx
+msgid "The host refused this device's sign-in. Pair this address again with Add route."
+msgstr "The host refused this device's sign-in. Pair this address again with Add route."
+
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Could not load issue trackers"
+msgstr "Could not load issue trackers"
+
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Credential rejected"
+msgstr "Credential rejected"
+
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Create one <0/>"
+msgstr "Create one <0/>"
+
+#. 0: tracker.credential.helpUrl ? ( <> {" "} <InlineButton render={ <a href={tracker.credential.helpUrl} target="_blank" rel="noreferrer noopener" /> } > Create one <ExternalLinkIcon aria-hidden className="size-3" /> </InlineButton> </> ) \\: null; 1: failure ? <span className="block text-destructive">{failure}</span> \\: null
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Stored on the server. {0} {1}"
+msgstr "Stored on the server. {0} {1}"
+
+#. 0: tracker.displayName
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Disconnect {0}"
+msgstr "Disconnect {0}"
+
+#. 0: tracker.displayName; 1: tracker.scopeNoun
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Pick the {0} {1} whose issues each project lists beside its repository's own."
+msgstr "Pick the {0} {1} whose issues each project lists beside its repository's own."
+
+#: src/components/settings/IssueTrackerSettings.tsx
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Not bound"
+msgstr "Not bound"
+
+#. 0: tracker.displayName; 1: tracker.scopeNoun; 2: project.title
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "{0} {1} for {2}"
+msgstr "{0} {1} for {2}"
+
+#: src/components/settings/KeybindingsSettings.tsx
+msgid "Unassign"
+msgstr "Unassign"
+
+#: src/components/settings/KeybindingsSettings.tsx
+msgid "No keyboard shortcut assigned. Click Unassigned to set one."
+msgstr "No keyboard shortcut assigned. Click Unassigned to set one."
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Ask before closing terminals and stopping their running processes."
+msgstr "Ask before closing terminals and stopping their running processes."
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Confirm terminal closing"
+msgstr "Confirm terminal closing"
+
+#. 0.0: Number(seconds.toFixed(2)); 0: " "
+#: src/components/settings/SpeechModelComparison.tsx
+msgid "<0>{0} s</0>{0} / 30 s"
+msgstr "<0>{0} s</0>{0} / 30 s"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Faster"
+msgstr "Faster"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "More accurate"
+msgstr "More accurate"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Balanced accuracy and speed for your selected languages on Handy’s reference benchmarks."
+msgstr "Balanced accuracy and speed for your selected languages on Handy’s reference benchmarks."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Quicker than Recommended on this reference tier, with useful accuracy."
+msgstr "Quicker than Recommended on this reference tier, with useful accuracy."
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Higher accuracy with a longer reference processing budget for your selected languages."
+msgstr "Higher accuracy with a longer reference processing budget for your selected languages."
+
+#. 0: status.benchmarkTier === "cpu" ? "CPU" \\: "GPU"
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Grades and seconds per 30 s use Handy’s reference {0}, not your hardware. Select languages for balanced recommendations."
+msgstr "Grades and seconds per 30 s use Handy’s reference {0}, not your hardware. Select languages for balanced recommendations."
 
 #: src/components/CommandPalette.tsx
 msgid "Maximize Window in App"

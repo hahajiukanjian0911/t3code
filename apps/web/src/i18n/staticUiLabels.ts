@@ -218,6 +218,9 @@ const SOURCE_LABELS = [
   "Preferences",
   "More",
   "Settings",
+  "Source control & issues",
+  "Terminal close confirmation",
+  "Issue trackers",
 ] as const;
 
 function createUiLabels(_revision: number): readonly string[] {
@@ -436,6 +439,9 @@ function createUiLabels(_revision: number): readonly string[] {
     "Preferences",
     "More",
     "Settings",
+    "Source control & issues",
+    "Terminal close confirmation",
+    "Issue trackers",
   ];
 }
 
