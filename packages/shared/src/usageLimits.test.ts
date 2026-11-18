@@ -1110,6 +1110,7 @@ describe("pools", () => {
         ...collectLimitAccounts(input),
         {
           key: "go",
+          historyKeys: ["go"],
           driver: claude,
           displayName: "Go",
           email: undefined,
@@ -1161,6 +1162,7 @@ describe("pooled account columns", () => {
   } as const;
   const account = (key: string, windows: LimitAccount["limits"]["windows"]): LimitAccount => ({
     key,
+    historyKeys: [key],
     driver: ProviderDriverKind.make("claudeAgent"),
     displayName: key,
     email: undefined,
