@@ -1,11 +1,14 @@
 import "~/index.css";
-import { useEffect, useState } from "react";
+import { createRef, useEffect, useState } from "react";
 import { expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
 import { act, render, stubGlobal } from "../../../test/render";
 import { BrowserSurfaceSlot } from "../../browser/BrowserSurfaceSlot";
 import { useBrowserSurfaceStore } from "../../browser/browserSurfaceStore";
 import { syncDocumentElectronPlatformClasses } from "../../lib/windowControlsOverlay";
+import { EnvironmentId, ThreadId } from "@t3tools/contracts";
+import { ThreadDetailsCard } from "../chat/ThreadDetailsCard";
+import { PopoverCreateHandle } from "../ui/popover";
 import { Sidebar, SidebarProvider } from "../ui/sidebar";
 import {
   WorkspaceActions,
@@ -450,12 +453,14 @@ it.each([true, false])(
   },
 );
 
-it("applies 7px concentric window cards, unmasked stratified translucency, and clean inline-details unwrapping", async () => {
+it("applies 7px concentric window cards, unmasked stratified translucency, with Details in the right panel", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   const cleanupPlatform = syncDocumentElectronPlatformClasses("MacIntel");
   using _platform = { [Symbol.dispose]: cleanupPlatform };
-  const ui = (fullscreen: boolean, dockedDetails: boolean) => (
+  const handle = PopoverCreateHandle();
+  const anchor = createRef<HTMLElement>();
+  const ui = (fullscreen: boolean, filesOpen: boolean) => (
     <SidebarProvider
       className="h-screen w-screen"
       data-window-fullscreen={fullscreen ? "true" : undefined}
@@ -467,47 +472,40 @@ it("applies 7px concentric window cards, unmasked stratified translucency, and c
           </Sidebar>
         </WorkspaceWindow>
         <WorkspaceWindow id="chat:glass" title="Conversation" panel="main" selected>
-          <div data-chat-column className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
-            <div
-              data-chat-canvas
-              data-inline-details-docked={dockedDetails ? "" : undefined}
-              className={
-                dockedDetails
-                  ? "relative flex min-h-0 min-w-0 flex-1 flex-row gap-1.5"
-                  : "relative flex min-h-0 min-w-0 flex-1 flex-col"
-              }
-            >
-              <div
-                data-chat-conversation-card=""
-                className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden in-data-[inline-details-docked]:workspace-window-card in-data-[inline-details-docked]:workspace-window-surface-main"
-              >
-                <div className="flex-1 bg-background">Solid conversation</div>
-              </div>
-              {dockedDetails ? (
-                <aside
-                  data-thread-details-panel="inline"
-                  className="relative z-20 flex h-full w-[280px] shrink-0 flex-col overflow-hidden workspace-window-card workspace-window-surface-right"
-                >
-                  Docked details
-                </aside>
-              ) : null}
-            </div>
-          </div>
+          <div className="flex-1 bg-background">Solid conversation</div>
         </WorkspaceWindow>
-        <WorkspaceWindow id="details:glass" title="Details" panel="right" closable={false}>
-          <p>Inspector details</p>
-        </WorkspaceWindow>
-        <WorkspaceWindow id="surface:glass:files" title="Files" panel="right" selected>
-          <p>Workspace files</p>
-        </WorkspaceWindow>
+        <ThreadDetailsCard
+          threadRef={{ environmentId: EnvironmentId.make("env"), threadId: ThreadId.make("glass") }}
+          anchor={anchor}
+          handle={handle}
+          contentKey="usage"
+        >
+          {() => <p>Inspector details</p>}
+        </ThreadDetailsCard>
+        {filesOpen && (
+          <WorkspaceWindow id="surface:glass:files" title="Files" panel="right" selected>
+            <p>Workspace files</p>
+          </WorkspaceWindow>
+        )}
       </WorkspaceRoot>
     </SidebarProvider>
   );
-  await using screen = await render(ui(false, true));
+  await using screen = await render(ui(false, false));
+  const inspector = screen.getByText("Inspector details");
+  await expect.element(inspector).toBeVisible();
+  expect(
+    inspector.element().closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel"),
+  ).toBe("right");
+  const rightToggle = screen.getByRole("button", { name: "Toggle Right panel" });
+  await userEvent.click(rightToggle);
+  await expect.element(inspector).not.toBeVisible();
+  await userEvent.click(rightToggle);
+  await expect.element(inspector).toBeVisible();
+  await screen.rerender(ui(false, true));
   await expect.element(screen.getByText("Solid conversation", { exact: true })).toBeVisible();
   await expect.element(screen.getByText("Workspace files", { exact: true })).toBeVisible();
   await expect.element(screen.getByRole("tab", { name: "Details", exact: true })).toBeVisible();
-  expect(screen.container.querySelector('[aria-label="Close Details"]')).toBeNull();
+  expect(screen.container.querySelector('[aria-label="Close Details"]')).not.toBeNull();
   expect(screen.container.querySelector('[aria-label="Close Files"]')).not.toBeNull();
   const dock = screen.container.querySelector<HTMLElement>("[data-workspace-dock]")!;
   const titlebar = screen.container.querySelector<HTMLElement>("[data-workspace-titlebar]")!;
@@ -527,11 +525,6 @@ it("applies 7px concentric window cards, unmasked stratified translucency, and c
   )!;
   const mainWindowContainer = mainGroup.querySelector<HTMLElement>(
     "[data-workspace-window-container]",
-  )!;
-  const chatColumn = mainGroup.querySelector<HTMLElement>("[data-chat-column]")!;
-  const conversationCard = mainGroup.querySelector<HTMLElement>("[data-chat-conversation-card]")!;
-  const dockedDetailsCard = mainGroup.querySelector<HTMLElement>(
-    '[data-thread-details-panel="inline"]',
   )!;
   const rightGroup = screen.container.querySelector<HTMLElement>(
     '[data-workspace-panel="right"] [data-workspace-group]',
@@ -561,13 +554,13 @@ it("applies 7px concentric window cards, unmasked stratified translucency, and c
   expect(alphaOf(leftWindowContainer)).toBe(0);
   expect(alphaOf(leftSidebar)).toBe(0);
   expect(alphaOf(rightWindowContainer)).toBe(0);
-  expect(alphaOf(mainGroup)).toBe(0);
+  expect(alphaOf(mainGroup)).toBe(255);
   expect(alphaOf(mainWindowContainer)).toBe(0);
-  expect(getComputedStyle(mainGroup).overflowX).toBe("visible");
-  expect(getComputedStyle(mainWindowContainer).overflowX).toBe("visible");
-  expect(getComputedStyle(chatColumn).overflowX).toBe("visible");
-  expect(getComputedStyle(conversationCard).borderRadius).toBe("7px");
-  expect(getComputedStyle(dockedDetailsCard).borderRadius).toBe("7px");
+  expect(getComputedStyle(mainGroup).borderRadius).toBe("7px");
+  expect(getComputedStyle(rightGroup).borderRadius).toBe("7px");
+  await userEvent.click(screen.getByRole("tab", { name: "Details", exact: true }));
+  await expect.element(inspector).toBeVisible();
+  await userEvent.click(screen.getByRole("tab", { name: "Files", exact: true }));
   await userEvent.click(screen.getByText("Workspace files", { exact: true }));
   expect(getComputedStyle(rightGroup).borderTopColor).toBe(
     getComputedStyle(leftGroup).borderTopColor,
@@ -581,33 +574,31 @@ it("applies 7px concentric window cards, unmasked stratified translucency, and c
     .element()
     .querySelector("span")!;
   const leftBounds = leftGroup.getBoundingClientRect();
-  const mainBounds = conversationCard.getBoundingClientRect();
-  const dockedBounds = dockedDetailsCard.getBoundingClientRect();
+  const mainBounds = mainGroup.getBoundingClientRect();
   const rightBounds = rightGroup.getBoundingClientRect();
   const leftBarBounds = leftResizeBar.getBoundingClientRect();
   const rightBarBounds = rightResizeBar.getBoundingClientRect();
   expect(getComputedStyle(leftResizeBar).transform).toBe("none");
   expect(getComputedStyle(rightResizeBar).transform).toBe("none");
   expect(mainBounds.left - leftBounds.right).toBe(6);
-  expect(rightBounds.left - dockedBounds.right).toBe(6);
+  expect(rightBounds.left - mainBounds.right).toBe(6);
   expect(leftBarBounds.left - leftBounds.right).toBeCloseTo(
     mainBounds.left - leftBarBounds.right,
     5,
   );
-  expect(rightBarBounds.left - dockedBounds.right).toBeCloseTo(
+  expect(rightBarBounds.left - mainBounds.right).toBeCloseTo(
     rightBounds.left - rightBarBounds.right,
     5,
   );
 
-  // Default 80% tier: Z0 < Left (~70%) < Right/Docked details (~79%) < Main conversation (100% solid).
+  // Default 80% tier: Z0 < Left (~70%) < Right (~79%) < Main conversation (100% solid).
   expect(alphaOf(dock)).toBeGreaterThan(100);
   expect(alphaOf(dock)).toBeLessThan(160);
   expect(alphaOf(leftGroup)).toBeGreaterThan(alphaOf(dock));
   expect(alphaOf(leftGroup)).toBeLessThan(195);
   expect(alphaOf(rightGroup)).toBeGreaterThan(alphaOf(leftGroup));
   expect(alphaOf(rightGroup)).toBeLessThan(220);
-  expect(alphaOf(dockedDetailsCard)).toBe(alphaOf(rightGroup));
-  expect(alphaOf(conversationCard)).toBe(255);
+  expect(alphaOf(mainGroup)).toBe(255);
 
   using _glassStyle = {
     [Symbol.dispose]: () => {
@@ -622,8 +613,7 @@ it("applies 7px concentric window cards, unmasked stratified translucency, and c
   expect(alphaOf(leftGroup)).toBeLessThan(110);
   expect(alphaOf(rightGroup)).toBeGreaterThan(115);
   expect(alphaOf(rightGroup)).toBeLessThan(150);
-  expect(alphaOf(dockedDetailsCard)).toBe(alphaOf(rightGroup));
-  expect(alphaOf(conversationCard)).toBe(255);
+  expect(alphaOf(mainGroup)).toBe(255);
 
   // 100% solid mode turns off all translucency across Z0, Left, and Right.
   document.documentElement.style.setProperty("--glass-opacity", "100%");
@@ -631,7 +621,6 @@ it("applies 7px concentric window cards, unmasked stratified translucency, and c
   expect(alphaOf(dock)).toBe(255);
   expect(alphaOf(leftGroup)).toBe(255);
   expect(alphaOf(rightGroup)).toBe(255);
-  expect(alphaOf(dockedDetailsCard)).toBe(255);
   document.documentElement.style.removeProperty("--glass-opacity");
   document.documentElement.style.removeProperty("--glass-blur");
 
@@ -661,7 +650,7 @@ it("dismisses the floating modal overlay on backdrop click or Escape, restores f
         <WorkspaceWindow id="threads" title="Threads" panel="left" fixed>
           <p>Threads</p>
         </WorkspaceWindow>
-        <WorkspaceWindow id="chat" title="Chat" panel="main" fixed>
+        <WorkspaceWindow id="chat:main" title="Chat" panel="main" fixed>
           <p>Chat</p>
         </WorkspaceWindow>
         <WorkspaceWindow id="file" title="README" panel="right" selected>
@@ -683,6 +672,24 @@ it("dismisses the floating modal overlay on backdrop click or Escape, restores f
   await userEvent.click(screen.getByRole("button", { name: "Toggle Floating panel" }));
   await vi.waitFor(() => expect(overlay.hasAttribute("hidden")).toBe(false));
 
+  const floatingFile = screen.getByText("Floating file content");
+  await floatingFile.click();
+  for (const stage of ["companion", "full"] as const) {
+    await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+    await vi.waitFor(() =>
+      expect(
+        floatingFile
+          .element()
+          .closest("[data-workspace-maximized-stage]")
+          ?.getAttribute("data-workspace-maximized-stage"),
+      ).toBe(stage),
+    );
+    expect(overlay.hasAttribute("hidden")).toBe(true);
+  }
+  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+  await vi.waitFor(() => expect(overlay.contains(floatingFile.element())).toBe(true));
+  expect(overlay.hasAttribute("hidden")).toBe(false);
+
   // Pressing Escape dismisses it again.
   await userEvent.keyboard("{Escape}");
   await vi.waitFor(() => expect(overlay.hasAttribute("hidden")).toBe(true));
@@ -700,4 +707,203 @@ it("dismisses the floating modal overlay on backdrop click or Escape, restores f
         ?.getAttribute("data-workspace-panel"),
     ).toBe("right"),
   );
+});
+
+it("progressively maximizes non-chat windows (companion chat left -> full app) via Shift+Escape while keeping sidebar unmaximizable", async () => {
+  await page.viewport(1280, 800);
+  using _layout = isolatedLayout();
+  await using screen = await render(
+    <div className="h-screen w-screen">
+      <WorkspaceRoot>
+        <WorkspaceWindow id="threads" title="Threads" panel="left" fixed>
+          <button>Thread item</button>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="chat:main" title="Conversation" panel="main" selected>
+          <input aria-label="chat draft" defaultValue="keep chat alive" />
+        </WorkspaceWindow>
+        <WorkspaceWindow id="surface:file" title="README.md" panel="right">
+          <input aria-label="file editor" defaultValue="keep editor alive" />
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    </div>,
+  );
+
+  const chatInput = screen.getByRole("textbox", { name: "chat draft" }).element();
+  const fileInput = screen.getByRole("textbox", { name: "file editor" }).element();
+  const threadBtn = screen.getByRole("button", { name: "Thread item" }).element();
+
+  // 1. Left session sidebar (`threads`) cannot maximize in app.
+  threadBtn.focus();
+  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+  expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull();
+
+  // 2. Non-chat window (`surface:file`): 1st Shift+Esc -> Stage 1 (companion chat on left, file on right stage).
+  fileInput.focus();
+  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+  await vi.waitFor(() =>
+    expect(
+      screen.container
+        .querySelector("[data-workspace-dock]")
+        ?.getAttribute("data-workspace-maximized"),
+    ).toBe("companion"),
+  );
+  expect(threadBtn.checkVisibility()).toBe(false);
+  const companionChat = screen.container.querySelector("[data-workspace-companion-chat]")!;
+  const stageSection = screen.container.querySelector(
+    '[data-workspace-maximized-stage="companion"]',
+  )!;
+  expect(companionChat.contains(chatInput)).toBe(true);
+  expect(stageSection.contains(fileInput)).toBe(true);
+  expect(
+    Math.round(
+      stageSection.getBoundingClientRect().left - companionChat.getBoundingClientRect().right,
+    ),
+  ).toBe(6);
+
+  // 3. 2nd Shift+Esc -> Stage 2 (true full app maximize, companion chat hidden, left edge peek shown).
+  fileInput.focus();
+  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+  await vi.waitFor(() =>
+    expect(
+      screen.container
+        .querySelector("[data-workspace-dock]")
+        ?.getAttribute("data-workspace-maximized"),
+    ).toBe("full"),
+  );
+  expect(chatInput.checkVisibility()).toBe(false);
+  expect(fileInput.checkVisibility()).toBe(true);
+  expect(screen.container.querySelector('[data-workspace-edge-peek="left"]')).not.toBeNull();
+
+  // 4. 3rd Shift+Esc -> Restores original 3-panel tile without remounting inputs.
+  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull(),
+  );
+  expect(threadBtn.checkVisibility()).toBe(true);
+  expect(chatInput).toBe(screen.getByRole("textbox", { name: "chat draft" }).element());
+  expect(fileInput).toBe(screen.getByRole("textbox", { name: "file editor" }).element());
+
+  fileInput.focus();
+  const mac = /mac/i.test(navigator.platform);
+  await userEvent.keyboard(
+    mac
+      ? "{Control>}{Meta>}{Shift>}j{/Shift}{/Meta}{/Control}"
+      : "{Control>}{Alt>}{Shift>}j{/Shift}{/Alt}{/Control}",
+  );
+  await vi.waitFor(() =>
+    expect(fileInput.closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel")).toBe(
+      "bottom",
+    ),
+  );
+  await userEvent.keyboard(mac ? "{Control>}2{/Control}" : "{Alt>}2{/Alt}");
+  await vi.waitFor(() => expect(document.activeElement).toBe(chatInput));
+
+  // 5. Main chat (`chat:main`): 1st Shift+Esc jumps straight to full app maximize.
+  chatInput.focus();
+  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+  await vi.waitFor(() =>
+    expect(
+      screen.container
+        .querySelector("[data-workspace-dock]")
+        ?.getAttribute("data-workspace-maximized"),
+    ).toBe("full"),
+  );
+  expect(chatInput.checkVisibility()).toBe(true);
+  expect(fileInput.checkVisibility()).toBe(false);
+});
+
+it("renders a 6px board seam between intra-panel split groups, resizes weights, and toggles monocle zoom in panel", async () => {
+  await page.viewport(1280, 800);
+  using _layout = isolatedLayout();
+  // Synthetic pointer events have no active browser pointer to capture.
+  using _capture = vi
+    .spyOn(HTMLElement.prototype, "setPointerCapture")
+    .mockImplementation(() => {});
+  await using screen = await render(
+    <div className="h-screen w-screen">
+      <WorkspaceRoot>
+        <WorkspaceWindow id="chat:main" title="Conversation" panel="main" fixed>
+          <p>Main chat</p>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="surface:diff" title="Diff" panel="right">
+          <button>Diff button</button>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="surface:terminal" title="Terminal" panel="right" selected>
+          <button>Terminal button</button>
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    </div>,
+  );
+
+  const termBtn = screen.getByRole("button", { name: "Terminal button" }).element();
+  termBtn.focus();
+
+  // Split focused window down (vertical split inside Right panel) via Window actions menu.
+  await userEvent.click(
+    page
+      .elementLocator(termBtn.closest("[data-workspace-window]")!)
+      .getByRole("button", { name: "Window actions" }),
+  );
+  await userEvent.click(page.getByRole("menuitem", { name: "Split vertically" }));
+
+  const groups = screen.container.querySelectorAll(
+    '[data-workspace-panel="right"] [data-workspace-group]',
+  );
+  expect(groups).toHaveLength(2);
+  const topRect0 = groups[0]!.getBoundingClientRect();
+  const bottomRect0 = groups[1]!.getBoundingClientRect();
+  // Intra-panel split gap must match the 6px board seam.
+  expect(Math.round(bottomRect0.top - topRect0.bottom)).toBe(6);
+
+  const splitHandle = screen.container.querySelector<HTMLElement>("[data-workspace-group-resize]")!;
+  const handleRect = splitHandle.getBoundingClientRect();
+  await act(() => {
+    splitHandle.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        bubbles: true,
+        pointerId: 1,
+        clientX: handleRect.x + 20,
+        clientY: handleRect.y + 3,
+      }),
+    );
+    splitHandle.dispatchEvent(
+      new PointerEvent("pointermove", {
+        bubbles: true,
+        pointerId: 1,
+        clientX: handleRect.x + 20,
+        clientY: handleRect.y + 90,
+      }),
+    );
+    splitHandle.dispatchEvent(
+      new PointerEvent("pointerup", {
+        bubbles: true,
+        pointerId: 1,
+        clientX: handleRect.x + 20,
+        clientY: handleRect.y + 90,
+      }),
+    );
+  });
+  expect(groups[0]!.getBoundingClientRect().height).toBeGreaterThan(topRect0.height + 40);
+
+  // Double-click seam resets back to equal 50/50 split.
+  await userEvent.dblClick(splitHandle);
+  await vi.waitFor(() =>
+    expect(
+      Math.abs(
+        groups[0]!.getBoundingClientRect().height - groups[1]!.getBoundingClientRect().height,
+      ),
+    ).toBeLessThan(4),
+  );
+
+  // Maximize in panel (monocle) hides sibling group inside Right panel while keeping Main chat visible.
+  termBtn.focus();
+  await userEvent.click(
+    page
+      .elementLocator(termBtn.closest("[data-workspace-window]")!)
+      .getByRole("button", { name: "Window actions" }),
+  );
+  await userEvent.click(page.getByRole("menuitem", { name: "Maximize in panel" }));
+  await vi.waitFor(() => expect(groups[0]!.hasAttribute("hidden")).toBe(true));
+  expect(groups[1]!.hasAttribute("hidden")).toBe(false);
+  expect(screen.getByText("Main chat").element().checkVisibility()).toBe(true);
 });

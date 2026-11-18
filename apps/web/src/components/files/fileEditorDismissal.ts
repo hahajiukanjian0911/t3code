@@ -38,7 +38,16 @@ export function installFileEditorDismissal({
     dismissFileEditorInteraction({ root, editor, onDismiss });
   };
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key !== "Escape" || isBlocked() || !isFileEditorFocused(root)) return;
+    if (
+      event.key !== "Escape" ||
+      event.shiftKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      isBlocked() ||
+      !isFileEditorFocused(root)
+    )
+      return;
     event.preventDefault();
     event.stopImmediatePropagation();
     dismissFileEditorInteraction({ root, editor, onDismiss });

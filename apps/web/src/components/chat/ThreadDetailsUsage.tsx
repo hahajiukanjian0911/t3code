@@ -1,37 +1,37 @@
 import type {
   ProviderInstanceId,
   ServerProvider,
-  ServerProviderUsageWindow,
+  EnvironmentId,
   UsageLimitSourceSnapshots,
 } from "@t3tools/contracts";
 import {
-  collectProviderUsageLimits,
-  formatDuration,
-  type LimitPace,
+  collectLimitAccounts,
+  collectLimitPools,
+  displayLimitWindows,
   limitsNotice,
-  paceOf,
-  remainingPercent,
 } from "@t3tools/shared/usageLimits";
-import type { ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { Fragment, useState, type ReactNode } from "react";
+import { ChartNoAxesColumnIcon, ChevronRightIcon } from "lucide-react";
 
-import { usePrimarySettings } from "../../hooks/useSettings";
+import { ClaudeAI, OpenAI } from "../Icons";
+import geminiLogo from "../mcp/logos/gemini.png";
+import { preferredUsageLimit } from "../usage/UsageLimitTrajectory.logic";
+import { UsageLimitTrajectoryHost } from "../usage/UsageLimitTrajectoryPanel";
+import { PROVIDER_PRESENTATION } from "../usage/usageProviders";
 import { useNowMinute } from "../../hooks/useNowMinute";
 import type { ContextWindowSnapshot } from "@t3tools/client-runtime/state/context-window";
 import { formatContextWindowTokens } from "../../lib/contextWindow";
 import { cn } from "../../lib/utils";
-import { formatUpcomingTimestamp } from "../../timestampFormat";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
+import { readUsagePagePreferences, saveUsagePagePreferences } from "../usage/usagePagePreferences";
 import { formatContextWindowCompactionMessage } from "./compaction.logic";
 import { ThreadDetailsSection } from "./ThreadDetailsSection";
 
-const PACE_LABEL: Record<LimitPace, string> = {
-  ahead: "Ahead of pace",
-  on: "On pace",
-  under: "Under pace",
-};
-
 export interface ThreadDetailsUsageInput {
   readonly providerInstanceId: ProviderInstanceId | null;
+  readonly model: string | null;
+  readonly environmentId: EnvironmentId;
   readonly providers: readonly ServerProvider[];
   readonly sources: UsageLimitSourceSnapshots;
   readonly contextWindow: ContextWindowSnapshot | null;
@@ -39,43 +39,132 @@ export interface ThreadDetailsUsageInput {
 
 type UsageTone = "error" | "warning" | null;
 
-/** The selected provider's limit windows. Each row reads as room left. */
 export function ThreadDetailsUsage({
+  environmentId,
   providerInstanceId,
+  model,
   providers,
   sources,
 }: Omit<ThreadDetailsUsageInput, "contextWindow">) {
   const nowMinute = useNowMinute();
   const now = Date.parse(`${nowMinute}:00Z`);
-  const report =
-    providerInstanceId !== null
-      ? collectProviderUsageLimits(providerInstanceId, providers, sources, now)
-      : null;
-  // Only this instance's data: the report keeps one instance per login, and any other entry may be
-  // a different login or workspace, so fall back to the instance's own snapshot.
-  const limits =
-    report?.accounts.find((entry) => entry.instanceId === providerInstanceId)?.limits ??
-    providers.find((provider) => provider.instanceId === providerInstanceId)?.usageLimits;
-  if (!limits) return null;
-  const notice = limitsNotice(limits);
-
+  const navigate = useNavigate();
+  const accounts = collectLimitAccounts(
+    new Map([
+      [
+        environmentId,
+        {
+          entry: { target: { label: environmentId } },
+          serverConfig: { providers, usageLimitSources: sources },
+        },
+      ],
+    ]),
+  );
+  const pools = collectLimitPools(accounts, now);
+  const provider = providers.find((p) => p.instanceId === providerInstanceId);
+  const preferred = preferredUsageLimit(pools, provider?.driver ?? null, model);
+  const [override, setOverride] = useState<string | null | undefined>();
+  const expanded = override === undefined ? preferred : override;
+  const notice = provider?.usageLimits && limitsNotice(provider.usageLimits);
+  if (!notice && pools.length === 0) return null;
   return (
     <ThreadDetailsSection
       headingId="thread-details-usage-heading"
       title="Usage limits"
       showHeading={false}
     >
-      <div className="grid grid-cols-[auto_minmax(3rem,1fr)_auto] gap-x-3 text-xs">
-        {notice ? (
-          <UsageRow
-            label="Limits"
-            fill={null}
-            tone={null}
-            value="Unavailable"
-            tooltip={<span className="text-foreground">{notice}</span>}
-          />
-        ) : (
-          limits.windows.map((window) => <LimitRow key={window.id} window={window} now={now} />)
+      <div>
+        {pools.map((pool, index) => {
+          const color =
+            Object.values(PROVIDER_PRESENTATION).find((p) => p.driverKind === pool.driver)?.color ??
+            "var(--foreground)";
+          return displayLimitWindows(pool).map((window, windowIndex) => {
+            const first = index === 0 && windowIndex === 0;
+            const key = `${pool.driver}:${window.kind}:${window.id}`;
+            const open = key === expanded;
+            const shared = pool.driver === "antigravity" && window.id.startsWith("3p-");
+            const label = shared
+              ? window.label.replace(/^Claude & GPT \(shared\)/, "Others")
+              : window.label;
+            let logo: ReactNode = null;
+            if (pool.driver === "codex") {
+              logo = <OpenAI aria-hidden className="size-3.5" />;
+            } else if (shared || pool.driver === "claudeAgent") {
+              logo = <ClaudeAI aria-hidden className="size-3.5" />;
+            } else if (pool.driver === "antigravity" && window.id.startsWith("gemini-")) {
+              logo = (
+                <img
+                  src={geminiLogo}
+                  alt=""
+                  className="size-3.5 rounded-full object-cover object-center [object-view-box:inset(20%)]"
+                />
+              );
+            }
+            const rowLabel = logo ? label.replace(/^(?:Gemini|Others) · /, "") : label;
+            return (
+              <Fragment key={key}>
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-expanded={open}
+                    aria-label={
+                      rowLabel === label ? undefined : `${label} ${window.remainingPercent}%`
+                    }
+                    onClick={() => setOverride(open ? null : key)}
+                    className="grid w-full grid-cols-[minmax(0,1.95fr)_minmax(1.5rem,1fr)_4ch_auto] items-center gap-1.5 rounded-md px-2.5 py-1 text-left text-xs hover:bg-accent"
+                  >
+                    <span className={cn("flex min-w-0 items-center gap-1.5", first && "pl-5")}>
+                      {!first && logo && <span className="shrink-0">{logo}</span>}
+                      <span className="min-w-0 break-words">{rowLabel}</span>
+                    </span>
+                    <span
+                      aria-hidden
+                      className="h-[3px] overflow-hidden rounded-full bg-muted-foreground/20"
+                    >
+                      <span
+                        className="block h-full rounded-full"
+                        style={{ width: `${window.remainingPercent}%`, backgroundColor: color }}
+                      />
+                    </span>
+                    <span className="text-right tabular-nums">{window.remainingPercent}%</span>
+                    <ChevronRightIcon
+                      className={cn("size-3 text-muted-foreground", open && "rotate-90")}
+                    />
+                  </button>
+                  {first && (
+                    <button
+                      type="button"
+                      aria-label="Usage limits"
+                      className="absolute top-1/2 left-1.5 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-accent"
+                      onClick={() => {
+                        saveUsagePagePreferences({
+                          ...readUsagePagePreferences(),
+                          metric: "limits",
+                        });
+                        void navigate({ to: "/usage" });
+                      }}
+                    >
+                      {logo ?? <ChartNoAxesColumnIcon className="size-3.5" />}
+                    </button>
+                  )}
+                </div>
+                {open && (
+                  <UsageLimitTrajectoryHost
+                    pool={label === window.label ? window : { ...window, label }}
+                    color={color}
+                    now={now}
+                    compact
+                    environmentId={environmentId}
+                  />
+                )}
+              </Fragment>
+            );
+          });
+        })}
+        {notice && (
+          <div className="grid grid-cols-[auto_1fr_auto] text-xs">
+            <UsageRow label="Limits" fill={null} tone={null} value="Unavailable" tooltip={notice} />
+          </div>
         )}
       </div>
     </ThreadDetailsSection>
@@ -135,42 +224,6 @@ export function ThreadDetailsContext({ usage }: { readonly usage: ContextWindowS
         />
       </div>
     </ThreadDetailsSection>
-  );
-}
-
-function LimitRow({
-  window,
-  now,
-}: {
-  readonly window: ServerProviderUsageWindow;
-  readonly now: number;
-}) {
-  const timestampFormat = usePrimarySettings((settings) => settings.timestampFormat);
-  const left = remainingPercent(window);
-  const pace = paceOf(window, now);
-  const resetsAt = window.resetsAt ? Date.parse(window.resetsAt) : Number.NaN;
-  return (
-    <UsageRow
-      label={window.label}
-      fill={left}
-      tone={left <= 10 ? "error" : left <= 20 ? "warning" : null}
-      value={`${left}%`}
-      ariaValue={`${left}% left`}
-      tooltip={
-        <>
-          <span className="text-foreground">
-            {window.label}: {left}% left
-          </span>
-          {window.resetsAt && resetsAt > now ? (
-            <span className="text-muted-foreground">
-              Resets in {formatDuration(resetsAt - now)} ·{" "}
-              {formatUpcomingTimestamp(window.resetsAt, timestampFormat, now)}
-            </span>
-          ) : null}
-          {pace ? <span className="text-muted-foreground">{PACE_LABEL[pace]}</span> : null}
-        </>
-      }
-    />
   );
 }
 

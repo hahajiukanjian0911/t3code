@@ -37,6 +37,14 @@ at the end, leave the block. **Backspace** at the start of a code block turns it
 back into plain lines. Choose the language in a code block's corner to change
 it. Very large code blocks are shown without syntax highlighting.
 
+## Vim editing
+
+On web and desktop, turn on **Settings → Chat → Vim mode**, or choose **Enable Vim Mode** in the
+command palette. The composer, editable source files and custom theme CSS share this setting.
+Press `i` to insert text and `Esc` to return to Normal mode. The composer keeps its file and
+skill suggestions, attachments and citation comments. Source files show line numbers and save
+edits automatically.
+
 ## Attach files
 
 Attach up to 100 files per message. Each image can be up to 10 MiB, with at most

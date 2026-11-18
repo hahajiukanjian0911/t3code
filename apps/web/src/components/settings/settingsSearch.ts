@@ -757,6 +757,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["composer rich text tiptap bold italic markdown styled wysiwyg"],
   },
   {
+    id: "composer-vim-mode",
+    title: "Vim mode",
+    to: "/settings/chat",
+    searchTerms: ["vim modal keybindings normal insert visual codemirror editor composer"],
+  },
+  {
     id: "send-shortcut",
     title: "Send shortcut",
     to: "/settings/chat",

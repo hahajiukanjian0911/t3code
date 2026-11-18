@@ -1,6 +1,11 @@
 export const workspacePanels = ["left", "main", "right", "bottom", "floating"] as const;
 export type WorkspacePanel = (typeof workspacePanels)[number];
 export type WorkspaceEdge = "left" | "right" | "top" | "bottom";
+export type WorkspaceMaximizeStage = "companion" | "full";
+export interface WorkspaceMaximizeState {
+  windowId: string;
+  stage: WorkspaceMaximizeStage;
+}
 export interface WindowPlacement {
   panel: WorkspacePanel;
   group: string;
@@ -12,7 +17,10 @@ export interface WorkspaceLayout {
   vertical: Partial<Record<WorkspacePanel, boolean>>;
   hidden: Partial<Record<WorkspacePanel, boolean>>;
   dismissed: string[];
-  sizes: { left: number; right: number; bottom: number };
+  sizes: { left: number; right: number; bottom: number; companion: number };
+  groupWeights: Record<string, number>;
+  panelZoomedGroup: Partial<Record<WorkspacePanel, string>>;
+  maximized: WorkspaceMaximizeState | null;
   floating: { x: number; y: number; width: number; height: number };
 }
 export function createWorkspaceLayout(): WorkspaceLayout {
@@ -23,9 +31,44 @@ export function createWorkspaceLayout(): WorkspaceLayout {
     vertical: {},
     hidden: {},
     dismissed: [],
-    sizes: { left: 232, right: 320, bottom: 220 },
+    sizes: { left: 232, right: 320, bottom: 220, companion: 320 },
+    groupWeights: {},
+    panelZoomedGroup: {},
+    maximized: null,
     floating: { x: 280, y: 140, width: 560, height: 440 },
   };
+}
+export function isChatWorkspaceWindowId(id: string): boolean {
+  return id === "route" || id.startsWith("chat:");
+}
+export function canMaximizeWorkspaceWindowInApp(id: string): boolean {
+  return id !== "threads";
+}
+export function advanceWorkspaceMaximizeInApp(
+  current: WorkspaceMaximizeState | null,
+  windowId: string,
+): WorkspaceMaximizeState | null {
+  if (!canMaximizeWorkspaceWindowInApp(windowId)) return current;
+  if (isChatWorkspaceWindowId(windowId)) {
+    return current?.windowId === windowId && current.stage === "full"
+      ? null
+      : { windowId, stage: "full" };
+  }
+  if (current?.windowId === windowId) {
+    return current.stage === "companion" ? { windowId, stage: "full" } : null;
+  }
+  return { windowId, stage: "companion" };
+}
+export function toggleWorkspaceMaximizeInPanel(
+  layout: WorkspaceLayout,
+  panel: WorkspacePanel,
+  groupId: string,
+): WorkspaceLayout {
+  const current = layout.panelZoomedGroup[panel];
+  const nextZoomed = { ...layout.panelZoomedGroup };
+  if (current === groupId) delete nextZoomed[panel];
+  else nextZoomed[panel] = groupId;
+  return { ...layout, panelZoomedGroup: nextZoomed };
 }
 export function moveWorkspaceWindow(
   layout: WorkspaceLayout,
@@ -57,6 +100,14 @@ export function moveWorkspaceWindow(
     vertical: edge
       ? { ...layout.vertical, [target.panel]: edge === "top" || edge === "bottom" }
       : layout.vertical,
+    panelZoomedGroup: edge
+      ? (() => {
+          const next = { ...layout.panelZoomedGroup };
+          delete next[target.panel];
+          return next;
+        })()
+      : layout.panelZoomedGroup,
+    maximized: layout.maximized?.windowId === id ? null : layout.maximized,
     hidden: { ...layout.hidden, [target.panel]: false },
     dismissed: layout.dismissed.filter((value) => value !== id),
   };
@@ -116,6 +167,31 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
       .filter((entry): entry is [string, string] => typeof entry[1] === "string")
       .slice(-512),
   );
+  const groupWeights = Object.fromEntries(
+    Object.entries(record(input.groupWeights))
+      .filter(
+        (entry): entry is [string, number] =>
+          typeof entry[1] === "number" && Number.isFinite(entry[1]) && entry[1] > 0,
+      )
+      .map(([key, weight]) => [key, Math.max(0.1, Math.min(10, weight))])
+      .slice(-512),
+  );
+  const panelZoomedGroup = Object.fromEntries(
+    Object.entries(record(input.panelZoomedGroup)).filter(
+      (entry): entry is [WorkspacePanel, string] =>
+        workspacePanels.includes(entry[0] as WorkspacePanel) && typeof entry[1] === "string",
+    ),
+  );
+  const rawMax = record(input.maximized);
+  const maximized: WorkspaceMaximizeState | null =
+    typeof rawMax.windowId === "string" &&
+    canMaximizeWorkspaceWindowInApp(rawMax.windowId) &&
+    (rawMax.stage === "companion" || rawMax.stage === "full")
+      ? {
+          windowId: rawMax.windowId,
+          stage: isChatWorkspaceWindowId(rawMax.windowId) ? "full" : rawMax.stage,
+        }
+      : null;
   const finite = (raw: unknown, initial: number, min: number, max: number) =>
     typeof raw === "number" && Number.isFinite(raw) ? Math.max(min, Math.min(max, raw)) : initial;
   const sizes = record(input.sizes),
@@ -128,10 +204,14 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
     hidden: flags(input.hidden),
     vertical: flags(input.vertical),
     dismissed: strings(input.dismissed),
+    groupWeights,
+    panelZoomedGroup,
+    maximized,
     sizes: {
       left: finite(sizes.left, fallback.sizes.left, 180, 600),
       right: finite(sizes.right, fallback.sizes.right, 180, 600),
       bottom: finite(sizes.bottom, fallback.sizes.bottom, 120, 600),
+      companion: finite(sizes.companion, fallback.sizes.companion, 220, 640),
     },
     floating: {
       x: finite(floating.x, fallback.floating.x, 0, 10000),

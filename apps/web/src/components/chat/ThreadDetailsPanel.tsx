@@ -284,7 +284,17 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
                 />
               ) : null}
 
-              {visible.usage ? <ThreadDetailsUsage {...props.usage} /> : null}
+              {visible.usage ? (
+                <ThreadDetailsUsage
+                  key={JSON.stringify([
+                    props.environmentId,
+                    props.usage.providerInstanceId,
+                    props.usage.model,
+                    props.threadId,
+                  ])}
+                  {...props.usage}
+                />
+              ) : null}
 
               {visible.context && props.usage.contextWindow ? (
                 <ThreadDetailsContext usage={props.usage.contextWindow} />

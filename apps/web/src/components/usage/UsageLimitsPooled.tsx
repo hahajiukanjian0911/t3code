@@ -18,7 +18,7 @@ import {
 } from "@t3tools/shared/usageLimits";
 import type { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { normalizeProviderAccentColor } from "@t3tools/client-runtime/state/provider-instance-display";
-import { AlertTriangleIcon, ExternalLinkIcon, TicketIcon } from "lucide-react";
+import { AlertTriangleIcon, ChevronDownIcon, ExternalLinkIcon, TicketIcon } from "lucide-react";
 import {
   createContext,
   Fragment,
@@ -41,6 +41,10 @@ import { Button } from "../ui/button";
 import { OpenAI } from "../Icons";
 import { Alert, AlertTitle } from "../ui/alert";
 import { Popover, PopoverCreateHandle, PopoverPopup, PopoverTrigger } from "../ui/popover";
+import { useAtomValue } from "@effect/atom-react";
+import { currentQuotaModelAtom } from "../../state/usage";
+import { preferredUsageLimit } from "./UsageLimitTrajectory.logic";
+import { UsageLimitTrajectoryHost } from "./UsageLimitTrajectoryPanel";
 import { PaceIcon, ResetCreditDialog, barColor, usePaceMark, useResetCredit } from "./UsageLimits";
 
 function accountInitials(email: string): string {
@@ -548,20 +552,56 @@ function PoolWindowCard({
   now,
   label,
   description,
+  expanded,
+  onToggleExpanded,
 }: {
   readonly pool: LimitPoolWindow;
   readonly color: string;
   readonly now: number;
   readonly label?: string | null | undefined;
   readonly description?: string | undefined;
+  readonly expanded: boolean;
+  readonly onToggleExpanded: () => void;
 }) {
   const nextRefill = pool.resets.find((reset) => reset.restoresPercent > 0);
+  const displayTitle = label === null ? pool.label : (label ?? pool.label);
   return (
-    <div className="grid items-center gap-x-6 gap-y-3 rounded-lg border border-border/60 p-4 md:grid-cols-[11rem_minmax(0,1fr)]">
+    <div
+      data-usage-limit-card=""
+      data-expanded={expanded ? "" : undefined}
+      onClick={(event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (target?.closest("[data-slot='popover-trigger'], button, a")) return;
+        onToggleExpanded();
+      }}
+      className={cn(
+        "group/limit-card grid cursor-pointer items-center gap-x-6 gap-y-3 rounded-lg border border-border/60 p-4 transition-colors hover:border-border md:grid-cols-[11rem_minmax(0,1fr)]",
+        expanded && "border-border bg-card/40",
+      )}
+    >
       <div className="flex flex-col gap-1">
-        {label !== null ? (
-          <span className="text-sm font-medium text-foreground">{label ?? pool.label}</span>
-        ) : null}
+        <div className="flex items-center justify-between gap-2">
+          {label !== null ? (
+            <span className="text-sm font-medium text-foreground">{label ?? pool.label}</span>
+          ) : (
+            <span />
+          )}
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-label={`${expanded ? "Hide" : "Show"} ${displayTitle} quota trajectory`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleExpanded();
+            }}
+            className="inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <ChevronDownIcon
+              aria-hidden
+              className={cn("size-3.5 transition-transform duration-150", expanded && "rotate-180")}
+            />
+          </button>
+        </div>
         <span className="flex items-baseline gap-2">
           <span className="text-3xl font-semibold text-foreground tabular-nums">
             {pool.remainingPercent}%
@@ -581,11 +621,22 @@ function PoolWindowCard({
       {description ? (
         <p className="text-xs text-muted-foreground md:col-span-2">{description}</p>
       ) : null}
+      {expanded ? <UsageLimitTrajectoryHost pool={pool} color={color} now={now} /> : null}
     </div>
   );
 }
 
-function PoolSection({ pool, now }: { readonly pool: LimitPool; readonly now: number }) {
+function PoolSection({
+  pool,
+  now,
+  expandedKey,
+  onToggleKey,
+}: {
+  readonly pool: LimitPool;
+  readonly now: number;
+  readonly expandedKey: string | null;
+  readonly onToggleKey: (key: string) => void;
+}) {
   const color = barColor(pool.driver);
   const label = providerClients.get(pool.driver)?.label ?? String(pool.driver);
   const windows = displayLimitWindows(pool);
@@ -604,6 +655,7 @@ function PoolSection({ pool, now }: { readonly pool: LimitPool; readonly now: nu
       {windows.map((window) => {
         const details =
           pool.driver === "cursor" ? cursorUsageWindowDetails(window.id, pool) : undefined;
+        const cardKey = `${pool.driver}:${window.kind}:${window.id}`;
         return (
           <PoolWindowCard
             key={`${window.kind}:${window.id}`}
@@ -612,6 +664,8 @@ function PoolSection({ pool, now }: { readonly pool: LimitPool; readonly now: nu
             now={now}
             label={details?.label}
             description={details?.description}
+            expanded={expandedKey === cardKey}
+            onToggleExpanded={() => onToggleKey(cardKey)}
           />
         );
       })}
@@ -627,8 +681,14 @@ export function UsageLimitsPooled({
   readonly now: number;
 }) {
   const [segmentPopover] = useState(() => PopoverCreateHandle<SegmentPayload>());
+  const selection = useAtomValue(currentQuotaModelAtom);
+  const [manualKey, setManualKey] = useState<string | null | undefined>();
   const segmentPopoverActions = useRef<PopoverPrimitive.Root.Actions | null>(null);
   const pools = collectLimitPools(collectLimitAccounts(presentations), now);
+  const expandedKey =
+    manualKey === undefined && selection && presentations.has(selection.environmentId)
+      ? preferredUsageLimit(pools, selection.driver, selection.model)
+      : manualKey;
   const notices = collectLimitNotices(presentations);
   const externalLinks = collectExternalUsageLinks(presentations);
   return (
@@ -641,7 +701,12 @@ export function UsageLimitsPooled({
       <SegmentPopoverContext value={segmentPopover}>
         {pools.map((pool) => (
           <Fragment key={pool.driver}>
-            <PoolSection pool={pool} now={now} />
+            <PoolSection
+              pool={pool}
+              now={now}
+              expandedKey={expandedKey ?? null}
+              onToggleKey={(key) => setManualKey(expandedKey === key ? null : key)}
+            />
           </Fragment>
         ))}
       </SegmentPopoverContext>

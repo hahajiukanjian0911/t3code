@@ -4,6 +4,7 @@ import {
   USAGE_CONTRACT_VERSION,
   type EnvironmentId,
   type UsageBucket,
+  type UsageLimitHistorySample,
   type UsageSummary,
   type UsageProviderKind,
   type UsageSummaryInput,
@@ -244,3 +245,47 @@ export function useUsage(
     refresh,
   };
 }
+
+const usageLimitHistoryAtom = Atom.family((key: string) =>
+  Atom.make((get): readonly UsageLimitHistorySample[] => {
+    const [sinceMs, scope] = JSON.parse(key) as [number, EnvironmentId | null];
+    const presentations = get(environmentPresentations.presentationsAtom);
+    const all: UsageLimitHistorySample[] = [];
+    for (const [environmentId, presentation] of presentations) {
+      if (scope !== null && scope !== environmentId) continue;
+      const sessionResult = get(environmentSession.sessionStateAtom(environmentId));
+      const access = resolveUsageAccess({
+        connectionPhase: presentation.connection.phase,
+        session: AsyncResult.getOrElse(sessionResult, () => null),
+        hasSessionError: sessionResult._tag === "Failure",
+      });
+      if (!access.canReadDiagnostics) continue;
+      const result = get(
+        serverEnvironment.usageLimitHistory({
+          environmentId,
+          input: { sinceMs },
+        }),
+      );
+      const data = AsyncResult.getOrElse(result, () => null);
+      if (data) {
+        for (const sample of data.samples) {
+          all.push(sample);
+        }
+      }
+    }
+    return all;
+  }).pipe(Atom.withLabel(`web-usage:limit-history:${key}`)),
+);
+
+export function useUsageLimitHistorySamples(
+  sinceMs: number,
+  environmentId?: EnvironmentId,
+): readonly UsageLimitHistorySample[] {
+  return useAtomValue(usageLimitHistoryAtom(JSON.stringify([sinceMs, environmentId ?? null])));
+}
+
+export const currentQuotaModelAtom = Atom.make<{
+  driver: string;
+  model: string;
+  environmentId: EnvironmentId;
+} | null>(null).pipe(Atom.keepAlive);

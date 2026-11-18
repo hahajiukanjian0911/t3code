@@ -159,3 +159,25 @@ export const UsageLimitsReport = Schema.Struct({
   notices: Schema.Array(Schema.String),
 });
 export type UsageLimitsReport = typeof UsageLimitsReport.Type;
+
+export const UsageLimitHistorySample = Schema.Struct({
+  accountKey: TrimmedNonEmptyString,
+  driver: ProviderDriverKind,
+  windowId: TrimmedNonEmptyString,
+  windowKind: Schema.Literals(["session", "weekly", "monthly", "other"]),
+  checkedAtMs: NonNegativeInt,
+  usedPercent: Schema.Number.check(Schema.isBetween({ minimum: 0, maximum: 100 })),
+  resetsAtMs: Schema.NullOr(NonNegativeInt),
+});
+export type UsageLimitHistorySample = typeof UsageLimitHistorySample.Type;
+
+export const UsageLimitHistoryInput = Schema.Struct({
+  sinceMs: NonNegativeInt,
+});
+export type UsageLimitHistoryInput = typeof UsageLimitHistoryInput.Type;
+
+export const UsageLimitHistory = Schema.Struct({
+  readAt: IsoDateTime,
+  samples: ForwardCompatibleArray(UsageLimitHistorySample),
+});
+export type UsageLimitHistory = typeof UsageLimitHistory.Type;

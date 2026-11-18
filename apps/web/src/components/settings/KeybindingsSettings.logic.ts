@@ -371,6 +371,23 @@ export function buildKeybindingCommandOptions(
 export function commandLabel(command: KeybindingCommand): string {
   if (command === "workspace.focusNext") return "Focus Next Workspace Area";
   if (command === "workspace.focusPrevious") return "Focus Previous Workspace Area";
+  if (command === "workspace.focusPanel.left") return "Focus Left Panel";
+  if (command === "workspace.focusPanel.main") return "Focus Main Composer";
+  if (command === "workspace.focusPanel.right") return "Focus Right Panel";
+  if (command === "workspace.focusPanel.bottom") return "Focus Bottom Panel";
+  if (command === "workspace.moveLeft") return "Move Window to Left Panel";
+  if (command === "workspace.moveRight") return "Move Window to Right Panel";
+  if (command === "workspace.moveDown") return "Move Window to Bottom Panel";
+  if (command === "workspace.moveFloat") return "Move Window to Floating Panel";
+  if (command === "workspace.focusLeft") return "Workspace: Focus Window Left";
+  if (command === "workspace.focusRight") return "Workspace: Focus Window Right";
+  if (command === "workspace.focusUp") return "Workspace: Focus Window Up";
+  if (command === "workspace.focusDown") return "Workspace: Focus Window Down";
+  if (command === "workspace.toggleMaximizeInApp") return "Workspace: Maximize Window in App";
+  if (command === "workspace.toggleMaximizeInPanel") return "Workspace: Maximize Window in Panel";
+  if (command === "workspace.splitRight") return "Workspace: Split Window Horizontally";
+  if (command === "workspace.splitDown") return "Workspace: Split Window Vertically";
+  if (command === "floatingPanel.toggle") return "Workspace: Toggle Floating Panel";
   if (command === "composer.sendAlternate") return "Composer: Opposite Queue or Steer Action";
   if (command === "composer.sendBackground") return "Composer: Start in Background";
   if (command === "composer.sendAndNewThread") return "Composer: Send and Start New Thread";

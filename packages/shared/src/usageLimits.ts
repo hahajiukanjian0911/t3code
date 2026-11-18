@@ -220,6 +220,18 @@ function accountKey(
     : null;
 }
 
+export function resolveUsageLimitAccountKey(
+  driver: ServerProvider["driver"],
+  email: string | undefined,
+  workspaceId: string | undefined,
+  limits: ServerProviderUsageLimits | undefined,
+  fallbackKey: string,
+): string {
+  const base = accountKey(driver, email, limits);
+  if (!base) return fallbackKey;
+  return workspaceId ? `${base}:${workspaceId}` : base;
+}
+
 interface AccountReport {
   readonly driver: ServerProvider["driver"];
   readonly email?: string | undefined;
@@ -271,6 +283,8 @@ function hubIdentity(environmentId: EnvironmentId, source: UsageLimitSourceSnaps
 
 export interface LimitAccount {
   readonly key: string;
+  /** Keys under which server usage-limit samples for this account may be stored. */
+  readonly historyKeys: readonly string[];
   readonly driver: ServerProvider["driver"];
   readonly displayName: string | null;
   readonly email: string | undefined;
@@ -341,6 +355,7 @@ export function collectLimitAccounts(presentations: LimitPresentations): readonl
     const displayName = previous.displayName ?? next.displayName;
     accounts.set(key, {
       ...previous,
+      historyKeys: [...new Set([...previous.historyKeys, ...next.historyKeys])],
       displayName:
         hubEmail &&
         displayName?.toLowerCase() === PROVIDER_DISPLAY_NAMES[previous.driver]?.toLowerCase()
@@ -373,8 +388,12 @@ export function collectLimitAccounts(presentations: LimitPresentations): readonl
     const label = presentation.entry.target.label;
     for (const provider of providersWithLimits(presentation.serverConfig?.providers ?? [])) {
       if (!provider.usageLimits || limitsNotice(provider.usageLimits) !== null) continue;
-      merge(resolveKey(nativeReport(provider)) ?? `${environmentId}:${provider.instanceId}`, {
+      const resolved = resolveKey(nativeReport(provider));
+      const localKey = `instance:${provider.instanceId}`;
+      const historyKeys = resolved ? [resolved, localKey] : [localKey];
+      merge(resolved ?? `${environmentId}:${provider.instanceId}`, {
         key: `${environmentId}:${provider.instanceId}`,
+        historyKeys,
         driver: provider.driver,
         displayName: provider.displayName?.trim() || null,
         email: provider.auth.email,
@@ -399,8 +418,11 @@ export function collectLimitAccounts(presentations: LimitPresentations): readonl
         // A resolved account already has an identity; its public key must stay distinct from others'.
         const hub = resolved ? `${environmentId}:${source.id}` : hubIdentity(environmentId, source);
         const key = `${hub}:${account.id}${account.workspaceId ? `:${account.workspaceId}` : ""}`;
+        const localSourceKey = `source:${source.id}:${account.id}${account.workspaceId ? `:${account.workspaceId}` : ""}`;
+        const historyKeys = resolved ? [resolved, localSourceKey, key] : [localSourceKey, key];
         merge(resolved ?? key, {
           key,
+          historyKeys,
           driver: account.driver,
           displayName: account.email ? null : hubAccountName(account),
           email: account.email,
@@ -582,6 +604,12 @@ function planCapacity(account: LimitAccount, kind: ServerProviderUsageWindow["ki
   return undefined;
 }
 
+export function limitPoolWeights(members: readonly LimitPoolMember[]) {
+  const capacities = members.map(({ account, window }) => planCapacity(account, window.kind));
+  // One unknown plan makes the pool incomparable by plan, so every member counts once.
+  return capacities.every((capacity) => capacity !== undefined) ? capacities : members.map(() => 1);
+}
+
 // Codex ids name slots, so pool by kind; other drivers' ids identify distinct allowances.
 function poolKey(driver: ServerProvider["driver"], window: ServerProviderUsageWindow): string {
   return driver === "codex" ? window.kind : `${window.kind}:${window.id}`;
@@ -650,11 +678,7 @@ function poolWindows(accounts: readonly LimitAccount[], now: number): readonly L
     const memberByAccount = new Map(members.map((member) => [member.account.key, member]));
     const first = members[0]!.window;
     const id = members[0]!.account.driver === "codex" ? key : first.id;
-    // One unknown plan makes the pool incomparable by plan, so every member then counts once.
-    const capacities = members.map((m) => planCapacity(m.account, first.kind));
-    const weights = capacities.every((capacity) => capacity !== undefined)
-      ? capacities
-      : members.map(() => 1);
+    const weights = limitPoolWeights(members);
     const weightOf = new Map(members.map((m, index) => [m, weights[index]!]));
     const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
     const usedPercent =

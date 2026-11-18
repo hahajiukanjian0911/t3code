@@ -1,3 +1,4 @@
+import { WORKSPACE_PLACEMENT_COMMANDS } from "@t3tools/contracts";
 import { useAtomValue } from "@effect/atom-react";
 import {
   scopeProjectRef,
@@ -46,6 +47,14 @@ import { toastManager } from "./ui/toast";
 const PREVIEW_FORWARDED_COMMANDS = [
   "workspace.focusNext",
   "workspace.focusPrevious",
+  ...WORKSPACE_PLACEMENT_COMMANDS,
+  "workspace.focusLeft",
+  "workspace.focusRight",
+  "workspace.focusUp",
+  "workspace.focusDown",
+  "workspace.toggleMaximizeInApp",
+  "workspace.toggleMaximizeInPanel",
+  "floatingPanel.toggle",
   "sidebar.toggle",
   "rightPanel.toggle",
   "rightPanel.toggleMaximized",

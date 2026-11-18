@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { __setClientSettingsForTests, getClientSettings } from "~/hooks/useSettings";
+import { ThemeCssEditor } from "./ThemeCssEditor";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { page, userEvent } from "vite-plus/test/browser";
 
@@ -116,7 +119,24 @@ async function editorElement(selector: string) {
   return query()!;
 }
 
+function CssDraft() {
+  const [value, setValue] = useState("body {}");
+  return <ThemeCssEditor value={value} onChange={setValue} />;
+}
+
 describe("ThemeEditorPanel", () => {
+  it("edits CSS with Vim and gives Tab back to the next control on Escape", async () => {
+    const previous = getClientSettings();
+    __setClientSettingsForTests({ ...previous, vimMode: true });
+    using _settings = { [Symbol.dispose]: () => __setClientSettingsForTests(previous) };
+    await using screen = await render(<CssDraft />);
+    const editor = screen.getByRole("textbox", { name: "Custom CSS" });
+    await editor.click();
+    await userEvent.keyboard("gg0cwmain{Escape}");
+    await expect.element(editor).toHaveTextContent("main {}");
+    await userEvent.keyboard("{Escape}{Tab}");
+    await expect.element(screen.getByRole("button", { name: "Clear CSS" })).toHaveFocus();
+  });
   it("keeps its left edge when resized after the window shrank", async () => {
     await using view = await renderPanel();
     dragHeader(view.panel, 700, 40);

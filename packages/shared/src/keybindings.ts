@@ -54,6 +54,13 @@ type WhenToken =
   | { type: "lparen" }
   | { type: "rparen" };
 
+function workspaceShortcuts(key: string, command: KeybindingRule["command"]): KeybindingRule[] {
+  return [
+    { key: `ctrl+meta+${key}`, command, when: "isMac" },
+    { key: `ctrl+alt+${key}`, command, when: "!isMac" },
+  ];
+}
+
 export const DEFAULT_KEYBINDINGS: ReadonlyArray<KeybindingRule> = [
   { key: "mod+b", command: "sidebar.toggle" },
   { key: "f6", command: "workspace.focusNext" },
@@ -61,6 +68,31 @@ export const DEFAULT_KEYBINDINGS: ReadonlyArray<KeybindingRule> = [
   // Some browsers keep plain F6 for their own toolbars; mod+F6 reaches the page in all of them.
   { key: "mod+f6", command: "workspace.focusNext" },
   { key: "mod+shift+f6", command: "workspace.focusPrevious" },
+  ...workspaceShortcuts("h", "workspace.focusLeft"),
+  ...workspaceShortcuts("arrowleft", "workspace.focusLeft"),
+  ...workspaceShortcuts("l", "workspace.focusRight"),
+  ...workspaceShortcuts("arrowright", "workspace.focusRight"),
+  ...workspaceShortcuts("k", "workspace.focusUp"),
+  ...workspaceShortcuts("arrowup", "workspace.focusUp"),
+  ...workspaceShortcuts("j", "workspace.focusDown"),
+  ...workspaceShortcuts("arrowdown", "workspace.focusDown"),
+  { key: "shift+escape", command: "workspace.toggleMaximizeInApp" },
+  ...workspaceShortcuts("m", "workspace.toggleMaximizeInPanel"),
+  { key: "ctrl+1", command: "workspace.focusPanel.left", when: "isMac" },
+  { key: "alt+1", command: "workspace.focusPanel.left", when: "!isMac" },
+  { key: "ctrl+2", command: "workspace.focusPanel.main", when: "isMac" },
+  { key: "alt+2", command: "workspace.focusPanel.main", when: "!isMac" },
+  { key: "ctrl+3", command: "workspace.focusPanel.right", when: "isMac" },
+  { key: "alt+3", command: "workspace.focusPanel.right", when: "!isMac" },
+  { key: "ctrl+4", command: "workspace.focusPanel.bottom", when: "isMac" },
+  { key: "alt+4", command: "workspace.focusPanel.bottom", when: "!isMac" },
+  ...workspaceShortcuts("shift+h", "workspace.moveLeft"),
+  ...workspaceShortcuts("shift+l", "workspace.moveRight"),
+  ...workspaceShortcuts("shift+j", "workspace.moveDown"),
+  ...workspaceShortcuts("shift+space", "workspace.moveFloat"),
+  { key: "mod+\\", command: "workspace.splitRight", when: "!terminalFocus" },
+  { key: "mod+shift+\\", command: "workspace.splitDown", when: "!terminalFocus" },
+  ...workspaceShortcuts("space", "floatingPanel.toggle"),
   { key: "mod+[", command: "navigation.back", when: "!terminalFocus" },
   { key: "mod+]", command: "navigation.forward", when: "!terminalFocus" },
   { key: "mod+j", command: "terminal.toggle" },

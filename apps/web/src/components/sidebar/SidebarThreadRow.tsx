@@ -690,6 +690,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
     (status === "preparing" || status === "working" || status === "waiting") &&
     durationStartedAt != null &&
     !Number.isNaN(Date.parse(durationStartedAt));
+  const hasWorkingDuration = hasDuration && (status === "preparing" || status === "working");
   const lastVisitedDate = lastVisitedAt === undefined ? null : parseTimestampDate(lastVisitedAt);
   const wokeAtDate = props.wokeAt === null ? null : parseTimestampDate(props.wokeAt);
   const isWoke =
@@ -1376,6 +1377,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
           }
         >
           <div
+            data-sidebar-card-content=""
             className={cn(
               "relative z-10 h-[4.875rem] px-(--sidebar-row-content-inset) py-(--sidebar-content-inset)",
               metaLineEmpty && "h-auto",
@@ -1404,6 +1406,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
                 <span
                   className={cn(
                     "group/sidebar-status-slot relative ml-auto flex h-5 min-w-8 shrink-0 items-stretch justify-end text-xs",
+                    hasWorkingDuration && "w-15",
                     props.sweepAction !== null && "hidden",
                     jumpHintLabel && JUMP_HINT_SLOT_CLASS_NAME,
                   )}
@@ -1414,6 +1417,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
                         ? "pointer-events-auto"
                         : "pointer-events-none group-has-[:focus-visible]/sidebar-status-slot:absolute group-has-[:focus-visible]/sidebar-status-slot:right-0 group-has-[:focus-visible]/sidebar-status-slot:opacity-0 group-any-hover/sidebar-row:absolute group-any-hover/sidebar-row:right-0 group-any-hover/sidebar-row:opacity-0",
                       "flex items-center self-center justify-self-end tabular-nums text-secondary-label",
+                      hasWorkingDuration && "w-full",
                     )}
                   >
                     {topStatus ? (
@@ -1442,6 +1446,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
                           className={cn(
                             "inline-flex items-center gap-1.5 font-medium",
                             topStatus.className,
+                            hasWorkingDuration && "w-full justify-between",
                           )}
                         >
                           <TopStatusIcon icon={topStatus.icon} className="size-3.5" />
@@ -1452,7 +1457,10 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
                             BackgroundThreadAnnouncer and the open thread's
                             timeline speak status changes instead. */}
                           {status === "preparing" || status === "working" ? (
-                            <span aria-hidden>
+                            <span
+                              aria-hidden
+                              className="min-w-0 truncate text-right text-sidebar-duration"
+                            >
                               <WorkingDuration
                                 environmentId={thread.environmentId}
                                 startedAt={resolveWorkingStartedAt(thread)}

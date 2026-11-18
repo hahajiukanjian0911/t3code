@@ -27,7 +27,7 @@ const NO_PROVIDER_MODELS: ServerProvider["models"] = [];
  * the draft resolves to on it. The draft store is read first so every derivation follows the only
  * hook here; in the composer body they would straddle its later hooks and lose their cache.
  */
-export function useComposerProviderModel(
+export function useComposerModelSelection(
   input: Omit<Parameters<typeof resolveComposerProviderSelection>[0], "entries"> & {
     readonly providerStatuses: ReadonlyArray<ServerProvider>;
     readonly settings: UnifiedSettings;
@@ -35,7 +35,6 @@ export function useComposerProviderModel(
     readonly threadRef: ScopedThreadRef | DraftId;
     readonly threadModelSelection: ModelSelection | null | undefined;
     readonly projectModelSelection: ModelSelection | null | undefined;
-    readonly promptInjectionState: ReturnType<typeof getComposerPromptInjectionState>;
     readonly threadStarted: boolean;
   },
 ) {
@@ -46,7 +45,6 @@ export function useComposerProviderModel(
     threadRef,
     threadModelSelection,
     projectModelSelection,
-    promptInjectionState,
     candidateInstanceIds,
     lockedProvider,
     lockedInstanceId,
@@ -84,22 +82,29 @@ export function useComposerProviderModel(
     projectModelSelection,
     settings,
   });
-  const selectedProviderModels = selection.selectedProviderEntry?.models ?? NO_PROVIDER_MODELS;
-  const composerProviderState = getComposerProviderState({
-    provider: selectedProvider,
-    model: modelState.selectedModel,
-    models: selectedProviderModels,
-    promptInjectionState,
-    modelOptions: modelState.modelOptions?.[selectedInstanceId],
-  });
   return {
-    providerInstanceEntries,
     ...selection,
+    providerInstanceEntries,
     selectedInstanceId,
     selectedProvider,
-    selectedProviderModels,
-    composerModelOptions: modelState.modelOptions,
     selectedModel: modelState.selectedModel,
-    composerProviderState,
+    composerModelOptions: modelState.modelOptions,
   };
+}
+
+export function useComposerProviderModel(
+  input: Parameters<typeof useComposerModelSelection>[0] & {
+    readonly promptInjectionState: ReturnType<typeof getComposerPromptInjectionState>;
+  },
+) {
+  const selection = useComposerModelSelection(input);
+  const selectedProviderModels = selection.selectedProviderEntry?.models ?? NO_PROVIDER_MODELS;
+  const composerProviderState = getComposerProviderState({
+    provider: selection.selectedProvider,
+    model: selection.selectedModel,
+    models: selectedProviderModels,
+    promptInjectionState: input.promptInjectionState,
+    modelOptions: selection.composerModelOptions?.[selection.selectedInstanceId],
+  });
+  return { ...selection, selectedProviderModels, composerProviderState };
 }

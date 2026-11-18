@@ -134,6 +134,10 @@ and a partly spent session may only regain its unused portion when the week rese
 stale reset times have no refill estimate; refresh Limits for a new reading. Claude's
 model-specific weekly allowances keep their reported values.
 
+On web and desktop, click a pooled limit card to see how the remaining quota changes over time.
+The solid line shows recorded readings for the current quota cycle. Each environment keeps up
+to 14 days of samples. The dashed line estimates future remaining quota and marks expected resets.
+
 Opening Limits checks the selected connected environments automatically. Each client waits at
 least five minutes between automatic checks of an environment, including after a failed check.
 If a window still looks stale, refresh Limits to re-check every provider and hub.
@@ -166,7 +170,7 @@ after signing in with `grok login`. Explicit `XAI_API_KEY` connections and custo
 or endpoint configurations do not report subscription limits.
 
 Muse Code reports its session and weekly windows and its tier once the Muse CLI has run in a thread.
-Until then it shows no limits. Readings are not kept across a server restart.
+Until then it shows no limits. After a restart, run the CLI again to refresh its current reading.
 
 API-key accounts may not report subscription limits. This also applies to Claude connections
 using a proxy through `ANTHROPIC_AUTH_TOKEN`.

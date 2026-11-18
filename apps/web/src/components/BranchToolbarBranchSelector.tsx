@@ -24,6 +24,7 @@ import {
   useState,
   useTransition,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
   type Ref,
 } from "react";
 
@@ -93,6 +94,7 @@ interface BranchToolbarBranchSelectorProps {
   onStartFromOriginChange: (startFromOrigin: boolean) => void;
   onCheckoutPullRequestRequest?: (reference: string) => void;
   onComposerFocusRequest?: () => void;
+  workspaceControl?: ReactNode;
 }
 
 const WORKTREE_CHANGE_BLOCKED_MESSAGE = "Stop the current turn to switch worktrees.";
@@ -117,6 +119,7 @@ export function BranchToolbarBranchSelector({
   onStartFromOriginChange,
   onCheckoutPullRequestRequest,
   onComposerFocusRequest,
+  workspaceControl,
 }: BranchToolbarBranchSelectorProps) {
   const composerFloatingLayerProps = useComposerMenuProps();
   const canWriteSourceControl = useEnvironmentScope(environmentId, AuthSourceControlWriteScope);
@@ -797,6 +800,14 @@ export function BranchToolbarBranchSelector({
           : null
       }
       renderItem={renderPickerItem}
+      footer={
+        workspaceControl ? (
+          <div className="flex items-center justify-between gap-3 border-t border-border/60 px-3 py-2">
+            <span className="text-xs font-medium text-muted-foreground">Workspace</span>
+            {workspaceControl}
+          </div>
+        ) : null
+      }
       getItemType={(item) =>
         item === checkoutPullRequestItemValue
           ? "checkout-pull-request"
@@ -858,6 +869,8 @@ export function BranchToolbarBranchSelector({
             disabled={isInitialBranchesLoadPending || isBranchActionPending}
             // NVDA browse mode re-reads a combobox when its attributes change, not when its text does.
             aria-label={`Branch: ${triggerLabel}`}
+            data-composer-shortcut={workspaceControl ? "composer.workspace" : undefined}
+            data-composer-context-control
           >
             <GitBranchIcon
               className={cn(

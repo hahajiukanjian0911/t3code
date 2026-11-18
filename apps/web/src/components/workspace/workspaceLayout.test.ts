@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  advanceWorkspaceMaximizeInApp,
   createWorkspaceLayout,
   moveWorkspaceWindow,
   restoreWorkspaceLayout,
+  toggleWorkspaceMaximizeInPanel,
   workspaceGroups,
 } from "./workspaceLayout";
 
@@ -58,15 +60,46 @@ describe("workspace window ownership", () => {
       hidden: { right: true },
       vertical: { main: true },
       dismissed: ["closed"],
-      sizes: { left: 280, right: 390, bottom: 260 },
+      groupWeights: { main: 1.4 },
+      panelZoomedGroup: { right: "right" },
+      maximized: { windowId: "surface:1:diff", stage: "companion" as const },
+      sizes: { left: 280, right: 390, bottom: 260, companion: 310 },
       floating: { x: 80, y: 40, width: 420, height: 300 },
     };
     expect(restoreWorkspaceLayout(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
     expect(
       restoreWorkspaceLayout({
-        sizes: { left: -10, right: "wide", bottom: Infinity },
+        sizes: { left: -10, right: "wide", bottom: Infinity, companion: -5 },
         floating: { x: -500, height: null },
+        maximized: { windowId: "threads", stage: "full" },
       }).sizes,
-    ).toEqual({ left: 180, right: 320, bottom: 220 });
+    ).toEqual({ left: 180, right: 320, bottom: 220, companion: 220 });
+    expect(
+      restoreWorkspaceLayout({
+        maximized: { windowId: "threads", stage: "full" },
+      }).maximized,
+    ).toBeNull();
+  });
+
+  it("enforces progressive 2-stage app maximize for non-chat windows and forbids sidebar maximize", () => {
+    expect(advanceWorkspaceMaximizeInApp(null, "threads")).toBeNull();
+    // Main chat goes straight to full and back
+    const chatStep1 = advanceWorkspaceMaximizeInApp(null, "chat:test");
+    expect(chatStep1).toEqual({ windowId: "chat:test", stage: "full" });
+    expect(advanceWorkspaceMaximizeInApp(chatStep1, "chat:test")).toBeNull();
+
+    // Non-chat window: Stage 1 (companion chat in left slot) -> Stage 2 (true full app) -> Tile
+    const nonChat1 = advanceWorkspaceMaximizeInApp(null, "surface:test:file");
+    expect(nonChat1).toEqual({ windowId: "surface:test:file", stage: "companion" });
+    const nonChat2 = advanceWorkspaceMaximizeInApp(nonChat1, "surface:test:file");
+    expect(nonChat2).toEqual({ windowId: "surface:test:file", stage: "full" });
+    expect(advanceWorkspaceMaximizeInApp(nonChat2, "surface:test:file")).toBeNull();
+
+    // Panel-level monocle toggle
+    let layout = createWorkspaceLayout();
+    layout = toggleWorkspaceMaximizeInPanel(layout, "right", "right:split:b");
+    expect(layout.panelZoomedGroup.right).toBe("right:split:b");
+    layout = toggleWorkspaceMaximizeInPanel(layout, "right", "right:split:b");
+    expect(layout.panelZoomedGroup.right).toBeUndefined();
   });
 });

@@ -537,6 +537,7 @@ export function useSettingsRestore(onRestored?: () => void) {
     ...(settings.composerRichTextEnabled !== DEFAULT_UNIFIED_SETTINGS.composerRichTextEnabled
       ? ["Rich text composer"]
       : []),
+    ...(settings.vimMode !== DEFAULT_UNIFIED_SETTINGS.vimMode ? ["Vim mode"] : []),
     ...(settings.sendShortcut !== DEFAULT_UNIFIED_SETTINGS.sendShortcut ? ["Send shortcut"] : []),
     ...(settings.followUpBehavior !== DEFAULT_UNIFIED_SETTINGS.followUpBehavior
       ? ["Follow-up behavior"]
@@ -665,6 +666,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       proactivePanelsEnabled: DEFAULT_UNIFIED_SETTINGS.proactivePanelsEnabled,
       showSkillsInSlashMenu: DEFAULT_UNIFIED_SETTINGS.showSkillsInSlashMenu,
       composerRichTextEnabled: DEFAULT_UNIFIED_SETTINGS.composerRichTextEnabled,
+      vimMode: DEFAULT_UNIFIED_SETTINGS.vimMode,
       sendShortcut: DEFAULT_UNIFIED_SETTINGS.sendShortcut,
       followUpBehavior: DEFAULT_UNIFIED_SETTINGS.followUpBehavior,
       toolCallVisibility: DEFAULT_UNIFIED_SETTINGS.toolCallVisibility,
@@ -1139,6 +1141,29 @@ export function ChatSettingsPanel() {
                 updateSettings({ composerRichTextEnabled: Boolean(checked) })
               }
               aria-label="Rich text composer"
+            />
+          }
+        />
+        <SettingsRow
+          {...searchableSetting("composer-vim-mode")}
+          description="Enable modal Vim motions and operators in the composer and code editors."
+          resetAction={
+            settings.vimMode !== DEFAULT_UNIFIED_SETTINGS.vimMode ? (
+              <SettingResetButton
+                label="Vim mode"
+                onClick={() =>
+                  updateSettings({
+                    vimMode: DEFAULT_UNIFIED_SETTINGS.vimMode,
+                  })
+                }
+              />
+            ) : null
+          }
+          control={
+            <Switch
+              checked={settings.vimMode}
+              onCheckedChange={(checked) => updateSettings({ vimMode: Boolean(checked) })}
+              aria-label="Vim mode"
             />
           }
         />

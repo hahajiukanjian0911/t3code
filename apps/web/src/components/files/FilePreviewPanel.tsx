@@ -30,14 +30,10 @@ import {
   type PostRenderPhase,
   type SelectedLineRange,
 } from "@pierre/diffs";
-import {
-  Editor,
-  type EditorChangeEvent,
-  type EditorFactory,
-  type EditorOptions,
-} from "@pierre/diffs/edit";
+import { Editor, type EditorFactory, type EditorOptions } from "@pierre/diffs/edit";
 import type { WorkerPoolManager } from "@pierre/diffs/worker";
 import { EditProvider, File, Virtualizer, useWorkerPool } from "@pierre/diffs/react";
+import type { FileEditorPosition } from "./VimFileEditor";
 import { DiffWorkerPoolProvider } from "../DiffWorkerPoolProvider";
 import { useFilesystemReadAccess } from "~/state/filesystem";
 import {
@@ -137,6 +133,8 @@ import {
   setProjectFileQueryData,
   useProjectFileQuery,
 } from "./projectFilesQueryState";
+
+const VimFileEditor = lazy(() => import("./VimFileEditor"));
 
 const NO_FILE_REVISION_ATOM = Atom.make(null);
 
@@ -748,10 +746,10 @@ function needsWorkerHighlight(workerPool: WorkerPoolManager | undefined, file: F
 
 /** Enable editing only after worker highlighting renders; active edit sessions highlight on the main
  * thread. */
-function useEditableAfterHighlight(file: FileContents) {
+function useEditableAfterHighlight(file: FileContents, enabled: boolean) {
   const workerPool = useWorkerPool();
   const [highlightedFile, setHighlightedFile] = useState<FileContents | null>(null);
-  const needsHighlight = needsWorkerHighlight(workerPool, file);
+  const needsHighlight = enabled && needsWorkerHighlight(workerPool, file);
   const ready = !needsHighlight || highlightedFile === file;
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- primes the worker pool's highlight cache for this file and falls back to plain text if it fails
@@ -781,7 +779,10 @@ interface EditableFileSurfaceProps {
   wordWrap: boolean;
   onPostRender: FilePostRender;
   onPendingChange: (relativePath: string, pending: boolean) => void;
-  onEditorChange: (editor: FileEditor | null) => void;
+  onEditorChange: (focus: (() => void) | null) => void;
+  vimMode: boolean;
+  revealLine: number | null;
+  positions: Map<string, FileEditorPosition>;
 }
 
 interface FileSelectionOverride {
@@ -802,6 +803,9 @@ function EditableFileSurface({
   onPostRender,
   onPendingChange,
   onEditorChange,
+  vimMode,
+  revealLine,
+  positions,
 }: EditableFileSurfaceProps) {
   const addReviewComment = useComposerDraftStore((store) => store.addReviewComment);
   const removeReviewComment = useComposerDraftStore((store) => store.removeReviewComment);
@@ -831,13 +835,22 @@ function EditableFileSurface({
     setExternalFile(editableFileContents(environmentId, cwd, relativePath, contents));
     setEditedContents(null);
   }
-  const { ready: editable, onPostRender: onEditablePostRender } =
-    useEditableAfterHighlight(externalFile);
+  const { ready: editable, onPostRender: onEditablePostRender } = useEditableAfterHighlight(
+    externalFile,
+    !vimMode,
+  );
   const editorRef = useRef<FileEditor | null>(null);
   const editorOptions: EditorOptions<"file", FileCommentAnnotationGroup, undefined> = {
     onAttach: (editor) => {
       editorRef.current = editor;
-      onEditorChange(editor);
+      onEditorChange(() =>
+        editor.focus({
+          preventScroll: true,
+          ...(editor.getViewState().selections?.length
+            ? {}
+            : { lineNumber: revealLine ?? "first-visible" }),
+        }),
+      );
     },
     onComplete: () => {
       editorRef.current = null;
@@ -845,14 +858,14 @@ function EditableFileSurface({
     },
   };
 
-  const handleEditChange = ({
-    file,
-    lineAnnotations: nextLineAnnotations,
-  }: EditorChangeEvent<"file", FileCommentAnnotationGroup, undefined>) => {
-    if (file.contents === getProjectFileContents(environmentId, cwd, relativePath)) return;
-    setEditedContents(file.contents);
-    setProjectFileQueryData(environmentId, cwd, relativePath, file.contents);
-    changeFileSaveSession(saveTarget, file.contents);
+  const saveEdit = (
+    text: string,
+    nextLineAnnotations?: ReadonlyArray<FileCommentLineAnnotation>,
+  ) => {
+    if (text === getProjectFileContents(environmentId, cwd, relativePath)) return;
+    setEditedContents(text);
+    setProjectFileQueryData(environmentId, cwd, relativePath, text);
+    changeFileSaveSession(saveTarget, text);
     if (!nextLineAnnotations) return;
     const remapped = remapFileCommentAnnotations(nextLineAnnotations);
     // The editor hands back the array it was given until an edit moves an annotation.
@@ -868,7 +881,7 @@ function EditableFileSurface({
             startLine: entry.startLine,
             endLine: entry.endLine,
             text: entry.text,
-            contents: file.contents,
+            contents: text,
           }),
         );
       }
@@ -994,6 +1007,50 @@ function EditableFileSurface({
     });
   };
 
+  const renderAnnotation = (annotation: FileCommentLineAnnotation) => {
+    // Sent comments stay annotated so a failed send can restore them at remapped lines.
+    const entries = promptFileCommentEntries(annotation.metadata.entries, promptCommentIds);
+    if (entries.length === 0) return null;
+    return (
+      <div className="py-1">
+        {entries.map((entry) => (
+          <DiffCommentAnnotation
+            key={entry.id}
+            environmentId={environmentId}
+            projectId={projectId}
+            ownerKey={JSON.stringify([environmentId, composerDraftTarget, relativePath, entry.id])}
+            kind={entry.kind}
+            rangeLabel={formatFileCommentRange(entry.startLine, entry.endLine)}
+            text={entry.text}
+            onCancel={() => removeAnnotationEntry(entry.id)}
+            onComment={(text) => submitAnnotationEntry(entry.id, text)}
+            onDelete={() => removeAnnotationEntry(entry.id)}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  if (vimMode) {
+    return (
+      <Suspense fallback={<FileSurfaceLoading />}>
+        <VimFileEditor
+          path={relativePath}
+          contents={contents}
+          wordWrap={wordWrap}
+          revealLine={revealLine}
+          revealRequestId={revealRequestId}
+          positions={positions}
+          annotations={lineAnnotations}
+          renderAnnotation={renderAnnotation}
+          onBeginComment={beginComment}
+          onEdit={saveEdit}
+          onFocusReady={onEditorChange}
+        />
+      </Suspense>
+    );
+  }
+
   return (
     <EditProvider createEditor={createFileEditor}>
       <div ref={surfaceRef} className="flex min-h-0 flex-1">
@@ -1008,7 +1065,7 @@ function EditableFileSurface({
             file={externalFile}
             edit={editable}
             editorOptions={editorOptions}
-            onEditChange={handleEditChange}
+            onEditChange={({ file, lineAnnotations }) => saveEdit(file.contents, lineAnnotations)}
             options={{
               disableFileHeader: true,
               enableGutterUtility: !hasOpenCommentForm,
@@ -1025,37 +1082,7 @@ function EditableFileSurface({
             }}
             selectedLines={selectedRange}
             lineAnnotations={lineAnnotations}
-            renderAnnotation={(annotation) => {
-              // Sent comments stay annotated so a failed send can restore them at remapped lines.
-              const entries = promptFileCommentEntries(
-                annotation.metadata.entries,
-                promptCommentIds,
-              );
-              if (entries.length === 0) return null;
-              return (
-                <div className="py-1">
-                  {entries.map((entry) => (
-                    <DiffCommentAnnotation
-                      key={entry.id}
-                      environmentId={environmentId}
-                      projectId={projectId}
-                      ownerKey={JSON.stringify([
-                        environmentId,
-                        composerDraftTarget,
-                        relativePath,
-                        entry.id,
-                      ])}
-                      kind={entry.kind}
-                      rangeLabel={formatFileCommentRange(entry.startLine, entry.endLine)}
-                      text={entry.text}
-                      onCancel={() => removeAnnotationEntry(entry.id)}
-                      onComment={(text) => submitAnnotationEntry(entry.id, text)}
-                      onDelete={() => removeAnnotationEntry(entry.id)}
-                    />
-                  ))}
-                </div>
-              );
-            }}
+            renderAnnotation={renderAnnotation}
             className="min-h-full"
           />
         </Virtualizer>
@@ -1101,6 +1128,8 @@ function RenderedMarkdownSurface({
   | "wordWrap"
   | "onPostRender"
   | "onEditorChange"
+  | "vimMode"
+  | "positions"
 > & {
   threadRef: ScopedThreadRef;
   readOnly: boolean;
@@ -1179,6 +1208,8 @@ export default function FilePreviewPanel({
     attachment === undefined ? resolveFilePreviewPath(requestedPath, cwd) : requestedPath;
   const draft = typeof composerDraftTarget === "string";
   const { resolvedTheme } = useTheme();
+  const vimMode = useClientSettings((settings) => settings.vimMode);
+  const [editorPositions] = useState(() => new Map<string, FileEditorPosition>());
   const defaultWordWrap = useClientSettings((settings) => settings.wordWrap);
   const [wordWrapOverride, setWordWrapOverride] = useState<boolean | null>(null);
   const wordWrap = wordWrapOverride ?? defaultWordWrap;
@@ -1313,24 +1344,14 @@ export default function FilePreviewPanel({
     !(isMarkdown && renderMarkdown) &&
     !(tableDelimiter && renderTable);
   const contentFocusRef = useRef<HTMLDivElement>(null);
-  const fileEditorRef = useRef<FileEditor | null>(null);
+  const fileEditorRef = useRef<(() => void) | null>(null);
   const focusEditorFromContent = () => {
-    const editor = fileEditorRef.current;
-    if (!editor || document.activeElement !== contentFocusRef.current) return;
-    // Without a caret the editor focuses with no selection, so no caret shows and typing
-    // lands on whatever the browser selection held.
-    const hasCaret = Boolean(editor.getViewState().selections?.length);
-    editor.focus(
-      hasCaret
-        ? { preventScroll: true }
-        : { preventScroll: true, lineNumber: revealLine ?? "first-visible" },
-    );
+    if (document.activeElement === contentFocusRef.current) fileEditorRef.current?.();
   };
-  const handleEditorChange = (editor: FileEditor | null) => {
-    fileEditorRef.current = editor;
+  const handleEditorChangeStable = useStableCallback((focus: (() => void) | null) => {
+    fileEditorRef.current = focus;
     focusEditorFromContent();
-  };
-  const handleEditorChangeStable = useStableCallback(handleEditorChange);
+  });
   const focusEditorOnTreeRowClickOrEnter = (event: {
     nativeEvent: Event;
     altKey: boolean;
@@ -1754,6 +1775,9 @@ export default function FilePreviewPanel({
                   onPostRender={onFilePostRender}
                   onPendingChange={onPendingChange}
                   onEditorChange={handleEditorChangeStable}
+                  vimMode={vimMode}
+                  revealLine={revealLine}
+                  positions={editorPositions}
                 />
               </DiffWorkerPoolProvider>
             )

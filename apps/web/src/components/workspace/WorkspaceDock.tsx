@@ -1,4 +1,5 @@
 import {
+  Fragment,
   createContext,
   use,
   useEffect,
@@ -16,6 +17,7 @@ import {
   Columns2Icon,
   EllipsisIcon,
   LayersIcon,
+  Maximize2Icon,
   Minimize2Icon,
   PanelBottomIcon,
   PanelLeftIcon,
@@ -28,14 +30,19 @@ import { useStableCallback } from "../../hooks/useStableCallback";
 import { isElectron } from "../../env";
 import { notifyWorkspaceLayout } from "../../lib/workspaceLayoutEvents";
 import { workspaceAreaProps } from "../../lib/workspaceFocus";
+import { registerCommands, registerMenuAction } from "../../shortcuts/dispatcher";
 import { cn } from "../../lib/utils";
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import { Button } from "../ui/button";
 import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "../ui/menu";
 import {
+  advanceWorkspaceMaximizeInApp,
+  canMaximizeWorkspaceWindowInApp,
   createWorkspaceLayout,
+  isChatWorkspaceWindowId,
   moveWorkspaceWindow,
   restoreWorkspaceLayout,
+  toggleWorkspaceMaximizeInPanel,
   workspaceGroups,
   workspacePanels,
   type WindowPlacement,
@@ -119,9 +126,50 @@ function createDockStore() {
     for (const id of Object.keys(snapshot.windows)) {
       const previous = snapshot.layout.placements[id],
         placement = next.placements[id];
-      if (previous?.panel !== placement?.panel || previous?.group !== placement?.group) park(id);
+      const maxChanged =
+        snapshot.layout.maximized?.windowId !== next.maximized?.windowId ||
+        snapshot.layout.maximized?.stage !== next.maximized?.stage;
+      if (
+        previous?.panel !== placement?.panel ||
+        previous?.group !== placement?.group ||
+        maxChanged
+      )
+        park(id);
     }
     publish({ ...snapshot, layout: next }, save);
+  };
+  const resolveTargetWindowId = (explicitId?: string): string | null => {
+    if (explicitId && snapshot.windows[explicitId]?.available) return explicitId;
+    if (typeof document !== "undefined") {
+      const activeWin = document.activeElement?.closest<HTMLElement>("[data-workspace-window]");
+      const domId = activeWin?.dataset.workspaceWindow;
+      if (domId && snapshot.windows[domId]?.available) return domId;
+    }
+    if (snapshot.focused && snapshot.windows[snapshot.focused]?.available) return snapshot.focused;
+    const chatWin = Object.values(snapshot.windows).find(
+      (win) => win.available && win.id.startsWith("chat:"),
+    );
+    if (chatWin) return chatWin.id;
+    return snapshot.windows.route?.available ? "route" : null;
+  };
+  const focusWindowContainer = (id: string, composer = false) => {
+    if (typeof document === "undefined" || typeof requestAnimationFrame === "undefined") return;
+    requestAnimationFrame(() => {
+      const container = snapshot.windows[id]?.container;
+      if (!container || !container.isConnected || !visibleWindow(snapshot, id)) return;
+      const composerInput =
+        composer && container.querySelector<HTMLElement>('[data-testid="composer-editor"]');
+      if (composerInput) {
+        composerInput.focus({ preventScroll: true });
+        return;
+      }
+      if (container.contains(document.activeElement)) return;
+      const preferred =
+        container.querySelector<HTMLElement>(
+          '[data-workspace-focus-default], .xterm-helper-textarea, [contenteditable="true"], textarea:not(:disabled), input:not(:disabled)',
+        ) ?? container.querySelector<HTMLElement>("[data-workspace-window]");
+      preferred?.focus({ preventScroll: true });
+    });
   };
   const activate = (id: string) => {
     const placement = snapshot.layout.placements[id];
@@ -160,6 +208,7 @@ function createDockStore() {
       if (members.length > 0) {
         updateLayout({
           ...snapshot.layout,
+          maximized: panel === "floating" ? snapshot.layout.maximized : null,
           hidden: { ...snapshot.layout.hidden, [panel]: !snapshot.layout.hidden[panel] },
         });
         return;
@@ -168,7 +217,10 @@ function createDockStore() {
         (value) => value.available && value.defaultPanel === panel && value.id !== "route",
       );
       if (window) {
-        updateLayout(moveWorkspaceWindow(snapshot.layout, window.id, { panel, group: panel }));
+        updateLayout({
+          ...moveWorkspaceWindow(snapshot.layout, window.id, { panel, group: panel }),
+          maximized: panel === "floating" ? snapshot.layout.maximized : null,
+        });
         activate(window.id);
       } else openers[panel]?.();
     },
@@ -194,8 +246,12 @@ function createDockStore() {
       ) {
         const currentActive = next.active[panel];
         next = moveWorkspaceWindow(next, window.id, { panel, group: panel });
-        if (!window.selected && currentActive) {
-          next = { ...next, active: { ...next.active, [panel]: currentActive } };
+        if (!window.selected) {
+          next = {
+            ...next,
+            hidden: snapshot.layout.hidden,
+            active: currentActive ? { ...next.active, [panel]: currentActive } : next.active,
+          };
         }
       }
       if (
@@ -239,13 +295,201 @@ function createDockStore() {
     close(id: string) {
       const window = snapshot.windows[id];
       if (window?.fixed || window?.closable === false) return;
+      if (snapshot.layout.maximized?.windowId === id) {
+        updateLayout({ ...snapshot.layout, maximized: null });
+      }
       if (window?.onClose) window.onClose();
-      else updateLayout({ ...snapshot.layout, dismissed: [...snapshot.layout.dismissed, id] });
+      else
+        updateLayout({
+          ...snapshot.layout,
+          maximized: snapshot.layout.maximized?.windowId === id ? null : snapshot.layout.maximized,
+          dismissed: [...snapshot.layout.dismissed, id],
+        });
     },
     move(id: string, target: WindowPlacement, edge?: WorkspaceEdge) {
       if (snapshot.windows[id]?.fixed) return;
       updateLayout(moveWorkspaceWindow(snapshot.layout, id, target, edge));
       activate(id);
+    },
+    toggleMaximizeInApp(explicitId?: string) {
+      const targetId = resolveTargetWindowId(explicitId);
+      if (!targetId) return false;
+      if (!canMaximizeWorkspaceWindowInApp(targetId)) {
+        // If already maximized on another window, allow Shift+Esc to exit; otherwise sidebar never maximizes.
+        if (snapshot.layout.maximized) {
+          updateLayout({ ...snapshot.layout, maximized: null });
+          return true;
+        }
+        return false;
+      }
+      const nextMax = advanceWorkspaceMaximizeInApp(snapshot.layout.maximized, targetId);
+      updateLayout({ ...snapshot.layout, maximized: nextMax });
+      activate(targetId);
+      focusWindowContainer(targetId);
+      return true;
+    },
+    exitMaximizeInApp() {
+      if (!snapshot.layout.maximized) return false;
+      updateLayout({ ...snapshot.layout, maximized: null });
+      return true;
+    },
+    toggleMaximizeInPanel(explicitId?: string) {
+      const targetId = resolveTargetWindowId(explicitId);
+      if (!targetId) return false;
+      const placement = snapshot.layout.placements[targetId];
+      if (!placement || placement.panel === "floating") return false;
+      const groupsInPanel = workspaceGroups(
+        snapshot.layout,
+        Object.values(snapshot.windows),
+        placement.panel,
+      );
+      if (groupsInPanel.length < 2 && !snapshot.layout.panelZoomedGroup[placement.panel]) {
+        return false;
+      }
+      updateLayout(
+        toggleWorkspaceMaximizeInPanel(snapshot.layout, placement.panel, placement.group),
+      );
+      activate(targetId);
+      focusWindowContainer(targetId);
+      return true;
+    },
+    focusPanel(panel: WorkspacePanel) {
+      const windows = Object.values(snapshot.windows);
+      const target =
+        panel === "main"
+          ? windows.find((win) => win.available && win.id.startsWith("chat:"))?.id
+          : undefined;
+      const id = target ?? workspaceGroups(snapshot.layout, windows, panel)[0]?.active;
+      if (!id) {
+        const open = openers[panel];
+        if (!open) return false;
+        open();
+        return true;
+      }
+      if (!visibleWindow(snapshot, id))
+        updateLayout({
+          ...snapshot.layout,
+          maximized: null,
+          panelZoomedGroup: { ...snapshot.layout.panelZoomedGroup, [panel]: undefined },
+        });
+      activate(id);
+      focusWindowContainer(id, panel === "main");
+      return true;
+    },
+    moveFocused(panel: WorkspacePanel) {
+      const id = resolveTargetWindowId();
+      if (!id || snapshot.windows[id]?.fixed || isChatWorkspaceWindowId(id)) return false;
+      const group =
+        workspaceGroups(snapshot.layout, Object.values(snapshot.windows), panel)[0]?.id ?? panel;
+      updateLayout(moveWorkspaceWindow(snapshot.layout, id, { panel, group }));
+      activate(id);
+      focusWindowContainer(id);
+      return true;
+    },
+    splitFocused(edge: "right" | "bottom", explicitId?: string) {
+      const targetId = resolveTargetWindowId(explicitId);
+      if (!targetId || snapshot.windows[targetId]?.fixed) return false;
+      const placement = snapshot.layout.placements[targetId];
+      if (!placement || placement.panel === "floating") return false;
+      updateLayout(moveWorkspaceWindow(snapshot.layout, targetId, placement, edge));
+      activate(targetId);
+      focusWindowContainer(targetId);
+      return true;
+    },
+    focusDirection(direction: "left" | "right" | "up" | "down") {
+      if (typeof document === "undefined") return false;
+      const currentId = resolveTargetWindowId();
+      const max = snapshot.layout.maximized;
+      // Niri column switch when maximized in app: left/right seamlessly slides between chat and non-chat columns!
+      if (max) {
+        const chatWin =
+          Object.values(snapshot.windows).find((w) => w.available && w.id.startsWith("chat:")) ??
+          (snapshot.windows.route?.available ? snapshot.windows.route : undefined);
+        if (max.stage === "full" && isChatWorkspaceWindowId(max.windowId)) {
+          if (direction === "left" && snapshot.windows.threads?.available) {
+            updateLayout({
+              ...snapshot.layout,
+              maximized: null,
+              hidden: { ...snapshot.layout.hidden, left: false },
+            });
+            activate("threads");
+            focusWindowContainer("threads");
+            return true;
+          }
+          if (direction === "right") {
+            const rightGroup = workspaceGroups(
+              snapshot.layout,
+              Object.values(snapshot.windows),
+              "right",
+            )[0];
+            if (rightGroup) {
+              updateLayout({
+                ...snapshot.layout,
+                maximized: { windowId: rightGroup.active, stage: "companion" },
+              });
+              activate(rightGroup.active);
+              focusWindowContainer(rightGroup.active);
+              return true;
+            }
+          }
+        } else if (
+          max.stage === "full" &&
+          !isChatWorkspaceWindowId(max.windowId) &&
+          direction === "left"
+        ) {
+          updateLayout({
+            ...snapshot.layout,
+            maximized: { windowId: max.windowId, stage: "companion" },
+          });
+          if (chatWin) {
+            activate(chatWin.id);
+            focusWindowContainer(chatWin.id);
+          }
+          return true;
+        }
+      }
+
+      const candidates = Object.values(snapshot.windows)
+        .filter((win) => win.id !== currentId && visibleWindow(snapshot, win.id))
+        .map((win) => ({ id: win.id, rect: win.container.getBoundingClientRect() }))
+        .filter(({ rect }) => rect.width > 4 && rect.height > 4);
+      if (candidates.length === 0) return false;
+
+      const currentRect = currentId
+        ? snapshot.windows[currentId]?.container.getBoundingClientRect()
+        : null;
+      if (!currentRect || currentRect.width <= 0) {
+        const first = candidates[0]!;
+        activate(first.id);
+        focusWindowContainer(first.id);
+        return true;
+      }
+      const cx = currentRect.left + currentRect.width / 2;
+      const cy = currentRect.top + currentRect.height / 2;
+      let best: { id: string; score: number } | null = null;
+      for (const candidate of candidates) {
+        const tx = candidate.rect.left + candidate.rect.width / 2;
+        const ty = candidate.rect.top + candidate.rect.height / 2;
+        const dx = tx - cx;
+        const dy = ty - cy;
+        const inDir =
+          direction === "left"
+            ? dx < -8
+            : direction === "right"
+              ? dx > 8
+              : direction === "up"
+                ? dy < -8
+                : dy > 8;
+        if (!inDir) continue;
+        const primary = direction === "left" || direction === "right" ? Math.abs(dx) : Math.abs(dy);
+        const cross = direction === "left" || direction === "right" ? Math.abs(dy) : Math.abs(dx);
+        const score = primary + cross * 2.2;
+        if (!best || score < best.score) best = { id: candidate.id, score };
+      }
+      if (!best) return false;
+      activate(best.id);
+      focusWindowContainer(best.id);
+      return true;
     },
     updateLayout,
   };
@@ -253,24 +497,60 @@ function createDockStore() {
 type DockStore = ReturnType<typeof createDockStore>;
 const DockContext = createContext<DockStore | null>(null);
 const WindowContext = createContext<string | null>(null);
+function activeMaximizedState(snapshot: DockSnapshot) {
+  const max = snapshot.layout.maximized;
+  if (!max) return null;
+  const target = snapshot.windows[max.windowId];
+  const placement = snapshot.layout.placements[max.windowId];
+  if (
+    !target?.available ||
+    snapshot.layout.dismissed.includes(max.windowId) ||
+    !placement ||
+    !canMaximizeWorkspaceWindowInApp(max.windowId)
+  ) {
+    return null;
+  }
+  return max;
+}
 function visibleWindow(snapshot: DockSnapshot, id: string): boolean {
   const window = snapshot.windows[id];
   const placement = snapshot.layout.placements[id];
-  if (!window?.available || !placement || snapshot.layout.hidden[placement.panel]) return false;
+  if (!window?.available || !placement) return false;
   const registered = Object.values(snapshot.windows);
   const chatPresent = registered.some((value) => value.available && value.id.startsWith("chat:"));
   if (id === "route" && chatPresent) return false;
+  const max = activeMaximizedState(snapshot);
+  if (
+    max &&
+    (placement.panel !== "floating" ||
+      snapshot.layout.placements[max.windowId]?.panel === "floating")
+  ) {
+    if (id === max.windowId) return true;
+    if (max.stage === "companion") {
+      const chatId =
+        registered.find((value) => value.available && value.id.startsWith("chat:"))?.id ??
+        (snapshot.windows.route?.available ? "route" : undefined);
+      return id === chatId;
+    }
+    return false;
+  }
+  if (snapshot.layout.hidden[placement.panel]) return false;
   const windows = registered.filter((value) => value.id !== "route" || !chatPresent);
-  return workspaceGroups(snapshot.layout, windows, placement.panel).some(
-    (group) => group.active === id,
-  );
+  const groups = workspaceGroups(snapshot.layout, windows, placement.panel);
+  const zoomed = snapshot.layout.panelZoomedGroup[placement.panel];
+  const activeGroups =
+    zoomed && groups.some((group) => group.id === zoomed)
+      ? groups.filter((group) => group.id === zoomed)
+      : groups;
+  return activeGroups.some((group) => group.active === id);
 }
 export function useWorkspaceDockEnabled(): boolean {
   return use(DockContext) !== null;
 }
-export function useWorkspaceWindowVisible(): boolean | undefined {
+export function useWorkspaceWindowVisible(windowId?: string): boolean | undefined {
   const store = use(DockContext);
-  const id = use(WindowContext);
+  const contextId = use(WindowContext);
+  const id = windowId ?? contextId;
   return useSyncExternalStore(store?.subscribe ?? subscribeNothing, () =>
     store && id ? visibleWindow(store.getSnapshot(), id) : undefined,
   );
@@ -402,6 +682,7 @@ function WindowContents({
     <div
       className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col"
       data-workspace-window={id}
+      tabIndex={-1}
       {...(id.startsWith("surface:")
         ? workspaceAreaProps("panel", 4, title)
         : id.startsWith("drawer:")
@@ -543,23 +824,98 @@ function DockFrame({
   const { layout } = snapshot;
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync, react/exhaustive-effect-dependencies -- repositions native browser layers after docking changes that do not resize their content
   useLayoutEffect(() => notifyWorkspaceLayout(), [layout]);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- registers global workspace window commands while the dock frame is mounted
+  useEffect(() => {
+    const consume = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    const actions = {
+      "workspace.toggleMaximizeInApp": () => store.toggleMaximizeInApp(),
+      "workspace.toggleMaximizeInPanel": () => store.toggleMaximizeInPanel(),
+      "workspace.splitRight": () => store.splitFocused("right"),
+      "workspace.splitDown": () => store.splitFocused("bottom"),
+      "floatingPanel.toggle": () => store.togglePanel("floating"),
+      "workspace.focusLeft": () => store.focusDirection("left"),
+      "workspace.focusRight": () => store.focusDirection("right"),
+      "workspace.focusUp": () => store.focusDirection("up"),
+      "workspace.focusDown": () => store.focusDirection("down"),
+      "workspace.focusPanel.left": () => store.focusPanel("left"),
+      "workspace.focusPanel.main": () => store.focusPanel("main"),
+      "workspace.focusPanel.right": () => store.focusPanel("right"),
+      "workspace.focusPanel.bottom": () => store.focusPanel("bottom"),
+      "workspace.moveLeft": () => store.moveFocused("left"),
+      "workspace.moveRight": () => store.moveFocused("right"),
+      "workspace.moveDown": () => store.moveFocused("bottom"),
+      "workspace.moveFloat": () => store.moveFocused("floating"),
+    };
+    const disposers = [
+      registerCommands(
+        Object.fromEntries(
+          Object.entries(actions).map(([command, run]) => [
+            command,
+            (event: KeyboardEvent) => {
+              if ((event.repeat && !command.startsWith("workspace.focus")) || run() === false)
+                return false;
+              consume(event);
+            },
+          ]),
+        ),
+        {
+          capture: true,
+          keybindings: () => keybindings,
+          when: (event) =>
+            !(
+              event.target instanceof Element &&
+              event.target.closest(
+                "[data-keybinding-capture], [role='dialog'], [role='alertdialog']",
+              )
+            ),
+        },
+      ),
+      ...Object.entries(actions).map(([command, run]) => registerMenuAction(command, run)),
+    ];
+    return () => {
+      for (const dispose of disposers) dispose();
+    };
+  }, [keybindings, store]);
   const windows = Object.values(snapshot.windows);
   const chatPresent = windows.some((window) => window.available && window.id.startsWith("chat:"));
   const shown = windows.filter((window) => window.id !== "route" || !chatPresent);
+  const activeMax = activeMaximizedState(snapshot);
+  const maximizedFloating =
+    !!activeMax && layout.placements[activeMax.windowId]?.panel === "floating";
+  const companionChatId =
+    shown.find((window) => window.available && window.id.startsWith("chat:"))?.id ??
+    (snapshot.windows.route?.available ? "route" : undefined);
   const groups = Object.fromEntries(
     workspacePanels.map((panel) => [panel, workspaceGroups(layout, shown, panel)]),
   ) as Record<WorkspacePanel, ReturnType<typeof workspaceGroups>>;
-  const panelVisible = (panel: WorkspacePanel) =>
-    !layout.hidden[panel] && (panel === "main" || groups[panel].length > 0);
+  const panelVisible = (panel: WorkspacePanel) => {
+    if (panel === "floating")
+      return !maximizedFloating && !layout.hidden.floating && groups.floating.length > 0;
+    if (activeMax) return false;
+    return !layout.hidden[panel] && (panel === "main" || groups[panel].length > 0);
+  };
   const left = panelVisible("left"),
     right = panelVisible("right"),
     bottom = panelVisible("bottom"),
     floatingVisible = panelVisible("floating");
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- subscribes to document Escape key while floating modal is visible
-  useEffect(() => {
+  const dockedThreads = groups.left.length === 1 && groups.left[0]?.active === "threads";
+  const leftGridColumn = left && !dockedThreads;
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- install dismissal before the restored floating window can receive its next key.
+  useLayoutEffect(() => {
     if (!floatingVisible) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (
+        event.key !== "Escape" ||
+        event.shiftKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        event.defaultPrevented
+      )
+        return;
       const target = event.target instanceof Element ? event.target : null;
       if (target?.closest("[role='dialog'], [role='menu'], [data-workspace-dragging]")) return;
       event.preventDefault();
@@ -587,46 +943,74 @@ function DockFrame({
     });
   const panel = (key: Exclude<WorkspacePanel, "floating">) => {
     if (groups[key].length === 0 && key !== "main") return null;
+    const zoomedId = layout.panelZoomedGroup[key];
+    const visibleGroups =
+      zoomedId && groups[key].some((group) => group.id === zoomedId)
+        ? groups[key].filter((group) => group.id === zoomedId)
+        : groups[key];
+    const isVertical = Boolean(layout.vertical[key]);
+    const threadSidebar = key === "left" && dockedThreads;
     return (
       <section
         key={key}
-        hidden={!panelVisible(key)}
+        hidden={!threadSidebar && !panelVisible(key)}
         inert={!panelVisible(key)}
         aria-label={panelLabels[key]}
         data-workspace-panel={key}
+        data-workspace-panel-zoomed={
+          zoomedId && visibleGroups.length === 1 && groups[key].length > 1 ? "" : undefined
+        }
         data-workspace-group={key === "main" && groups.main.length === 0 ? "main" : undefined}
         data-workspace-owner={key === "main" && groups.main.length === 0 ? "main" : undefined}
         className={cn(
           "relative flex min-h-0 min-w-0 overflow-visible",
+          threadSidebar && "workspace-docked-sidebar",
           key === "main" &&
             groups.main.length === 0 &&
             "workspace-window-card workspace-window-surface-main",
         )}
-        style={{ gridArea: key }}
+        style={threadSidebar ? { width: layout.sizes.left } : { gridArea: key }}
       >
-        <div
-          className={cn(
-            "relative flex min-h-0 min-w-0 flex-1 gap-(--workspace-seam)",
-            layout.vertical[key] && "flex-col",
-          )}
-        >
-          {groups[key].map((group) => (
-            <div
-              key={group.id}
-              data-workspace-group={group.id}
-              data-workspace-owner={key}
-              className={cn(
-                "workspace-window-card relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-                key === "left"
-                  ? "workspace-window-surface-left"
-                  : key === "right"
-                    ? "workspace-window-surface-right"
-                    : "workspace-window-surface-main",
-              )}
-            >
-              {renderGroupWindows(group)}
-            </div>
-          ))}
+        <div className={cn("relative flex min-h-0 min-w-0 flex-1", isVertical && "flex-col")}>
+          {groups[key].map((group) => {
+            const isHiddenByZoom =
+              Boolean(zoomedId) &&
+              visibleGroups.length === 1 &&
+              groups[key].length > 1 &&
+              group.id !== zoomedId;
+            const visibleIdx = visibleGroups.findIndex((item) => item.id === group.id);
+            const weight = layout.groupWeights[group.id] ?? 1;
+            return (
+              <Fragment key={group.id}>
+                {visibleIdx > 0 ? (
+                  <GroupResize
+                    store={store}
+                    panel={key}
+                    vertical={isVertical}
+                    beforeGroupId={visibleGroups[visibleIdx - 1]!.id}
+                    afterGroupId={group.id}
+                  />
+                ) : null}
+                <div
+                  hidden={isHiddenByZoom}
+                  inert={isHiddenByZoom}
+                  data-workspace-group={group.id}
+                  data-workspace-owner={key}
+                  style={isHiddenByZoom ? undefined : { flex: `${weight} ${weight} 0%` }}
+                  className={cn(
+                    "workspace-window-card relative flex min-h-0 min-w-0 flex-col overflow-hidden",
+                    key === "left"
+                      ? "workspace-window-surface-left"
+                      : key === "right"
+                        ? "workspace-window-surface-right"
+                        : "workspace-window-surface-main",
+                  )}
+                >
+                  {renderGroupWindows(group)}
+                </div>
+              </Fragment>
+            );
+          })}
         </div>
         {key === "right" ? (
           <div
@@ -670,6 +1054,10 @@ function DockFrame({
           }
         }}
         onClick={() => store.activate(id)}
+        onDoubleClick={(event) => {
+          if (event.target instanceof Element && event.target.closest("[role='button']")) return;
+          if (store.toggleMaximizeInApp(id)) event.stopPropagation();
+        }}
         onAuxClick={(event) => {
           if (event.button === 1) store.close(id);
         }}
@@ -761,7 +1149,71 @@ function DockFrame({
       </Tooltip>
     );
   };
-  const panels = (["left", "main", "right", "bottom"] as const).map(panel);
+  const panels = activeMax ? null : (["left", "main", "right", "bottom"] as const).map(panel);
+  const maximizedStageView = activeMax ? (
+    activeMax.stage === "companion" &&
+    companionChatId &&
+    companionChatId !== activeMax.windowId &&
+    snapshot.windows[companionChatId] ? (
+      <>
+        <section
+          aria-label="Companion conversation"
+          data-workspace-panel="left"
+          data-workspace-companion-chat=""
+          className="relative flex min-h-0 min-w-0 overflow-visible"
+          style={{ gridArea: "companion" }}
+        >
+          <div className="workspace-window-card workspace-window-surface-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            {(() => {
+              mounted.add(companionChatId);
+              return (
+                <PortalMount
+                  node={snapshot.windows[companionChatId]!.container}
+                  className="h-full min-h-0 min-w-0 flex-1"
+                />
+              );
+            })()}
+          </div>
+          <CompanionResize store={store} />
+        </section>
+        <section
+          aria-label={snapshot.windows[activeMax.windowId]?.title ?? "Maximized window"}
+          data-workspace-panel={layout.placements[activeMax.windowId]?.panel ?? "right"}
+          data-workspace-maximized-stage="companion"
+          className="workspace-window-card workspace-window-surface-right relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+          style={{ gridArea: "stage" }}
+        >
+          {(() => {
+            mounted.add(activeMax.windowId);
+            return (
+              <PortalMount
+                node={snapshot.windows[activeMax.windowId]!.container}
+                className="h-full min-h-0 min-w-0 flex-1"
+              />
+            );
+          })()}
+        </section>
+      </>
+    ) : (
+      <section
+        aria-label={snapshot.windows[activeMax.windowId]?.title ?? "Maximized window"}
+        data-workspace-panel={layout.placements[activeMax.windowId]?.panel ?? "main"}
+        data-workspace-maximized-stage="full"
+        className="workspace-window-card workspace-window-surface-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+        style={{ gridArea: "full" }}
+      >
+        {(() => {
+          mounted.add(activeMax.windowId);
+          return (
+            <PortalMount
+              node={snapshot.windows[activeMax.windowId]!.container}
+              className="h-full min-h-0 min-w-0 flex-1"
+            />
+          );
+        })()}
+      </section>
+    )
+  ) : null;
   const floatingTabs = groups.floating.flatMap((group) =>
     group.windows.map((id) => ({ id, group: group.id, key: "floating" as const })),
   );
@@ -791,7 +1243,18 @@ function DockFrame({
           data-workspace-panel="floating"
           className="workspace-window-surface-floating relative z-10 flex h-full max-h-[820px] w-full max-w-[1060px] min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border"
         >
-          <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-border/60 px-3.5">
+          <div
+            onDoubleClick={(event) => {
+              if (
+                event.target instanceof Element &&
+                event.target.closest("button, [role='button']")
+              )
+                return;
+              if (activeFloatingId && store.toggleMaximizeInApp(activeFloatingId))
+                event.stopPropagation();
+            }}
+            className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-border/60 px-3.5"
+          >
             <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto [scrollbar-width:none]">
               {floatingTabs.length > 1 ? (
                 renderTabs(floatingTabs)
@@ -849,16 +1312,17 @@ function DockFrame({
             </div>
           </div>
           <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
-            {groups.floating.map((group) => (
-              <div
-                key={group.id}
-                data-workspace-group={group.id}
-                data-workspace-owner="floating"
-                className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-              >
-                {renderGroupWindows(group)}
-              </div>
-            ))}
+            {!maximizedFloating &&
+              groups.floating.map((group) => (
+                <div
+                  key={group.id}
+                  data-workspace-group={group.id}
+                  data-workspace-owner="floating"
+                  className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                >
+                  {renderGroupWindows(group)}
+                </div>
+              ))}
           </div>
         </section>
       </div>
@@ -867,13 +1331,26 @@ function DockFrame({
     <div
       className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-(--workspace-board) [--workspace-board:color-mix(in_oklab,var(--background),var(--foreground)_4%)] [--workspace-seam:6px] [--workspace-topbar-height:34px]"
       data-workspace-dock=""
+      data-workspace-maximized={activeMax?.stage}
     >
       <header
         className="drag-region relative grid h-[34px] min-h-[34px] shrink-0 items-center gap-(--workspace-seam) px-(--workspace-seam) wco:pr-(--workspace-native-controls-inset)"
         style={{
-          gridTemplateColumns: `${left ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr)${right ? ` ${layout.sizes.right}px` : ""}`,
+          gridTemplateColumns: activeMax
+            ? activeMax.stage === "companion"
+              ? `${layout.sizes.companion}px minmax(0,1fr)`
+              : "max-content minmax(0,1fr)"
+            : `${left ? `${layout.sizes.left}px` : "max-content"} minmax(0,1fr)${right ? ` ${layout.sizes.right}px` : ""}`,
         }}
         data-workspace-titlebar=""
+        onDoubleClick={(event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          if (target?.closest("button, [role='tab'], [role='button'], input, a")) return;
+          if (store.toggleMaximizeInApp()) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }}
       >
         <div
           className="flex h-full min-w-0 items-center gap-3 overflow-hidden pr-3 pl-(--workspace-controls-left)"
@@ -901,6 +1378,23 @@ function DockFrame({
             ) : mainWindow.id === "route" && mainWindow.title === "T3 Code" ? null : (
               <span className="workspace-window-label truncate">{mainWindow.title}</span>
             )
+          ) : null}
+          {activeMax ? (
+            <button
+              type="button"
+              data-workspace-maximize-pill=""
+              onClick={() => store.toggleMaximizeInApp(activeMax.windowId)}
+              className="ml-1.5 inline-flex h-5 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2 text-2xs font-medium text-primary transition-colors hover:bg-primary/15 [-webkit-app-region:no-drag]"
+            >
+              <span>
+                {activeMax.stage === "companion"
+                  ? `${snapshot.windows[activeMax.windowId]?.title ?? "Window"} · Stage 1`
+                  : `${snapshot.windows[activeMax.windowId]?.title ?? "Window"} · Maximized`}
+              </span>
+              <span className="font-mono text-3xs opacity-80">
+                {shortcutLabelForCommand(keybindings, "workspace.toggleMaximizeInApp") ?? "⇧Esc"}
+              </span>
+            </button>
           ) : null}
           {renderTabs(headerWindows.filter((window) => window.key === "bottom"))}
         </div>
@@ -938,23 +1432,68 @@ function DockFrame({
       {controls}
       <div
         ref={(node) => store.setBody(node)}
+        data-thread-sidebar-closed={!activeMax && dockedThreads && !left ? "" : undefined}
         className="relative grid min-h-0 flex-1 gap-(--workspace-seam) overflow-hidden px-(--workspace-seam) pb-(--workspace-seam)"
-        style={{
-          gridTemplateColumns: [
-            left ? `${layout.sizes.left}px` : null,
-            "minmax(0,1fr)",
-            right ? `${layout.sizes.right}px` : null,
-          ]
-            .filter(Boolean)
-            .join(" "),
-          gridTemplateRows: bottom ? `minmax(0,1fr) ${layout.sizes.bottom}px` : "minmax(0,1fr)",
-          gridTemplateAreas: `"${left ? "left " : ""}main${right ? " right" : ""}"${bottom ? ` "${left ? "left " : ""}bottom${right ? " right" : ""}"` : ""}`,
-        }}
+        style={
+          activeMax
+            ? activeMax.stage === "companion" &&
+              companionChatId &&
+              companionChatId !== activeMax.windowId &&
+              snapshot.windows[companionChatId]
+              ? {
+                  gridTemplateColumns: `${layout.sizes.companion}px minmax(0,1fr)`,
+                  gridTemplateRows: "minmax(0,1fr)",
+                  gridTemplateAreas: `"companion stage"`,
+                }
+              : {
+                  gridTemplateColumns: "minmax(0,1fr)",
+                  gridTemplateRows: "minmax(0,1fr)",
+                  gridTemplateAreas: `"full"`,
+                }
+            : {
+                paddingLeft:
+                  dockedThreads && left
+                    ? `calc(${layout.sizes.left}px + 2 * var(--workspace-seam))`
+                    : undefined,
+                gridTemplateColumns: [
+                  leftGridColumn ? `${layout.sizes.left}px` : null,
+                  "minmax(0,1fr)",
+                  right ? `${layout.sizes.right}px` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" "),
+                gridTemplateRows: bottom
+                  ? `minmax(0,1fr) ${layout.sizes.bottom}px`
+                  : "minmax(0,1fr)",
+                gridTemplateAreas: `"${leftGridColumn ? "left " : ""}main${right ? " right" : ""}"${bottom ? ` "${leftGridColumn ? "left " : ""}bottom${right ? " right" : ""}"` : ""}`,
+              }
+        }
       >
         <div className="pointer-events-none invisible absolute inset-0" aria-hidden inert>
           {children}
         </div>
         {panels}
+        {maximizedStageView}
+        {activeMax?.stage === "full" ? (
+          <>
+            <button
+              type="button"
+              aria-label="Peek left workspace column"
+              data-workspace-edge-peek="left"
+              onClick={() => store.focusDirection("left")}
+              className="absolute inset-y-3 left-0.5 z-30 w-1 cursor-pointer rounded-full bg-foreground/15 opacity-60 transition-all hover:w-1.5 hover:bg-primary hover:opacity-100"
+            />
+            {isChatWorkspaceWindowId(activeMax.windowId) && groups.right.length > 0 ? (
+              <button
+                type="button"
+                aria-label="Peek right workspace column"
+                data-workspace-edge-peek="right"
+                onClick={() => store.focusDirection("right")}
+                className="absolute inset-y-3 right-0.5 z-30 w-1 cursor-pointer rounded-full bg-foreground/15 opacity-60 transition-all hover:w-1.5 hover:bg-primary hover:opacity-100"
+              />
+            ) : null}
+          </>
+        ) : null}
         {chatPresent && snapshot.windows.route ? (
           <PortalMount
             node={snapshot.windows.route.container}
@@ -984,6 +1523,20 @@ function DockFrame({
 }
 function DockMenu({ store, id }: { store: DockStore; id: string }) {
   const panelLabels = workspacePanelLabel();
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const placement = snapshot.layout.placements[id];
+  const groupsInPanel = placement
+    ? workspaceGroups(snapshot.layout, Object.values(snapshot.windows), placement.panel)
+    : [];
+  const canMaxInPanel =
+    Boolean(placement && placement.panel !== "floating") &&
+    (groupsInPanel.length > 1 ||
+      Boolean(placement && snapshot.layout.panelZoomedGroup[placement.panel]));
+  const isMaxInPanel = Boolean(
+    placement && snapshot.layout.panelZoomedGroup[placement.panel] === placement.group,
+  );
+  const canMaxInApp = canMaximizeWorkspaceWindowInApp(id);
+  const isMaxInApp = snapshot.layout.maximized?.windowId === id;
   const split = (edge: "right" | "bottom") => {
     const position = store.getSnapshot().layout.placements[id];
     if (position) store.move(id, position, edge);
@@ -996,6 +1549,29 @@ function DockMenu({ store, id }: { store: DockStore; id: string }) {
         <EllipsisIcon className="size-3.5" />
       </MenuTrigger>
       <MenuPopup>
+        {canMaxInApp ? (
+          <MenuItem onClick={() => store.toggleMaximizeInApp(id)}>
+            {isMaxInApp && snapshot.layout.maximized?.stage === "full" ? (
+              <Minimize2Icon />
+            ) : (
+              <Maximize2Icon />
+            )}
+            <span>
+              {isMaxInApp
+                ? snapshot.layout.maximized?.stage === "companion"
+                  ? "Maximize in app (Stage 2)"
+                  : "Restore from app maximize"
+                : "Maximize in app"}
+            </span>
+          </MenuItem>
+        ) : null}
+        {canMaxInPanel ? (
+          <MenuItem onClick={() => store.toggleMaximizeInPanel(id)}>
+            {isMaxInPanel ? <Minimize2Icon /> : <Maximize2Icon />}
+            <span>{isMaxInPanel ? "Restore split in panel" : "Maximize in panel"}</span>
+          </MenuItem>
+        ) : null}
+        {canMaxInApp || canMaxInPanel ? <MenuSeparator /> : null}
         {workspacePanels.map((panel) => (
           <MenuItem key={panel} onClick={() => store.move(id, { panel, group: panel })}>
             Move to {panelLabels[panel]}
@@ -1012,6 +1588,137 @@ function DockMenu({ store, id }: { store: DockStore; id: string }) {
         </MenuItem>
       </MenuPopup>
     </Menu>
+  );
+}
+
+function GroupResize({
+  store,
+  panel,
+  vertical,
+  beforeGroupId,
+  afterGroupId,
+}: {
+  store: DockStore;
+  panel: Exclude<WorkspacePanel, "floating">;
+  vertical: boolean;
+  beforeGroupId: string;
+  afterGroupId: string;
+}) {
+  const panelLabels = workspacePanelLabel();
+  return (
+    <div
+      role="separator"
+      aria-label={`Resize split in ${panelLabels[panel]}`}
+      aria-orientation={vertical ? "horizontal" : "vertical"}
+      data-workspace-group-resize=""
+      className={cn(
+        "group/resize relative z-20 flex shrink-0 touch-none items-center justify-center before:absolute before:-inset-1",
+        vertical
+          ? "h-(--workspace-seam) w-full cursor-row-resize"
+          : "h-full w-(--workspace-seam) cursor-col-resize",
+      )}
+      onDoubleClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const current = store.getSnapshot().layout;
+        const nextWeights = { ...current.groupWeights };
+        delete nextWeights[beforeGroupId];
+        delete nextWeights[afterGroupId];
+        store.updateLayout({ ...current, groupWeights: nextWeights });
+      }}
+      onPointerDown={(event) => {
+        event.preventDefault();
+        const node = event.currentTarget;
+        const parent = node.parentElement;
+        const beforeEl = node.previousElementSibling as HTMLElement | null;
+        const afterEl = node.nextElementSibling as HTMLElement | null;
+        if (!parent || !beforeEl || !afterEl) return;
+        node.setPointerCapture(event.pointerId);
+        const beforeRect = beforeEl.getBoundingClientRect();
+        const afterRect = afterEl.getBoundingClientRect();
+        const beforeStartPx = vertical ? beforeRect.height : beforeRect.width;
+        const afterStartPx = vertical ? afterRect.height : afterRect.width;
+        const totalPx = Math.max(1, beforeStartPx + afterStartPx);
+        const initLayout = store.getSnapshot().layout;
+        const wBefore0 = initLayout.groupWeights[beforeGroupId] ?? 1;
+        const wAfter0 = initLayout.groupWeights[afterGroupId] ?? 1;
+        const sumWeight = wBefore0 + wAfter0;
+        const startPos = vertical ? event.clientY : event.clientX;
+        const minPx = Math.min(120, totalPx * 0.25);
+        const move = (next: PointerEvent) => {
+          const delta = (vertical ? next.clientY : next.clientX) - startPos;
+          const nextBeforePx = Math.max(minPx, Math.min(totalPx - minPx, beforeStartPx + delta));
+          const ratio = nextBeforePx / totalPx;
+          const current = store.getSnapshot().layout;
+          store.updateLayout(
+            {
+              ...current,
+              groupWeights: {
+                ...current.groupWeights,
+                [beforeGroupId]: Math.max(0.1, sumWeight * ratio),
+                [afterGroupId]: Math.max(0.1, sumWeight * (1 - ratio)),
+              },
+            },
+            false,
+          );
+        };
+        const stop = () => {
+          store.updateLayout(store.getSnapshot().layout);
+          node.removeEventListener("pointermove", move);
+          node.removeEventListener("pointerup", stop);
+          node.removeEventListener("pointercancel", stop);
+        };
+        node.addEventListener("pointermove", move);
+        node.addEventListener("pointerup", stop);
+        node.addEventListener("pointercancel", stop);
+      }}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none shrink-0 rounded-full bg-foreground/40 opacity-0 group-hover/resize:opacity-100 group-active/resize:opacity-100",
+          vertical ? "h-[2px] w-8" : "h-8 w-[2px]",
+        )}
+      />
+    </div>
+  );
+}
+
+function CompanionResize({ store }: { store: DockStore }) {
+  return (
+    <div
+      role="separator"
+      aria-label="Resize companion conversation"
+      aria-orientation="vertical"
+      className="group/resize absolute inset-y-0 -right-(--workspace-seam) z-20 flex w-(--workspace-seam) cursor-col-resize touch-none items-center justify-center before:absolute before:-inset-1"
+      onPointerDown={(event) => {
+        event.preventDefault();
+        const node = event.currentTarget;
+        node.setPointerCapture(event.pointerId);
+        const initial = store.getSnapshot().layout.sizes.companion;
+        const start = event.clientX;
+        const move = (next: PointerEvent) => {
+          const delta = next.clientX - start;
+          const value = Math.max(220, Math.min(640, initial + delta));
+          const current = store.getSnapshot().layout;
+          store.updateLayout({ ...current, sizes: { ...current.sizes, companion: value } }, false);
+        };
+        const stop = () => {
+          store.updateLayout(store.getSnapshot().layout);
+          node.removeEventListener("pointermove", move);
+          node.removeEventListener("pointerup", stop);
+          node.removeEventListener("pointercancel", stop);
+        };
+        node.addEventListener("pointermove", move);
+        node.addEventListener("pointerup", stop);
+        node.addEventListener("pointercancel", stop);
+      }}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none h-8 w-[2px] shrink-0 rounded-full bg-foreground/40 opacity-0 group-hover/resize:opacity-100 group-active/resize:opacity-100"
+      />
+    </div>
   );
 }
 
@@ -1080,6 +1787,12 @@ function WindowGrab({ store, id, title }: { store: DockStore; id: string; title:
           <button
             aria-label={`Drag ${title}`}
             className="absolute top-0 left-1/2 z-20 grid h-3 w-16 -translate-x-1/2 cursor-grab touch-none place-items-center rounded-b-lg opacity-0 hover:opacity-100 focus-visible:opacity-100 active:cursor-grabbing [-webkit-app-region:no-drag] pointer-coarse:opacity-75"
+            onDoubleClick={(event) => {
+              if (store.toggleMaximizeInApp(id)) {
+                event.preventDefault();
+                event.stopPropagation();
+              }
+            }}
             onPointerDown={(event) => {
               const body = store.getBody(),
                 window = store.getSnapshot().windows[id];

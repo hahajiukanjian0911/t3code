@@ -1,3 +1,4 @@
+import { WORKSPACE_PLACEMENT_COMMANDS } from "@t3tools/contracts";
 import { useAtomValue } from "@effect/atom-react";
 import {
   type KeybindingCommand,
@@ -58,6 +59,14 @@ const HTML_RENDER_SHORTCUT_COMMANDS: ReadonlySet<KeybindingCommand> = new Set([
   "sidebar.toggle",
   "rightPanel.toggle",
   "rightPanel.toggleMaximized",
+  "workspace.toggleMaximizeInApp",
+  "workspace.toggleMaximizeInPanel",
+  ...WORKSPACE_PLACEMENT_COMMANDS,
+  "workspace.focusLeft",
+  "workspace.focusRight",
+  "workspace.focusUp",
+  "workspace.focusDown",
+  "floatingPanel.toggle",
   "threadPanel.toggle",
   "terminal.toggle",
   "preview.toggle",

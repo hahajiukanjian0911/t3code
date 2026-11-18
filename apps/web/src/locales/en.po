@@ -371,6 +371,7 @@ msgid "<0/> Add to another machine"
 msgstr "<0/> Add to another machine"
 
 #: src/components/BranchToolbar.tsx
+#: src/components/BranchToolbarBranchSelector.tsx
 #: src/components/BranchToolbarEnvModeSelector.tsx
 #: src/components/BranchToolbarEnvModeSelector.tsx
 #: src/components/chat/ThreadDetailsPanel.tsx
@@ -1129,7 +1130,7 @@ msgstr "Confirm"
 #. 0: label
 #. 0: props.record.path
 #. 0: props.image.name
-#: src/components/ComposerPromptEditorTiptap.tsx
+#: src/components/ComposerFileMentionChip.tsx
 #: src/components/chat/ComposerAttachmentStrip.tsx
 #: src/components/chat/ComposerAttachmentStrip.tsx
 #: src/components/chat/GuestMessageAttachments.tsx
@@ -4365,6 +4366,7 @@ msgstr "Stashed prompts"
 
 #: src/components/chat/ComposerUsageLimits.tsx
 #: src/components/chat/ThreadDetailsUsage.tsx
+#: src/components/chat/ThreadDetailsUsage.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "Usage limits"
 msgstr "Usage limits"
@@ -4743,6 +4745,7 @@ msgstr "New model"
 #: src/components/settings/CodexSetupSection.tsx
 #: src/components/settings/CodexSetupSection.tsx
 #: src/components/settings/ResourceTelemetryDiagnostics.tsx
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
 msgid "Unavailable"
 msgstr "Unavailable"
 
@@ -8220,6 +8223,7 @@ msgstr "Line {0}"
 msgid "No checks reported"
 msgstr "No checks reported"
 
+#: src/components/RightPanelTabs.tsx
 #: src/components/chat/BackgroundWorkDetails.tsx
 #: src/components/chat/ThreadDetailsCard.tsx
 #: src/components/device/DevicePanel.tsx
@@ -9721,6 +9725,7 @@ msgstr "Could not create pairing URL"
 #: src/components/settings/AuthorizedClientsSettings.tsx
 #: src/components/settings/ThemeColorPicker.tsx
 #: src/components/settings/ThemeColorPicker.tsx
+#: src/components/usage/UsageLimitsPooled.tsx
 msgid "Hide"
 msgstr "Hide"
 
@@ -14145,6 +14150,7 @@ msgstr "Choose {0} color"
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
 #: src/components/settings/ThemeColorPicker.tsx
 #: src/components/settings/ThemeColorPicker.tsx
+#: src/components/usage/UsageLimitsPooled.tsx
 msgid "Show"
 msgstr "Show"
 
@@ -18897,16 +18903,6 @@ msgstr "Context: {0} tokens used"
 msgid "{0} of {1}{2} tokens"
 msgstr "{0} of {1}{2} tokens"
 
-#. 0: formatDuration(resetsAt - now); 1: " "; 2: formatUpcomingTimestamp(window.resetsAt, timestampFormat, now)
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "Resets in {0} ·{1} {2}"
-msgstr "Resets in {0} ·{1} {2}"
-
-#. 0: window.label; 1: left
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "{0}: {1}% left"
-msgstr "{0}: {1}% left"
-
 #. 0: props.summary === null ? null \\: ( <span className="text-muted-foreground"> <span aria-hidden>· </span> {props.summary} </span> )
 #: src/components/chat/TimelineOverlays.tsx
 msgid "<0/> Scroll to end {0}"
@@ -21354,3 +21350,208 @@ msgstr "1 merge loaded"
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "{0} merges loaded"
 msgstr "{0} merges loaded"
+
+#: src/components/CommandPalette.tsx
+msgid "Maximize Window in App"
+msgstr "Maximize Window in App"
+
+#: src/components/CommandPalette.tsx
+msgid "Maximize Window in Panel"
+msgstr "Maximize Window in Panel"
+
+#: src/components/CommandPalette.tsx
+msgid "Split Window Right"
+msgstr "Split Window Right"
+
+#: src/components/CommandPalette.tsx
+msgid "Split Window Down"
+msgstr "Split Window Down"
+
+#: src/components/CommandPalette.tsx
+msgid "Toggle Floating Panel"
+msgstr "Toggle Floating Panel"
+
+#: src/components/CommandPalette.tsx
+msgid "Focus Window Left"
+msgstr "Focus Window Left"
+
+#: src/components/CommandPalette.tsx
+msgid "Focus Window Right"
+msgstr "Focus Window Right"
+
+#: src/components/CommandPalette.tsx
+msgid "Focus Window Up"
+msgstr "Focus Window Up"
+
+#: src/components/CommandPalette.tsx
+msgid "Focus Window Down"
+msgstr "Focus Window Down"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Companion conversation"
+msgstr "Companion conversation"
+
+#: src/components/workspace/WorkspaceDock.tsx
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Maximized window"
+msgstr "Maximized window"
+
+#: src/components/workspace/WorkspaceDock.tsx
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Window"
+msgstr "Window"
+
+#. 0: snapshot.windows[activeMax.windowId]?.title ?? "Window"
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "{0} · Stage 1"
+msgstr "{0} · Stage 1"
+
+#. 0: snapshot.windows[activeMax.windowId]?.title ?? "Window"
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "{0} · Maximized"
+msgstr "{0} · Maximized"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Peek left workspace column"
+msgstr "Peek left workspace column"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Peek right workspace column"
+msgstr "Peek right workspace column"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Maximize in app (Stage 2)"
+msgstr "Maximize in app (Stage 2)"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Restore from app maximize"
+msgstr "Restore from app maximize"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Maximize in app"
+msgstr "Maximize in app"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Restore split in panel"
+msgstr "Restore split in panel"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Maximize in panel"
+msgstr "Maximize in panel"
+
+#. 0: panelLabels[panel]
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Resize split in {0}"
+msgstr "Resize split in {0}"
+
+#: src/components/workspace/WorkspaceDock.tsx
+msgid "Resize companion conversation"
+msgstr "Resize companion conversation"
+
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "Safe through cycle"
+msgstr "Safe through cycle"
+
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "Pool empty"
+msgstr "Pool empty"
+
+#. 0: trajectory.firstMemberEmpty.accountLabel; 1: formatDuration(trajectory.firstMemberEmpty.emptyAtMs - now)
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "{0} · in {1}"
+msgstr "{0} · in {1}"
+
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "None projected"
+msgstr "None projected"
+
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "First empty"
+msgstr "First empty"
+
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "Next reset"
+msgstr "Next reset"
+
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "Burn rate"
+msgstr "Burn rate"
+
+#. 0: trajectory.burnPercentPerHour
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "{0}%/h"
+msgstr "{0}%/h"
+
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "Burn rate window"
+msgstr "Burn rate window"
+
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "Recorded"
+msgstr "Recorded"
+
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "Projected"
+msgstr "Projected"
+
+#. 0: expanded ? "Hide" \\: "Show"; 1: displayTitle
+#: src/components/usage/UsageLimitsPooled.tsx
+msgid "{0} {1} quota trajectory"
+msgstr "{0} {1} quota trajectory"
+
+#: src/components/usage/UsageLimitTrajectoryPanel.tsx
+msgid "Reset time unavailable"
+msgstr "Reset time unavailable"
+
+#: src/components/CommandPalette.tsx
+msgid "Disable Vim Mode"
+msgstr "Disable Vim Mode"
+
+#: src/components/CommandPalette.tsx
+msgid "Enable Vim Mode"
+msgstr "Enable Vim Mode"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Enable modal Vim motions and operators in the composer and code editors."
+msgstr "Enable modal Vim motions and operators in the composer and code editors."
+
+#: src/components/settings/SettingsPanels.tsx
+#: src/components/settings/SettingsPanels.tsx
+msgid "Vim mode"
+msgstr "Vim mode"
+
+#: src/components/settings/ThemeCssEditor.tsx
+msgid "Vim mode active. Escape returns to Normal mode."
+msgstr "Vim mode active. Escape returns to Normal mode."
+
+#: src/components/CommandPalette.tsx
+msgid "Focus Left Panel"
+msgstr "Focus Left Panel"
+
+#: src/components/CommandPalette.tsx
+msgid "Focus Main Composer"
+msgstr "Focus Main Composer"
+
+#: src/components/CommandPalette.tsx
+msgid "Focus Right Panel"
+msgstr "Focus Right Panel"
+
+#: src/components/CommandPalette.tsx
+msgid "Focus Bottom Panel"
+msgstr "Focus Bottom Panel"
+
+#: src/components/CommandPalette.tsx
+msgid "Move Window to Left Panel"
+msgstr "Move Window to Left Panel"
+
+#: src/components/CommandPalette.tsx
+msgid "Move Window to Right Panel"
+msgstr "Move Window to Right Panel"
+
+#: src/components/CommandPalette.tsx
+msgid "Move Window to Bottom Panel"
+msgstr "Move Window to Bottom Panel"
+
+#: src/components/CommandPalette.tsx
+msgid "Move Window to Floating Panel"
+msgstr "Move Window to Floating Panel"

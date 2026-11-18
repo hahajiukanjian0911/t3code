@@ -426,6 +426,27 @@ describe("model picker navigation helpers", () => {
 });
 
 describe("chat/editor shortcuts", () => {
+  it("focuses adjacent windows without stealing plain Ctrl shortcuts on Windows or Linux", () => {
+    for (const platform of ["MacIntel", "Win32", "Linux"]) {
+      const modifiers =
+        platform === "MacIntel"
+          ? { ctrlKey: true, metaKey: true }
+          : { ctrlKey: true, altKey: true };
+      assert.equal(
+        resolveShortcutCommand(event({ key: "h", ...modifiers }), DEFAULT_RESOLVED_KEYBINDINGS, {
+          platform,
+        }),
+        "workspace.focusLeft",
+      );
+      assert.notEqual(
+        resolveShortcutCommand(event({ key: "h", ctrlKey: true }), DEFAULT_RESOLVED_KEYBINDINGS, {
+          platform,
+        }),
+        "workspace.focusLeft",
+      );
+    }
+  });
+
   it("toggles the thread panel by default without taking terminal keystrokes", () => {
     for (const platform of ["MacIntel", "Win32", "Linux"]) {
       const input = event({

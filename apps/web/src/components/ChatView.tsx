@@ -215,7 +215,6 @@ import {
 } from "~/lib/sideChatPane";
 import {
   NO_PROVIDER_MODEL_SELECTION,
-  providerInstanceEntriesFor,
   resolveProjectDefaultProviderModelSelection,
   shouldShowInstanceBadge,
 } from "../providerInstances";
@@ -370,6 +369,8 @@ import {
 import { useLocalStorage } from "~/hooks/useLocalStorage";
 import { useComposerHandleContext } from "../composerHandleContext";
 import { clampFileAttachmentUploadBytes } from "@t3tools/client-runtime/state/attachments";
+import { useComposerModelSelection } from "./chat/useComposerProviderModel";
+import { currentQuotaModelAtom } from "../state/usage";
 import { appAtomRegistry } from "../rpc/atomRegistry";
 import { assetEnvironment } from "../state/assets";
 import { readEnvironmentScope, readPreparedConnection } from "../state/session";
@@ -384,6 +385,7 @@ import {
   WorkspaceActions,
   WorkspacePanelActions,
   useWorkspaceDockEnabled,
+  useWorkspaceWindowVisible,
   useWorkspacePanel,
 } from "./workspace/WorkspaceDock";
 import { rightPanelSurfaceTitle, RightPanelSurfaceIcon } from "./RightPanelTabs";
@@ -1370,12 +1372,24 @@ export default function ChatView(props: ChatViewProps) {
     automaticEnvironment,
     autoUpdateEnvironments,
   });
-  const providerInstanceEntries = providerInstanceEntriesFor(
+  const activeThreadModelInstanceId = activeThread?.modelSelection.instanceId;
+  const quotaSelection = useComposerModelSelection({
     providerStatuses,
     settings,
-    activeProject?.id ?? null,
-  );
-  const activeThreadModelInstanceId = activeThread?.modelSelection.instanceId;
+    activeProjectId: activeProject?.id ?? null,
+    threadRef: composerDraftTarget,
+    threadModelSelection: activeThread?.modelSelection,
+    projectModelSelection: activeProjectDefaultModelSelection,
+    threadStarted: threadHasStarted(activeThread),
+    candidateInstanceIds: [
+      activeThread?.runtime?.providerInstanceId,
+      activeThreadModelInstanceId,
+      activeProjectDefaultModelSelection?.instanceId,
+    ],
+    lockedProvider: modelPickerLockedProvider,
+    lockedInstanceId: activeThread?.runtime?.providerInstanceId ?? activeThreadModelInstanceId,
+  });
+  const providerInstanceEntries = quotaSelection.providerInstanceEntries;
   const { selectedProviderEntry, requestedDriverKind } = resolveComposerProviderSelection({
     entries: providerInstanceEntries,
     candidateInstanceIds: [
@@ -2003,18 +2017,19 @@ export default function ChatView(props: ChatViewProps) {
   );
   // Selects only the mode, so canvas resizes rerender the chat view only when the
   // card switches presentation.
-  const threadPanelPresentation = useStore(
-    chatCanvasStore,
-    (state) =>
-      resolveChatCanvasModel({
-        measurements: state.measurements,
-        detailsCardMeasurement: state.detailsCardMeasurement,
-        threadRef: activeThreadRef,
-        preview: canvasPreview,
-        detailsCardInlineOpen: threadPanelInlineOpen,
-      }).detailsCardMode,
+  const threadPanelPresentation = useStore(chatCanvasStore, (state) =>
+    workspaceDock
+      ? "inline"
+      : resolveChatCanvasModel({
+          measurements: state.measurements,
+          detailsCardMeasurement: state.detailsCardMeasurement,
+          threadRef: activeThreadRef,
+          preview: canvasPreview,
+          detailsCardInlineOpen: threadPanelInlineOpen,
+        }).detailsCardMode,
   );
-  const threadPanelOpen = useRightPanelStore((state) =>
+  const dockedDetailsVisible = useWorkspaceWindowVisible(`details:${activeThreadKey}`);
+  const legacyThreadPanelOpen = useRightPanelStore((state) =>
     selectThreadPanelOpen(
       state.threadPanelVisibilityByThreadKey,
       activeThreadRef,
@@ -2440,6 +2455,7 @@ export default function ChatView(props: ChatViewProps) {
     deviceState,
     deviceStateLoaded,
     pullRequestPanelTarget,
+    dockedDetailsVisible: workspaceDock && dockedDetailsVisible === true,
     threadPanelPresentation,
     isServerThread,
     embedded,
@@ -2521,6 +2537,17 @@ export default function ChatView(props: ChatViewProps) {
   const pendingHandoffSelection =
     (composerModelSelectionApplies ? composerSelectedModelSelection : null) ??
     activeThread?.modelSelection;
+  const quotaModel = quotaSelection.selectedModel;
+  const quotaDriver = quotaSelection.selectedProviderEntry?.driverKind;
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- the Usage route opens over this chat and reads its live composer selection.
+  useLayoutEffect(() => {
+    if (embedded) return;
+    appAtomRegistry.set(
+      currentQuotaModelAtom,
+      quotaDriver && quotaModel ? { driver: quotaDriver, model: quotaModel, environmentId } : null,
+    );
+    return () => appAtomRegistry.set(currentQuotaModelAtom, null);
+  }, [embedded, quotaDriver, quotaModel, environmentId]);
   const pendingHandoffSelectionUsable = providerInstanceEntries.some(
     (entry) =>
       entry.instanceId === pendingHandoffSelection?.instanceId &&
@@ -3314,7 +3341,7 @@ export default function ChatView(props: ChatViewProps) {
     terminalAvailable: activeProject !== null,
     terminalOpen: terminalUiState.terminalOpen,
     terminalShortcutLabel: shortcutLabelForCommand(keybindings, "terminal.toggle"),
-    threadPanelOpen,
+    threadPanelOpen: workspaceDock ? dockedDetailsVisible === true : legacyThreadPanelOpen,
     threadPanelPresentation,
     threadPanelPopoverHandle,
     threadPanelShortcutLabel: shortcutLabelForCommand(keybindings, "threadPanel.toggle"),
@@ -3401,6 +3428,9 @@ export default function ChatView(props: ChatViewProps) {
   const rightPanelShell = activeThreadRef ? (
     <ChatRightPanel
       workspaceToolbar={workspaceDock}
+      {...(workspaceDock && !dockedDetailsVisible
+        ? { onOpenDetails: toggleThreadPanelStable }
+        : {})}
       sheet={shouldUsePlanSidebarSheet}
       workspaceLayoutElement={workspaceLayoutElement}
       widthStorageKey={`t3code:preview-panel-width:${activeThreadKey}`}
@@ -3463,6 +3493,78 @@ export default function ChatView(props: ChatViewProps) {
     </ChatRightPanel>
   ) : null;
 
+  const detailsPanel = (
+    <ThreadDetailsPanel
+      anchor={threadPanelPopoverAnchorRef}
+      handle={threadPanelPopoverHandle}
+      forceNewWorktree={multipleModelSelections !== null}
+      environmentId={activeThread.environmentId}
+      threadId={activeThread.id}
+      projectId={activeThread.projectId}
+      worktreePath={activeThread.worktreePath}
+      isServerThread={isServerThread}
+      {...(draftId ? { draftId } : {})}
+      composerDraftTarget={composerDraftTarget}
+      activeProjectName={activeProject?.title}
+      activeProjectScripts={activeProject ? activeProjectScripts : undefined}
+      preferredScriptId={
+        activeProject ? (lastInvokedScriptByProjectId[activeProject.id] ?? null) : null
+      }
+      keybindings={keybindings}
+      availableEditors={availableEditors}
+      showOpenInPicker={showOpenInPicker}
+      openInShortcutEnabled={
+        !(
+          rightPanelOpen &&
+          renderedRightPanelSurface?.kind === "file" &&
+          renderedRightPanelSurface.attachment === undefined
+        )
+      }
+      gitCwd={gitCwd}
+      workspaceMutationId={workspaceMutationId}
+      isGitRepo={isGitRepo}
+      envLocked={envLocked}
+      availableEnvironments={logicalProjectEnvironments}
+      autoEnvironmentLabel={autoEnvironmentLabel}
+      onAutoEnvironment={
+        draftId &&
+        !envLocked &&
+        canAutoBalanceEnvironments &&
+        loadBalancingSettings.loadBalancingEnabled
+          ? onAutoEnvironmentStable
+          : undefined
+      }
+      {...(canChangeEnvironment ? { onEnvironmentChange: onEnvironmentChangeStable } : {})}
+      onEnvModeChange={onEnvModeChangeStable}
+      envMode={envMode}
+      {...(canOverrideServerThreadEnvMode
+        ? {
+            activeThreadBranchOverride: activeThreadBranch,
+            onActiveThreadBranchOverrideChange: setPendingServerThreadBranch,
+          }
+        : {})}
+      startFromOrigin={startFromOrigin}
+      onStartFromOriginChange={onStartFromOriginChange}
+      {...(canCheckoutPullRequestIntoThread
+        ? { onCheckoutPullRequestRequest: openPullRequestDialogStable }
+        : {})}
+      onComposerFocusRequest={scheduleComposerFocusStable}
+      {...(isServerThread && isGitRepo ? { onOpenChanges: openChangesFromThreadPanelStable } : {})}
+      onRunProjectScript={runProjectScriptStable}
+      onAddProjectScript={saveProjectScriptStable}
+      onUpdateProjectScript={updateProjectScriptStable}
+      onDeleteProjectScript={deleteProjectScriptStable}
+      usage={{
+        model: quotaModel,
+        environmentId,
+        providerInstanceId: quotaSelection.selectedProviderEntry?.instanceId ?? null,
+        providers: providerStatuses,
+        sources: serverConfig?.usageLimitSources ?? EMPTY_USAGE_LIMIT_SOURCES,
+        contextWindow: activeContextWindow,
+      }}
+    />
+  );
+
   const content = (
     <div
       ref={setWorkspaceLayoutElement}
@@ -3520,11 +3622,7 @@ export default function ChatView(props: ChatViewProps) {
             >
               <div
                 data-chat-conversation-card=""
-                className={cn(
-                  "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-                  workspaceDock &&
-                    "in-data-[inline-details-docked]:workspace-window-card in-data-[inline-details-docked]:workspace-window-surface-main",
-                )}
+                className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
               >
                 <ThreadFind onClose={focusComposerStable} />
                 {isWorkspaceFileDragActive ? <WorkspaceFileDropOverlay /> : null}
@@ -4032,79 +4130,7 @@ export default function ChatView(props: ChatViewProps) {
                     onConfirm={handleSwitchCheckoutToThreadStable}
                   />
 
-                  <ThreadDetailsPanel
-                    anchor={threadPanelPopoverAnchorRef}
-                    handle={threadPanelPopoverHandle}
-                    forceNewWorktree={multipleModelSelections !== null}
-                    environmentId={activeThread.environmentId}
-                    threadId={activeThread.id}
-                    projectId={activeThread.projectId}
-                    worktreePath={activeThread.worktreePath}
-                    isServerThread={isServerThread}
-                    {...(draftId ? { draftId } : {})}
-                    composerDraftTarget={composerDraftTarget}
-                    activeProjectName={activeProject?.title}
-                    activeProjectScripts={activeProject ? activeProjectScripts : undefined}
-                    preferredScriptId={
-                      activeProject
-                        ? (lastInvokedScriptByProjectId[activeProject.id] ?? null)
-                        : null
-                    }
-                    keybindings={keybindings}
-                    availableEditors={availableEditors}
-                    showOpenInPicker={showOpenInPicker}
-                    openInShortcutEnabled={
-                      !(
-                        rightPanelOpen &&
-                        renderedRightPanelSurface?.kind === "file" &&
-                        renderedRightPanelSurface.attachment === undefined
-                      )
-                    }
-                    gitCwd={gitCwd}
-                    workspaceMutationId={workspaceMutationId}
-                    isGitRepo={isGitRepo}
-                    envLocked={envLocked}
-                    availableEnvironments={logicalProjectEnvironments}
-                    autoEnvironmentLabel={autoEnvironmentLabel}
-                    onAutoEnvironment={
-                      draftId &&
-                      !envLocked &&
-                      canAutoBalanceEnvironments &&
-                      loadBalancingSettings.loadBalancingEnabled
-                        ? onAutoEnvironmentStable
-                        : undefined
-                    }
-                    {...(canChangeEnvironment
-                      ? { onEnvironmentChange: onEnvironmentChangeStable }
-                      : {})}
-                    onEnvModeChange={onEnvModeChangeStable}
-                    envMode={envMode}
-                    {...(canOverrideServerThreadEnvMode
-                      ? {
-                          activeThreadBranchOverride: activeThreadBranch,
-                          onActiveThreadBranchOverrideChange: setPendingServerThreadBranch,
-                        }
-                      : {})}
-                    startFromOrigin={startFromOrigin}
-                    onStartFromOriginChange={onStartFromOriginChange}
-                    {...(canCheckoutPullRequestIntoThread
-                      ? { onCheckoutPullRequestRequest: openPullRequestDialogStable }
-                      : {})}
-                    onComposerFocusRequest={scheduleComposerFocusStable}
-                    {...(isServerThread && isGitRepo
-                      ? { onOpenChanges: openChangesFromThreadPanelStable }
-                      : {})}
-                    onRunProjectScript={runProjectScriptStable}
-                    onAddProjectScript={saveProjectScriptStable}
-                    onUpdateProjectScript={updateProjectScriptStable}
-                    onDeleteProjectScript={deleteProjectScriptStable}
-                    usage={{
-                      providerInstanceId: activeProviderInstanceId,
-                      providers: providerStatuses,
-                      sources: serverConfig?.usageLimitSources ?? EMPTY_USAGE_LIMIT_SOURCES,
-                      contextWindow: activeContextWindow,
-                    }}
-                  />
+                  {!workspaceDock && detailsPanel}
 
                   <PullRequestThreadDialogHost
                     threadKey={activeThreadKey}
@@ -4137,17 +4163,12 @@ export default function ChatView(props: ChatViewProps) {
 
       {workspaceDock && activeThreadRef ? (
         <>
+          {detailsPanel}
           <WorkspacePanelActions>{rightPanelShell}</WorkspacePanelActions>
           <WorkspaceActions
             windowId={`chat:${activeThreadKey}`}
             onOpenBottom={toggleTerminalVisibilityStable}
-            onOpenRight={
-              rightPanelState.surfaces.length === 0
-                ? activeProject
-                  ? addFilesSurfaceStable
-                  : toggleThreadPanelStable
-                : toggleRightPanelStable
-            }
+            onOpenRight={toggleThreadPanelStable}
           />
           {rightPanelState.surfaces.map((surface) => (
             <RightPanelWorkspaceWindow

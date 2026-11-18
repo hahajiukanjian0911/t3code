@@ -47,6 +47,7 @@ interface RightPanelActionsInput {
   readonly deviceState: ReturnType<typeof useDeviceState>["state"];
   readonly deviceStateLoaded: boolean;
   readonly pullRequestPanelTarget: ReturnType<typeof threadPullRequestPanelTarget> | null;
+  readonly dockedDetailsVisible: boolean;
   readonly threadPanelPresentation: ThreadPanelPresentation;
   readonly isServerThread: boolean;
   /** A side chat pane; the main view already answers preview bus actions. */
@@ -84,6 +85,7 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
     deviceState,
     deviceStateLoaded,
     pullRequestPanelTarget,
+    dockedDetailsVisible,
     threadPanelPresentation,
     isServerThread,
     embedded,
@@ -226,12 +228,8 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
   const activateRightPanelSurfaceStable = useStableCallback(activateRightPanelSurface);
   const toggleRightPanel = () => {
     if (!activeThreadRef) return;
-    if (workspacePanel && !embedded && rightPanelOpen) {
+    if (workspacePanel && !embedded) {
       workspacePanel.toggle();
-      return;
-    }
-    if (workspacePanel?.visible && !embedded && !rightPanelOpen) {
-      useRightPanelStore.getState().setThreadPanelOpen(activeThreadRef, "popover", false);
       return;
     }
     if (rightPanelOpen) {
@@ -245,9 +243,10 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
   const toggleThreadPanel = () => {
     if (!activeThreadRef) return;
     const store = useRightPanelStore.getState();
-    if (workspaceDock && !embedded && rightPanelOpen) {
+    if (workspaceDock && !embedded) {
       toggleWorkspaceWindow(`details:${scopedThreadKey(activeThreadRef)}`, "right");
-      requestWorkspaceFocus({ area: "details" });
+      if (dockedDetailsVisible) requestWorkspaceContentFocus();
+      else requestWorkspaceFocus({ area: "details" });
       return;
     }
     if (threadPanelPresentation === "inline") {
@@ -255,15 +254,6 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
         store.threadPanelVisibilityByThreadKey,
         activeThreadRef,
         "inline",
-      );
-      if (!open) requestWorkspaceFocus({ area: "details" });
-      else if (document.activeElement?.closest('[data-workspace-area="details"]'))
-        requestWorkspaceContentFocus();
-    } else if (workspaceDock && !embedded) {
-      const open = selectThreadPanelOpen(
-        store.threadPanelVisibilityByThreadKey,
-        activeThreadRef,
-        "popover",
       );
       if (!open) requestWorkspaceFocus({ area: "details" });
       else if (document.activeElement?.closest('[data-workspace-area="details"]'))
@@ -347,6 +337,20 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
     },
     "threadPanel.toggle": () => toggleThreadPanel(),
     "rightPanel.close": ({ event }) => {
+      if (
+        dockedDetailsVisible &&
+        activeThreadRef &&
+        !(
+          event.target instanceof Element &&
+          event.target.closest('[data-workspace-window^="surface:"]')
+        )
+      ) {
+        if (!event.repeat) {
+          toggleWorkspaceWindow(`details:${scopedThreadKey(activeThreadRef)}`);
+          requestWorkspaceContentFocus();
+        }
+        return;
+      }
       if (!activeRightPanelSurface) return false;
       if (!event.repeat) closeRightPanelSurface(activeRightPanelSurface);
     },

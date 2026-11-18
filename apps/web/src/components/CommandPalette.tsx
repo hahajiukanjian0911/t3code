@@ -69,8 +69,11 @@ import {
   FolderPlusIcon,
   MessageSquareDashedIcon,
   LinkIcon,
+  Maximize2Icon,
   MessageSquareIcon,
   PaletteIcon,
+  Columns2Icon,
+  Rows2Icon,
   RotateCcwIcon,
   SettingsIcon,
   MonitorIcon,
@@ -111,7 +114,7 @@ import {
   copyPromptLink,
   promptLinkRepositoryOf,
 } from "./promptLinks/copyPromptLink";
-import { useClientSettings } from "../hooks/useSettings";
+import { updateClientSettings, useClientSettings } from "../hooks/useSettings";
 import { useStableCallback } from "../hooks/useStableCallback";
 import { readLocalApi } from "../localApi";
 import { configuredHostedAppUrl } from "../hostedPairing";
@@ -268,6 +271,7 @@ import { settingsForThisPlatform, SETTINGS_SECTION_LABELS } from "./settings/set
 import { useUiLabel } from "../i18n/staticUiLabels";
 import { primaryServerKeybindingsAtom } from "../state/server";
 import { resolveShortcutCommand, threadJumpIndexFromCommand } from "../keybindings";
+import { dispatchMenuAction } from "../shortcuts/dispatcher";
 import { CommandDialog, CommandDialogPopup, CommandFooterAction } from "./ui/command";
 import { Button } from "./ui/button";
 import { stackedThreadToast, toastManager } from "./ui/toast";
@@ -1710,6 +1714,134 @@ function OpenCommandPaletteDialog(props: {
       },
     });
   }
+
+  for (const entry of [
+    {
+      command: "workspace.focusPanel.left",
+      title: "Focus Left Panel",
+      terms: ["window", "panel", "left"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.focusPanel.main",
+      title: "Focus Main Composer",
+      terms: ["window", "panel", "main"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.focusPanel.right",
+      title: "Focus Right Panel",
+      terms: ["window", "panel", "right"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.focusPanel.bottom",
+      title: "Focus Bottom Panel",
+      terms: ["window", "panel", "bottom"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.moveLeft",
+      title: "Move Window to Left Panel",
+      terms: ["window", "panel", "left"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.moveRight",
+      title: "Move Window to Right Panel",
+      terms: ["window", "panel", "right"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.moveDown",
+      title: "Move Window to Bottom Panel",
+      terms: ["window", "panel", "bottom"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.moveFloat",
+      title: "Move Window to Floating Panel",
+      terms: ["window", "panel", "floating"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.toggleMaximizeInApp",
+      title: "Maximize Window in App",
+      terms: ["maximize", "window", "app", "niri", "fullscreen", "zen", "shift escape"],
+      icon: <Maximize2Icon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.toggleMaximizeInPanel",
+      title: "Maximize Window in Panel",
+      terms: ["maximize", "panel", "monocle", "zoom", "split"],
+      icon: <Maximize2Icon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.splitRight",
+      title: "Split Window Right",
+      terms: ["split", "right", "horizontal", "column", "panel"],
+      icon: <Columns2Icon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.splitDown",
+      title: "Split Window Down",
+      terms: ["split", "down", "vertical", "row", "panel"],
+      icon: <Rows2Icon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "floatingPanel.toggle",
+      title: "Toggle Floating Panel",
+      terms: ["floating", "overlay", "modal", "scratchpad", "panel"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.focusLeft",
+      title: "Focus Window Left",
+      terms: ["focus", "window", "left", "panel", "hjkl"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.focusRight",
+      title: "Focus Window Right",
+      terms: ["focus", "window", "right", "panel", "hjkl"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.focusUp",
+      title: "Focus Window Up",
+      terms: ["focus", "window", "up", "panel", "hjkl"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+    {
+      command: "workspace.focusDown",
+      title: "Focus Window Down",
+      terms: ["focus", "window", "down", "panel", "hjkl"],
+      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
+    },
+  ] as const) {
+    actionItems.push({
+      kind: "action",
+      value: `action:${entry.command}`,
+      title: entry.title,
+      searchTerms: [entry.title, ...entry.terms],
+      icon: entry.icon,
+      shortcutCommand: entry.command,
+      run: async () => {
+        window.requestAnimationFrame(() => dispatchMenuAction(entry.command));
+      },
+    });
+  }
+
+  actionItems.push({
+    kind: "action",
+    value: "action:toggle-vim-mode",
+    searchTerms: ["vim", "modal", "normal", "insert", "codemirror", "editor", "composer"],
+    title: clientSettings.vimMode ? "Disable Vim Mode" : "Enable Vim Mode",
+    icon: <SquarePenIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await updateClientSettings({ vimMode: !clientSettings.vimMode });
+    },
+  });
 
   actionItems.push({
     kind: "action",

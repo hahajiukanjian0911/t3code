@@ -1,7 +1,4 @@
-import { useNativeFileDrag } from "../useNativeFileDrag";
-import { resolvePathLinkTarget } from "@t3tools/shared/fileLinks";
 import { useAtomValue } from "@effect/atom-react";
-import { documentChipKindForFileName } from "~/pierre-icons";
 import { isProviderSkillUserInvocable } from "@t3tools/client-runtime/providerSkills";
 import { formatProviderSkillDisplayName } from "@t3tools/shared/inlineSkills";
 import {
@@ -42,6 +39,8 @@ import {
 } from "@t3tools/shared/composerContextClipboard";
 import {
   createContext,
+  lazy,
+  Suspense,
   use,
   useEffect,
   useEffectEvent,
@@ -62,6 +61,8 @@ import {
   pastedPathQueryLength,
 } from "~/composer-logic";
 import { useStableCallback } from "~/hooks/useStableCallback";
+import { ComposerFileMentionChip } from "./ComposerFileMentionChip";
+import { useClientSettings } from "~/hooks/useSettings";
 import { caretLineDirection, ComposerTextDirectionExtension } from "~/composer-text-direction";
 import {
   collapseShownMarkdownSource,
@@ -120,21 +121,16 @@ import { isThreadNavigationShortcut } from "~/keybindings";
 import { appAtomRegistry } from "~/rpc/atomRegistry";
 import { primaryServerKeybindingsAtom } from "~/state/server";
 import { hasCommandForKeyDown } from "~/shortcuts/dispatcher";
-import { basenameOfPath } from "~/pierre-icons";
-import { WorkspaceEntryTooltip } from "./chat/WorkspaceEntryIcon";
-import { FileTagChipContent } from "./chat/FileTagChip";
 import { SkillChipPopover, skillPopoverDescription } from "./chat/SkillInlineText";
 import { AssistantCitationChip } from "./chat/AssistantCitationChip";
 import { ModelMentionChip, modelMentionKey, modelMentionKeysAtom } from "./chat/ModelMentionChip";
 import { getTimelinePageScrollKey } from "./chat/pageScrollController";
-import { ContextChip } from "./ContextChip";
 import {
   ComposerContextActionsContext,
   ComposerContextReferenceChip,
   ComposerContextRecordsContext,
 } from "./composerContextPresentation";
 import type { AssistantCitationSourceAnchor } from "~/lib/assistantTextSelection";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
 import { ComposerCodeBlockNodeView } from "./chat/ComposerCodeBlockNodeView";
 import { resolveAssistantCitationCommentDismissal } from "./chat/assistantCitationCommentDismissal";
 import { composerCodeBlockHighlight } from "./composerCodeBlockHighlight";
@@ -174,6 +170,7 @@ export interface ComposerPromptEditorProps {
   value: string;
   cursor: number;
   richTextEnabled?: boolean;
+  vimMode?: boolean;
   literalText?: boolean;
   contextRecords: ComposerDraftContextRecords;
   buildContextClipboardFragment?:
@@ -257,10 +254,6 @@ const SURROUND_CLOSE: Record<string, string> = {
   _: "_",
 };
 
-function resolvedThemeFromDocument(): "light" | "dark" {
-  return document.documentElement.classList.contains("dark") ? "dark" : "light";
-}
-
 const CHIP_NODE_SELECTION_CLASS_NAME =
   "relative inline-flex min-w-0 max-w-full select-none items-baseline data-[composer-chip-selected]:after:pointer-events-none data-[composer-chip-selected]:after:absolute data-[composer-chip-selected]:after:inset-0 data-[composer-chip-selected]:after:rounded-sm data-[composer-chip-selected]:after:bg-[Highlight] data-[composer-chip-selected]:after:opacity-30 data-[composer-chip-selected]:after:content-['']";
 
@@ -288,44 +281,9 @@ const ComposerMentionExtension = Node.create({
 });
 
 function ComposerMentionNodeView({ node }: NodeViewProps) {
-  const actions = use(ComposerContextActionsContext);
-  const path = (node.attrs.path as string) ?? "";
-  const nativeDrag = useNativeFileDrag(actions.environmentId, () =>
-    resolvePathLinkTarget(path, actions.cwd ?? ""),
-  );
-  const chip = (
-    <ContextChip
-      {...nativeDrag}
-      kind={documentChipKindForFileName(path) ?? "mention"}
-      dir="ltr"
-      render={<button type="button" />}
-      onClick={() => actions.openMention(path)}
-      aria-label={`Preview ${path}`}
-      contentEditable={false}
-      spellCheck={false}
-      data-composer-mention-chip="true"
-    >
-      <FileTagChipContent
-        path={path}
-        environmentId={actions.environmentId}
-        cwd={actions.cwd}
-        label={basenameOfPath(path)}
-        theme={resolvedThemeFromDocument()}
-      />
-    </ContextChip>
-  );
   return (
     <NodeViewWrapper as="span" className={CHIP_NODE_SELECTION_CLASS_NAME}>
-      <Tooltip>
-        <TooltipTrigger render={chip} />
-        <TooltipPopup side="top">
-          <WorkspaceEntryTooltip
-            path={path}
-            environmentId={actions.environmentId}
-            cwd={actions.cwd}
-          />
-        </TooltipPopup>
-      </Tooltip>
+      <ComposerFileMentionChip path={String(node.attrs.path ?? "")} />
     </NodeViewWrapper>
   );
 }
@@ -775,8 +733,12 @@ function replaceSkillChips(
   editor.view.dispatch(transaction);
 }
 
+const ComposerPromptEditorCodeMirror = lazy(() => import("./ComposerPromptEditorCodeMirror"));
+
 export function ComposerPromptEditorTiptap(props: ComposerPromptEditorProps) {
   const restoreFocusRef = useRef(false);
+  const clientVimMode = useClientSettings((settings) => settings.vimMode);
+  const vimEnabled = props.vimMode ?? clientVimMode;
   const { onChange: onPromptChange } = props;
   const [selection, setSelection] = useState<{
     value: string;
@@ -792,6 +754,23 @@ export function ComposerPromptEditorTiptap(props: ComposerPromptEditorProps) {
     setSelection({ value, cursor, expandedCursor });
     onPromptChange(value, cursor, expandedCursor, ...rest);
   };
+  const initialExpandedCursor =
+    selection?.value === props.value && selection.cursor === props.cursor
+      ? selection.expandedCursor
+      : expandCollapsedComposerCursor(props.value, props.cursor, props.literalText);
+  if (vimEnabled) {
+    return (
+      <Suspense fallback={<div className="min-h-lh" />}>
+        <ComposerPromptEditorCodeMirror
+          key={`${props.draftKey ?? ""}:vim:${props.literalText ? "literal" : "markdown"}`}
+          {...props}
+          restoreFocusRef={restoreFocusRef}
+          initialExpandedCursor={initialExpandedCursor}
+          onChange={onChange}
+        />
+      </Suspense>
+    );
+  }
   // Changing text mode remounts the editor. Its collapsed cursor cannot represent
   // a caret inside unknown `$name` text, so retain the exact Markdown offset here.
   return (
@@ -799,11 +778,7 @@ export function ComposerPromptEditorTiptap(props: ComposerPromptEditorProps) {
       key={`${props.draftKey ?? ""}:${props.literalText ? "literal" : props.richTextEnabled ? "rich" : "plain"}`}
       {...props}
       restoreFocusRef={restoreFocusRef}
-      initialExpandedCursor={
-        selection?.value === props.value && selection.cursor === props.cursor
-          ? selection.expandedCursor
-          : expandCollapsedComposerCursor(props.value, props.cursor, props.literalText)
-      }
+      initialExpandedCursor={initialExpandedCursor}
       onChange={onChange}
     />
   );

@@ -255,7 +255,7 @@ p > [data-draft-project-trigger] {
   &:is([aria-current], :hover) .text-sm {
     color: var(--foreground);
   }
-  & > div:last-child {
+  & > [data-sidebar-card-content] {
     height: auto !important;
     min-height: 0px !important;
     padding: 8px 10px !important;

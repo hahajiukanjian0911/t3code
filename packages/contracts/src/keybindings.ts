@@ -55,9 +55,30 @@ const MODEL_PICKER_KEYBINDING_COMMANDS = [
   ...MODEL_PICKER_JUMP_KEYBINDING_COMMANDS,
 ] as const;
 
+export const WORKSPACE_PLACEMENT_COMMANDS = [
+  "workspace.focusPanel.left",
+  "workspace.focusPanel.main",
+  "workspace.focusPanel.right",
+  "workspace.focusPanel.bottom",
+  "workspace.moveLeft",
+  "workspace.moveRight",
+  "workspace.moveDown",
+  "workspace.moveFloat",
+] as const;
+
 export const STATIC_KEYBINDING_COMMANDS = [
+  ...WORKSPACE_PLACEMENT_COMMANDS,
   "workspace.focusNext",
   "workspace.focusPrevious",
+  "workspace.focusLeft",
+  "workspace.focusRight",
+  "workspace.focusUp",
+  "workspace.focusDown",
+  "workspace.toggleMaximizeInApp",
+  "workspace.toggleMaximizeInPanel",
+  "workspace.splitRight",
+  "workspace.splitDown",
+  "floatingPanel.toggle",
   "sidebar.toggle",
   "navigation.back",
   "navigation.forward",

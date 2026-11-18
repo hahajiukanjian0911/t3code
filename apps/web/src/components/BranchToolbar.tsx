@@ -620,6 +620,7 @@ export const BranchToolbar = memo(function BranchToolbar({
   const activeWorktreePath = forceNewWorktree ? null : worktreePath;
   const effectiveEnvMode = forceNewWorktree ? "worktree" : envMode;
   const envModeLocked = envLocked || (isServerThread && activeWorktreePath !== null);
+  const showWorkspaceIndicator = effectiveEnvMode === "worktree" || activeWorktreePath !== null;
 
   const canUsePreviousWorktree = !isServerThread && !envModeLocked && !forceNewWorktree;
   const projectRefsForWorktreeLookup = canUsePreviousWorktree ? [activeProjectRef] : [];
@@ -734,38 +735,8 @@ export const BranchToolbar = memo(function BranchToolbar({
       data-compact={labelsOverflow ? "" : undefined}
       className={cn("gap-1 text-xs font-normal text-foreground/70 dark:text-muted-foreground")}
     >
-      {showGitControls ? (
-        <div className="contents @xl/composer-surface:hidden">
-          <RunContextSelector
-            forceNewWorktree={forceNewWorktree}
-            autoEnvironmentLabel={autoEnvironmentLabel}
-            onAutoEnvironment={onAutoEnvironment}
-            envLocked={envLocked}
-            envModeLocked={envModeLocked}
-            environmentId={environmentId}
-            availableEnvironments={availableEnvironments}
-            showEnvironmentPicker={showEnvironmentPicker}
-            showEnvironmentIndicator={showEnvironmentIndicator}
-            onEnvironmentChange={onEnvironmentChange}
-            effectiveEnvMode={effectiveEnvMode}
-            activeWorktreePath={activeWorktreePath}
-            onEnvModeChange={onEnvModeChange}
-            previousWorktreeLabel={previousWorktreeLabel}
-            previousWorktreeBranch={previousWorktreeSeed?.branch ?? null}
-            onUsePreviousWorktree={onUsePreviousWorktree}
-            addTargets={addTargets}
-            onAddToMachine={onAddToMachine}
-          />
-        </div>
-      ) : null}
       {showGitControls || showEnvironmentIndicator ? (
-        <div
-          className={cn(
-            "min-h-7 min-w-10 items-center gap-1 sm:min-h-6",
-            showGitControls ? "hidden @xl/composer-surface:flex" : "flex",
-            "flex-1",
-          )}
-        >
+        <div className="flex min-h-7 min-w-0 flex-1 items-center gap-1 sm:min-h-6">
           {showEnvironmentIndicator && availableEnvironments && (
             <>
               <BranchToolbarEnvironmentSelector
@@ -777,7 +748,7 @@ export const BranchToolbar = memo(function BranchToolbar({
                 {...(showEnvironmentPicker ? { onEnvironmentChange } : {})}
                 {...(addTargets.length > 0 ? { onAddToMachine: () => onAddToMachine(null) } : {})}
               />
-              {showGitControls ? (
+              {showGitControls && showWorkspaceIndicator ? (
                 <Separator
                   orientation="vertical"
                   className="mx-0.5 h-3.5!"
@@ -786,10 +757,10 @@ export const BranchToolbar = memo(function BranchToolbar({
               ) : null}
             </>
           )}
-          {showGitControls ? (
+          {showGitControls && showWorkspaceIndicator ? (
             <BranchToolbarEnvModeSelector
               forceNewWorktree={forceNewWorktree}
-              envLocked={envModeLocked}
+              envLocked
               effectiveEnvMode={effectiveEnvMode}
               activeWorktreePath={activeWorktreePath}
               onEnvModeChange={onEnvModeChange}
@@ -805,7 +776,7 @@ export const BranchToolbar = memo(function BranchToolbar({
         <BranchToolbarBranchSelector
           forceNewWorktree={forceNewWorktree}
           ref={branchSelectorRef}
-          className="min-w-0 flex-initial justify-end @xl/composer-surface:ml-auto"
+          className="ml-auto min-w-0 flex-initial justify-end"
           environmentId={environmentId}
           threadId={threadId}
           {...(draftId ? { draftId } : {})}
@@ -815,6 +786,19 @@ export const BranchToolbar = memo(function BranchToolbar({
           {...(onActiveThreadBranchOverrideChange ? { onActiveThreadBranchOverrideChange } : {})}
           startFromOrigin={startFromOrigin}
           onStartFromOriginChange={onStartFromOriginChange}
+          workspaceControl={
+            !envModeLocked && !forceNewWorktree ? (
+              <BranchToolbarEnvModeSelector
+                envLocked={false}
+                effectiveEnvMode={effectiveEnvMode}
+                activeWorktreePath={activeWorktreePath}
+                onEnvModeChange={onEnvModeChange}
+                previousWorktreeLabel={previousWorktreeLabel}
+                previousWorktreeBranch={previousWorktreeSeed?.branch ?? null}
+                onUsePreviousWorktree={onUsePreviousWorktree}
+              />
+            ) : null
+          }
           {...(onCheckoutPullRequestRequest ? { onCheckoutPullRequestRequest } : {})}
           {...(onComposerFocusRequest ? { onComposerFocusRequest } : {})}
         />

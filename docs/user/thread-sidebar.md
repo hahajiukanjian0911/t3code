@@ -292,7 +292,9 @@ Select a server to open it in the browser panel. **Stop** ends the server's job
 and keeps the agent, the terminal, and T3 Code running. Stop needs terminal
 access to the environment and is not available on Windows.
 
-To choose what the thread details card shows, right-click the card or open
+In the docked workspace, **Details** opens as a right-panel tab. Switch between it and files in the title bar. To reopen it, use the right-panel toggle when the panel is empty, or choose **+ → Details** alongside an open file.
+
+To choose what thread details shows, right-click inside it or open
 **Settings → Appearance → Thread details**. Hidden rows keep their keyboard
 shortcuts, such as Open in editor and project scripts. **Reset to default** brings
 back the standard rows.

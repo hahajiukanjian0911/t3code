@@ -24,6 +24,17 @@ In a browser, plain `F6` may move to the browser's own toolbar. Use `mod+F6` and
 Workspace Area** and **Focus Previous Workspace Area** are also in the command palette and
 can be remapped in Settings > Keybindings.
 
+In a chat workspace, move focus toward a neighboring window with `Ctrl+Command` on macOS
+or `Ctrl+Alt` on Windows and Linux, plus an arrow key or `H/J/K/L`. Add `M` to the same
+modifiers to maximize or restore a split within its panel. Press `Ctrl+1/2/3/4` on macOS
+or `Alt+1/2/3/4` elsewhere to focus the left panel, main composer, right panel or bottom panel.
+To move a tool window, hold the directional focus modifiers plus Shift, then press `H` for
+left, `L` for right, `J` for bottom or Space to float it.
+
+Press `Shift+Esc` or double-click the window title bar to maximize. Chat fills the app in
+one step. For a tool window, the first press keeps chat alongside it, the second fills the
+app, and the third restores your layout. The Threads sidebar stays in its panel.
+
 ## Browse threads
 
 Tab moves through each thread and its buttons. Up and Down also move between threads

@@ -7,6 +7,7 @@ import { userEvent } from "vite-plus/test/browser";
 import { act, fakeTimers, render } from "../../../test/render";
 import appCss from "~/index.css?inline";
 import { isMacPlatform } from "~/lib/utils";
+import { __setClientSettingsForTests, getClientSettings } from "~/hooks/useSettings";
 import {
   createWorkspaceFocusController,
   startWorkspaceFocus,
@@ -187,6 +188,36 @@ function deepActiveElement() {
 }
 
 describe("source file focus", () => {
+  it("edits source in Vim, preserves the original line endings on save, and leaves truncated files read-only", async () => {
+    using _settings = setup();
+    const previous = getClientSettings();
+    __setClientSettingsForTests({ ...previous, vimMode: true });
+    using _vim = { [Symbol.dispose]: () => __setClientSettingsForTests(previous) };
+    const contents = "one\r\ntwo\nthree\r\n";
+    state.file = {
+      relativePath: "server.ts",
+      contents,
+      byteLength: contents.length,
+      truncated: false,
+    };
+    await using screen = await render(filePreview("server.ts"));
+    const textbox = screen.getByRole("textbox", { name: "server.ts" });
+    await expect.element(textbox).toBeVisible();
+    (textbox.element() as HTMLElement).focus();
+    await userEvent.keyboard("ggj0cwchanged{Escape}");
+    const expected = "one\r\nchanged\nthree\r\n";
+    await vi.waitFor(() => expect(state.optimistic?.contents).toBe(expected));
+    await vi.waitFor(() =>
+      expect(state.writeFile).toHaveBeenCalledWith({
+        environmentId,
+        input: { cwd: "/workspace", relativePath: "server.ts", contents: expected },
+      }),
+    );
+    state.file = { ...state.file, truncated: true };
+    await screen.rerender(filePreview("server.ts"));
+    await expect.element(textbox).not.toBeInTheDocument();
+  });
+
   it("hands panel focus to the file's editor, which owns mod+f", async () => {
     using _settings = setup();
     const style = document.createElement("style");

@@ -45,6 +45,7 @@ import {
   Globe2,
   MessagesSquare,
   Plus,
+  SquareMenuIcon,
   TerminalSquare,
   Volume2Icon,
   VolumeOffIcon,
@@ -110,6 +111,7 @@ import { surfaceShortcutKey } from "~/lib/surfaceShortcutKey";
 export interface RightPanelTabsProps {
   mode: PreviewPanelMode;
   workspaceToolbar?: boolean;
+  onOpenDetails?: () => void;
   maximized?: boolean;
   open?: boolean;
   keybindings: ResolvedKeybindingsConfig;
@@ -1120,6 +1122,18 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
   };
 
   const addSurfaceActions = [
+    ...(props.onOpenDetails
+      ? [
+          {
+            label: "Details",
+            icon: SquareMenuIcon,
+            shortcut: "I",
+            available: true,
+            disabledReason: "",
+            onClick: props.onOpenDetails,
+          },
+        ]
+      : []),
     {
       label: "Browser",
       icon: Globe2,

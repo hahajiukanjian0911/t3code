@@ -32,11 +32,13 @@ function Composer({
   question,
   editorRef,
   disabled = false,
+  vimMode = false,
   send = "clears",
 }: {
   question: boolean;
   editorRef: React.RefObject<ComposerPromptEditorHandle | null>;
   disabled?: boolean;
+  vimMode?: boolean;
   send?: "clears" | "blocked" | "refusedLater";
 }) {
   const [prompt, setPrompt] = useState(promptBefore);
@@ -60,6 +62,7 @@ function Composer({
         contextRecords={new Map()}
         skills={[]}
         disabled={disabled}
+        vimMode={vimMode}
         placeholder=""
         onChange={(next) => (question ? setAnswer(next) : setPrompt(next))}
         onCitationDraftSave={(replacedValue, savedValue) => {
@@ -76,69 +79,87 @@ function Composer({
   );
 }
 
-it("keeps an unsaved citation comment when a question takes the composer", async () => {
-  const editorRef = createRef<ComposerPromptEditorHandle>();
-  await using screen = await render(<Composer question={false} editorRef={editorRef} />);
-  const drafts = () => screen.container.querySelector("output")?.dataset;
-
-  const sourceAnchor = findAssistantCitationSourceAnchor(document, citation);
-  if (!sourceAnchor) throw new Error("Citation source did not resolve");
-  await act(async () =>
-    editorRef.current?.requestCitationComment({
-      previousValue: "See ",
-      value: promptBefore,
-      citationStart: "See ".length,
-      sourceAnchor,
-      insertedSpaces: { before: false, after: true },
-    }),
-  );
-  const comment = page.getByLabelText("Comment on selected text");
-  await expect.element(comment).toBeVisible();
-  await comment.click();
-  await userEvent.keyboard("check this");
-
-  await screen.rerender(<Composer question editorRef={editorRef} />);
-  expect(drafts()?.answer).toBe("");
-  await screen.rerender(<Composer question={false} editorRef={editorRef} />);
-
-  expect(drafts()?.prompt).toBe(
-    `See ${serializeAssistantCitation(withAssistantCitationComment(citation, "check this"))} `,
-  );
-  await expect.element(page.getByLabelText("Edit citation comment")).toBeInTheDocument();
-});
-
-it("clears the sent prompt when an empty citation comment sends it", async () => {
-  const editorRef = createRef<ComposerPromptEditorHandle>();
-  await using screen = await render(<Composer question={false} editorRef={editorRef} />);
-
-  const sourceAnchor = findAssistantCitationSourceAnchor(document, citation);
-  if (!sourceAnchor) throw new Error("Citation source did not resolve");
-  await act(async () =>
-    editorRef.current?.requestCitationComment({
-      previousValue: "See ",
-      value: promptBefore,
-      citationStart: "See ".length,
-      sourceAnchor,
-      insertedSpaces: { before: false, after: true },
-    }),
-  );
-  const comment = page.getByLabelText("Comment on selected text");
-  await expect.element(comment).toHaveFocus();
-  await userEvent.keyboard("{Control>}{Enter}{/Control}");
-
-  await expect.element(comment).not.toBeInTheDocument();
-  await expect.element(page.getByTestId("composer-editor")).toHaveFocus();
-  await expect.element(screen.getByRole("status")).toHaveAttribute("data-prompt", "");
-});
-
-it.each(["blocked", "refusedLater"] as const)(
-  "keeps the caret after the citation when save-and-send is %s",
-  async (send) => {
+it.each([false, true])(
+  "keeps an unsaved citation comment when a question takes the composer (Vim %s)",
+  async (vimMode) => {
     const editorRef = createRef<ComposerPromptEditorHandle>();
     await using screen = await render(
-      <Composer question={false} editorRef={editorRef} send={send} />,
+      <Composer vimMode={vimMode} question={false} editorRef={editorRef} />,
+    );
+    const drafts = () => screen.container.querySelector("output")?.dataset;
+
+    await expect.element(screen.getByTestId("composer-editor")).toBeInTheDocument();
+    const sourceAnchor = findAssistantCitationSourceAnchor(document, citation);
+    if (!sourceAnchor) throw new Error("Citation source did not resolve");
+    await act(async () =>
+      editorRef.current?.requestCitationComment({
+        previousValue: "See ",
+        value: promptBefore,
+        citationStart: "See ".length,
+        sourceAnchor,
+        insertedSpaces: { before: false, after: true },
+      }),
+    );
+    const comment = page.getByLabelText("Comment on selected text");
+    await expect.element(comment).toBeVisible();
+    await comment.click();
+    await userEvent.keyboard("check this");
+
+    await screen.rerender(<Composer vimMode={vimMode} question editorRef={editorRef} />);
+    expect(drafts()?.answer).toBe("");
+    await screen.rerender(<Composer vimMode={vimMode} question={false} editorRef={editorRef} />);
+
+    expect(drafts()?.prompt).toBe(
+      `See ${serializeAssistantCitation(withAssistantCitationComment(citation, "check this"))} `,
+    );
+    await expect.element(page.getByLabelText("Edit citation comment")).toBeInTheDocument();
+  },
+);
+
+it.each([false, true])(
+  "clears the sent prompt when an empty citation comment sends it (Vim %s)",
+  async (vimMode) => {
+    const editorRef = createRef<ComposerPromptEditorHandle>();
+    await using screen = await render(
+      <Composer vimMode={vimMode} question={false} editorRef={editorRef} />,
     );
 
+    await expect.element(screen.getByTestId("composer-editor")).toBeInTheDocument();
+    const sourceAnchor = findAssistantCitationSourceAnchor(document, citation);
+    if (!sourceAnchor) throw new Error("Citation source did not resolve");
+    await act(async () =>
+      editorRef.current?.requestCitationComment({
+        previousValue: "See ",
+        value: promptBefore,
+        citationStart: "See ".length,
+        sourceAnchor,
+        insertedSpaces: { before: false, after: true },
+      }),
+    );
+    const comment = page.getByLabelText("Comment on selected text");
+    await expect.element(comment).toHaveFocus();
+    await userEvent.keyboard("{Control>}{Enter}{/Control}");
+
+    await expect.element(comment).not.toBeInTheDocument();
+    await expect.element(page.getByTestId("composer-editor")).toHaveFocus();
+    await expect.element(screen.getByRole("status")).toHaveAttribute("data-prompt", "");
+  },
+);
+
+it.each([
+  ["blocked", false],
+  ["refusedLater", false],
+  ["blocked", true],
+  ["refusedLater", true],
+] as const)(
+  "keeps the caret after the citation when save-and-send is %s (Vim %s)",
+  async (send, vimMode) => {
+    const editorRef = createRef<ComposerPromptEditorHandle>();
+    await using screen = await render(
+      <Composer question={false} editorRef={editorRef} send={send} vimMode={vimMode} />,
+    );
+
+    await expect.element(screen.getByTestId("composer-editor")).toBeInTheDocument();
     const sourceAnchor = findAssistantCitationSourceAnchor(document, citation);
     if (!sourceAnchor) throw new Error("Citation source did not resolve");
     await act(async () =>
@@ -154,7 +175,7 @@ it.each(["blocked", "refusedLater"] as const)(
     await expect.element(comment).toHaveFocus();
     await userEvent.keyboard("{Control>}{Enter}{/Control}");
     await expect.element(comment).not.toBeInTheDocument();
-    await userEvent.keyboard("x");
+    await userEvent.keyboard(vimMode ? "ix" : "x");
 
     await expect
       .element(screen.getByRole("status"))
@@ -162,25 +183,31 @@ it.each(["blocked", "refusedLater"] as const)(
   },
 );
 
-it("cancels a new citation while dictation makes the composer read-only", async () => {
-  const editorRef = createRef<ComposerPromptEditorHandle>();
-  await using screen = await render(<Composer question={false} editorRef={editorRef} disabled />);
+it.each([false, true])(
+  "cancels a new citation while dictation makes the composer read-only (Vim %s)",
+  async (vimMode) => {
+    const editorRef = createRef<ComposerPromptEditorHandle>();
+    await using screen = await render(
+      <Composer vimMode={vimMode} question={false} editorRef={editorRef} disabled />,
+    );
 
-  const sourceAnchor = findAssistantCitationSourceAnchor(document, citation);
-  if (!sourceAnchor) throw new Error("Citation source did not resolve");
-  await act(async () =>
-    editorRef.current?.requestCitationComment({
-      previousValue: "See ",
-      value: promptBefore,
-      citationStart: "See ".length,
-      sourceAnchor,
-      insertedSpaces: { before: false, after: true },
-    }),
-  );
-  await expect.element(page.getByLabelText("Comment on selected text")).toBeVisible();
+    await expect.element(screen.getByTestId("composer-editor")).toBeInTheDocument();
+    const sourceAnchor = findAssistantCitationSourceAnchor(document, citation);
+    if (!sourceAnchor) throw new Error("Citation source did not resolve");
+    await act(async () =>
+      editorRef.current?.requestCitationComment({
+        previousValue: "See ",
+        value: promptBefore,
+        citationStart: "See ".length,
+        sourceAnchor,
+        insertedSpaces: { before: false, after: true },
+      }),
+    );
+    await expect.element(page.getByLabelText("Comment on selected text")).toBeVisible();
 
-  await page.getByRole("button", { name: "Cancel" }).click();
+    await page.getByRole("button", { name: "Cancel" }).click();
 
-  await expect.element(page.getByLabelText("Comment on selected text")).not.toBeInTheDocument();
-  expect(screen.container.querySelector("output")?.dataset.prompt).toBe("See ");
-});
+    await expect.element(page.getByLabelText("Comment on selected text")).not.toBeInTheDocument();
+    expect(screen.container.querySelector("output")?.dataset.prompt).toBe("See ");
+  },
+);
