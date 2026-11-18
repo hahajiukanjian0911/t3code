@@ -31,11 +31,13 @@ export function useDockedSidebarMotion(
     }
 
     const target = Number(open);
-    const springs = (motion.current ??= {
-      position: { value: target, velocity: 0 },
-      opacity: { value: target, velocity: 0 },
-    });
-    const { position, opacity } = springs;
+    if (motion.current === null) {
+      motion.current = {
+        position: { value: target, velocity: 0 },
+        opacity: { value: target, velocity: 0 },
+      };
+    }
+    const { position, opacity } = motion.current;
     let frame = 0;
     const paint = () => {
       const p = position.value;
