@@ -3381,11 +3381,12 @@ export default function ChatView(props: ChatViewProps) {
     <header
       ref={workspaceDock ? undefined : threadPanelPopoverAnchorRef}
       data-chat-header={workspaceDock ? undefined : ""}
+      data-workspace-chat-heading={workspaceDock ? "" : undefined}
       className={cn(
         "relative [[data-panel-animations=true]_&]:motion-safe:transition-[padding-left] [[data-panel-animations=true]_&]:motion-safe:duration-(--panel-animation-duration) [[data-panel-animations=true]_&]:motion-safe:ease-out",
         !workspaceDock && "bg-background",
         workspaceDock
-          ? "flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center"
+          ? "drag-region flex h-8 shrink-0 items-center"
           : isElectron
             ? cn(
                 "drag-region flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center px-3 sm:px-5",
@@ -3589,7 +3590,6 @@ export default function ChatView(props: ChatViewProps) {
         panel="main"
         closable={false}
         selected
-        titlebar={chatHeader}
       >
         <div
           className={cn(
@@ -3601,7 +3601,7 @@ export default function ChatView(props: ChatViewProps) {
           inert={rightPanelMaximized}
           onMouseUp={preventMiddleClickPasteOutsideEditable}
         >
-          {workspaceDock ? null : chatHeader}
+          {chatHeader}
 
           <div className="relative flex min-h-0 min-w-0 flex-1">
             <ThreadFindCanvas

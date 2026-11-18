@@ -479,7 +479,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 }
 
 @utility workspace-window-card {
-  border-radius: 7px;
+  border-radius: 10px;
   border: 1px solid color-mix(in oklab, var(--border) 82%, transparent);
   box-shadow:
     0 2px 10px -2px rgb(0 0 0 / 8%),
@@ -496,14 +496,6 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 
 @utility workspace-window-surface-main {
   background-color: var(--background);
-}
-
-@utility workspace-window-surface-left {
-  background-color: var(--workspace-left-surface, var(--sidebar));
-}
-
-@utility workspace-window-surface-right {
-  background-color: var(--workspace-right-surface, var(--background));
 }
 
 @utility workspace-window-surface-floating {
@@ -531,7 +523,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 /* Keep the thread list laid out at its docked width when the chat reclaims its column. */
 .workspace-docked-sidebar {
   position: absolute;
-  inset: 0 auto var(--workspace-seam) var(--workspace-seam);
+  inset: var(--workspace-seam) auto var(--workspace-seam) var(--workspace-seam);
   z-index: 1;
 
   &[inert] {
@@ -559,19 +551,129 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   align-self: start;
   margin-top: var(--workspace-seam);
 }
-:is(.workspace-docked-right, .workspace-docked-bottom, [data-workspace-titlebar-right])[inert]:not(
-    [data-dock-moving]
-  ) {
+:is(.workspace-docked-right, .workspace-docked-bottom)[inert]:not([data-dock-moving]) {
   display: none;
 }
 
-@utility workspace-titlebar-tabs-fade {
-  -webkit-mask-image: linear-gradient(
-    to right,
-    black calc(100% - 4rem),
-    transparent calc(100% - 3.25rem)
-  );
-  mask-image: linear-gradient(to right, black calc(100% - 4rem), transparent calc(100% - 3.25rem));
+[data-workspace-dock] {
+  --workspace-seam: 6px;
+  --workspace-topbar-height: 32px;
+  --workspace-board: color-mix(in oklab, var(--app-chrome-background), var(--foreground) 8%);
+  --leading-controls: calc(var(--workspace-controls-left) + 28px);
+  --trailing-controls: calc(var(--workspace-controls-right) + 56px);
+
+  &[data-has-floating] {
+    --trailing-controls: calc(var(--workspace-controls-right) + 84px);
+  }
+  &[data-left-open="false"] [data-workspace-panel="main"],
+  & [data-workspace-companion-chat] {
+    --heading-start: var(--leading-controls);
+  }
+  &[data-right-open="false"] [data-workspace-panel="main"] {
+    --heading-end: var(--trailing-controls);
+  }
+}
+
+[data-workspace-controls] {
+  top: calc(var(--workspace-controls-top) + var(--workspace-seam));
+  padding-inline: var(--workspace-controls-left) var(--workspace-controls-right);
+}
+
+.workspace-panel-heading,
+.workspace-stage-heading {
+  display: flex;
+  flex: 0 0 var(--workspace-topbar-height);
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  padding-inline: var(--heading-start, 6px) var(--heading-end, 6px);
+}
+
+[data-workspace-panel-heading="right"] {
+  --heading-end: var(--trailing-controls);
+
+  & [role="tab"] {
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+  }
+  & [role="tab"][aria-selected="true"] {
+    border-bottom-color: var(--muted-foreground);
+  }
+}
+
+[data-workspace-panel-heading="left"] {
+  --heading-start: var(--leading-controls);
+}
+
+.workspace-stage-heading {
+  justify-content: center;
+  padding-inline: max(var(--leading-controls), var(--trailing-controls));
+}
+
+[data-workspace-chat-heading] {
+  padding-inline: max(32px, var(--heading-start, 0px), var(--heading-end, 0px));
+
+  & ol {
+    justify-content: center;
+  }
+  & [aria-current="page"] [data-slot="workspace-breadcrumb-text"] {
+    font-weight: 600;
+  }
+  & [data-thread-title-chevron] {
+    margin-inline-end: -1.125rem;
+  }
+  & nav:has([data-workspace-parent-link]) {
+    position: relative;
+    padding-inline: 24px;
+  }
+  & li:has([data-workspace-parent-link]) {
+    position: absolute;
+    inset-inline-start: 0;
+  }
+}
+
+[data-workspace-window^="chat:"] {
+  & > [data-workspace-window-controls] {
+    right: max(4px, var(--heading-end, 0px));
+  }
+  & > [data-workspace-grab] {
+    left: max(4px, var(--heading-start, 0px));
+    top: 3px;
+    width: 24px;
+    height: 24px;
+    translate: none;
+  }
+}
+
+[data-workspace-window="route"] > [data-workspace-window-controls] {
+  right: max(4px, var(--heading-end, 0px));
+}
+
+[data-workspace-window="route"] [data-workspace-page-header] {
+  padding-inline-start: max(var(--workspace-gutter-start), var(--heading-start, 0px));
+  padding-inline-end: max(var(--workspace-gutter-end), var(--heading-end, 0px));
+}
+
+.workspace-docked-sidebar:not(:has(> [data-workspace-panel-heading])) [data-thread-tools] {
+  padding-top: 0;
+  padding-inline-start: calc(var(--leading-controls) - var(--workspace-seam));
+  padding-inline-end: 0;
+}
+
+.workspace-docked-sidebar [data-thread-search] {
+  padding-inline: 2px;
+  gap: 4px;
+}
+
+[data-workspace-owner]:not([data-workspace-owner="main"]) [data-thread-terminal-drawer] {
+  --terminal-background: transparent;
+  background-color: transparent;
+}
+
+[data-workspace-owner="left"] [data-app-sidebar] {
+  --sidebar-row-active: color-mix(in srgb, var(--sidebar-foreground) 9%, transparent);
+  --sidebar-row-selected: var(--sidebar-row-active);
+  --sidebar-row-hover: color-mix(in srgb, var(--sidebar-foreground) 5%, transparent);
 }
 
 @utility topbar-scroll-fade {
@@ -1894,7 +1996,7 @@ body {
 
 @media not (prefers-reduced-transparency: reduce) {
   /* Native behind-window vibrancy on macOS: keep root transparent so WindowServer
-     vibrancy shows through the Z0 frame, titlebar, seams, and translucent sidebars. */
+     vibrancy shows through the shared workspace background. */
   html.electron-macos:not([style*="--glass-blur: 0px"]):has([data-workspace-dock]):not(
       :has([data-window-fullscreen="true"])
     ),
@@ -1909,8 +2011,6 @@ body {
     background-size: cover;
   }
 
-  /* Stratified opacity tiers (Feel 1) calibrated over native behind-window vibrancy:
-     Z0 board < Left sidebar < Right inspector < Floating, while Main/Bottom canvas stays 100% solid. */
   :is(html.electron-macos, html[style*="--theme-background-image"]):not(
       [style*="--glass-blur: 0px"]
     ):not(:has([data-window-fullscreen="true"]))
@@ -1918,16 +2018,6 @@ body {
     --workspace-board: color-mix(
       in oklab,
       var(--app-chrome-background) calc(6% + (var(--glass-opacity) - 40%) * 1.15),
-      transparent
-    );
-    --workspace-left-surface: color-mix(
-      in oklab,
-      var(--sidebar) calc(34% + (var(--glass-opacity) - 40%) * 0.9),
-      transparent
-    );
-    --workspace-right-surface: color-mix(
-      in oklab,
-      var(--background) calc(50% + (var(--glass-opacity) - 40%) * 0.72),
       transparent
     );
     --workspace-floating-surface: color-mix(

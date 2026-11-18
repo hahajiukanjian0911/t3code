@@ -76,7 +76,7 @@ describe("workspace window ownership", () => {
         floating: { x: -500, height: null },
         maximized: { windowId: "threads", stage: "full" },
       }).sizes,
-    ).toEqual({ left: 180, right: 320, bottom: 220, companion: 220 });
+    ).toEqual({ left: 246, right: 280, bottom: 152, companion: 220 });
     expect(
       restoreWorkspaceLayout({
         maximized: { windowId: "threads", stage: "full" },

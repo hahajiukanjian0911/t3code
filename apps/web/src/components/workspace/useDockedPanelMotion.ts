@@ -41,11 +41,6 @@ export function useDockedPanelMotion(
     }
     const { position, opacity } = motion.current;
     let frame = 0;
-    const header =
-      edge === "right"
-        ? body.parentElement?.querySelector<HTMLElement>("[data-workspace-titlebar]")
-        : null;
-    const tabs = header?.querySelector<HTMLElement>("[data-workspace-titlebar-right]");
     const track = `--workspace-${edge}-track`;
     const reserve = (p: number) => {
       if (edge === "left") {
@@ -53,7 +48,6 @@ export function useDockedPanelMotion(
       } else {
         const space = p ? `calc(${size * p}px + ${p} * var(--workspace-seam))` : "";
         body.style.setProperty(track, space);
-        header?.style.setProperty(track, space);
       }
     };
     const paint = () => {
@@ -62,7 +56,6 @@ export function useDockedPanelMotion(
         panel.style.transform = `translate3d(calc(${position.value - 1} * (100% + 2 * var(--workspace-seam))), 0, 0)`;
       }
       panel.style.opacity = String(opacity.value);
-      if (tabs) tabs.style.opacity = panel.style.opacity;
       notifyWorkspaceLayout();
     };
     const settle = () => {
@@ -70,16 +63,13 @@ export function useDockedPanelMotion(
       position.velocity = opacity.velocity = 0;
       reserve(target);
       panel.removeAttribute("data-dock-moving");
-      tabs?.removeAttribute("data-dock-moving");
       panel.style.transform = "";
       panel.style.opacity = "";
-      if (tabs) tabs.style.opacity = "";
       notifyWorkspaceLayout();
     };
 
     if (active && (position.value !== target || position.velocity !== 0)) {
       panel.setAttribute("data-dock-moving", "");
-      tabs?.setAttribute("data-dock-moving", "");
       const start = performance.now();
       let previous = start;
       const tick = (now: number) => {
@@ -107,10 +97,8 @@ export function useDockedPanelMotion(
       cancelAnimationFrame(frame);
       reserve(0);
       panel.removeAttribute("data-dock-moving");
-      tabs?.removeAttribute("data-dock-moving");
       panel.style.transform = "";
       panel.style.opacity = "";
-      if (tabs) tabs.style.opacity = "";
     };
   }, [getBody, edge, open, size, active, durationMs]);
 }

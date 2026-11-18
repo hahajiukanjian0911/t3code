@@ -8,6 +8,7 @@ import {
 import { scopedThreadKey, scopeProjectRef } from "@t3tools/client-runtime/environment";
 import { projectScriptCwd, projectScriptRuntimeEnv } from "@t3tools/shared/projectScripts";
 import { resolveTerminalSessionLabel } from "@t3tools/shared/terminalLabels";
+import { SquareTerminalIcon } from "lucide-react";
 import { memo, useEffect } from "react";
 import { useComposerDraftStore } from "../composerDraftStore";
 import { useStableCallback } from "../hooks/useStableCallback";
@@ -244,6 +245,7 @@ export const PersistentThreadTerminalDrawer = memo(function PersistentThreadTerm
     <WorkspaceWindow
       id={`drawer:${scopedThreadKey(threadRef)}`}
       title="Terminal"
+      icon={<SquareTerminalIcon className="size-3.5" />}
       panel="bottom"
       available={visible}
       selected={terminalUiState.terminalOpen}

@@ -120,6 +120,20 @@ describe.each([1.25, 2.2])("renderGhosttySnapshot at a %sx device pixel ratio", 
 
     renderGhosttySnapshot({ ...options, snapshot: firstRow(blank) });
     expect(pixelsOffBackground(context)).toBe(0);
+
+    const transparent = { ...options, transparentBackground: true };
+    const sample = () => [
+      ...context.getImageData(Math.floor(16 * scale), Math.floor(10 * scale), 1, 1).data,
+    ];
+    renderGhosttySnapshot({ ...transparent, snapshot: firstRow(blank), forceFull: true });
+    expect(sample()[3]).toBe(0);
+    renderGhosttySnapshot({
+      ...transparent,
+      snapshot: firstRow({ ...blank, background: { r: 10, g: 20, b: 30 } }),
+    });
+    expect(sample()).toEqual([10, 20, 30, 255]);
+    renderGhosttySnapshot({ ...transparent, snapshot: firstRow(blank) });
+    expect(sample()[3]).toBe(0);
   });
 
   it("keeps concealed text and its decorations hidden, under a block cursor too", () => {

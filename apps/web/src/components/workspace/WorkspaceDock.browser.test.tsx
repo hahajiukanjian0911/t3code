@@ -43,7 +43,7 @@ function Content({ mount }: { mount: () => () => void }) {
     </div>
   );
 }
-it("keeps live window content when moving, splitting, hiding and restoring it, with every tab in the titlebar", async () => {
+it("keeps live window content when moving, splitting, hiding and restoring it, with tabs inside their own panels", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   const dispose = vi.fn(),
@@ -76,7 +76,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
     chatControls.closest("[data-workspace-window]")?.getAttribute("data-workspace-window"),
   ).toBe("chat:test");
   expect(
-    screen.container.querySelector("[data-workspace-titlebar] [data-workspace-window-controls]"),
+    screen.container.querySelector("[data-workspace-controls] [data-workspace-window-controls]"),
   ).toBeNull();
   await userEvent.fill(screen.getByRole("textbox", { name: "draft" }), "unsent draft");
   await expect.element(screen.getByRole("tab", { name: "README", exact: true })).toBeVisible();
@@ -94,7 +94,9 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   expect(input.closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel")).toBe(
     "right",
   );
-  expect(screen.container.querySelectorAll('[data-workspace-panel] [role="tab"]')).toHaveLength(0);
+  expect(
+    screen.container.querySelectorAll('[data-workspace-panel="right"] [role="tab"]'),
+  ).toHaveLength(2);
   expect(input).toBe(screen.getByRole("textbox", { name: "draft" }).element());
   expect(chatControls.closest("[data-workspace-window]")).toBe(
     input.closest("[data-workspace-window]"),
@@ -124,7 +126,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
     .element(screen.getByRole("button", { name: "Toggle Right panel" }))
     .toHaveAttribute("aria-pressed", "true");
   expect(
-    screen.container.querySelectorAll("[data-workspace-titlebar] button[aria-pressed]"),
+    screen.container.querySelectorAll("[data-workspace-controls] button[aria-pressed]"),
   ).toHaveLength(3);
   await userEvent.click(
     page
@@ -140,9 +142,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   expect(mount).toHaveBeenCalledTimes(1);
   expect(dispose).not.toHaveBeenCalled();
   expect(frame.contentDocument).toBe(frameDocument);
-  expect(
-    screen.container.querySelector("[data-workspace-titlebar]")?.getBoundingClientRect().height,
-  ).toBe(34);
+  expect(screen.container.querySelector("[data-workspace-titlebar]")).toBeNull();
 });
 it("cancels a handle drag with Escape and floats a window without remounting its input", async () => {
   await page.viewport(1280, 800);
@@ -255,13 +255,13 @@ it("restores a hidden panel without an initially selected resource reopening it"
       </WorkspaceRoot>
     </div>,
   );
-  const titlebar = screen.container.querySelector("[data-workspace-titlebar]")!;
-  expect(titlebar.textContent).not.toContain("T3 Code");
+  const controls = screen.container.querySelector("[data-workspace-controls]")!;
+  expect(controls.textContent).not.toContain("T3 Code");
   expect(
     screen
       .getByRole("button", { name: "Toggle Left panel" })
       .element()
-      .closest("[data-workspace-titlebar-leading]"),
+      .closest("[data-workspace-controls-leading]"),
   ).not.toBeNull();
   const bottomToggle = screen.getByRole("button", { name: "Toggle Bottom panel" });
   await expect.element(bottomToggle).toHaveAttribute("aria-pressed", "false");
@@ -279,7 +279,7 @@ it("restores a hidden panel without an initially selected resource reopening it"
   expect(sidebar.querySelector("[data-workspace-window-controls]")).toBeNull();
   expect(sidebar.querySelector("button")).toBeNull();
   expect(
-    screen.container.querySelector('[data-workspace-titlebar] [aria-haspopup="menu"]'),
+    screen.container.querySelector('[data-workspace-controls] [aria-haspopup="menu"]'),
   ).toBeNull();
   await expect
     .element(screen.getByRole("button", { name: "Toggle Right panel" }))
@@ -454,7 +454,7 @@ it.each([true, false])(
   },
 );
 
-it("applies 7px concentric window cards, unmasked stratified translucency, with Details in the right panel", async () => {
+it("keeps side panels on the shared background and docks Details beside the raised conversation", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   const cleanupPlatform = syncDocumentElectronPlatformClasses("MacIntel");
@@ -509,7 +509,7 @@ it("applies 7px concentric window cards, unmasked stratified translucency, with 
   expect(screen.container.querySelector('[aria-label="Close Details"]')).not.toBeNull();
   expect(screen.container.querySelector('[aria-label="Close Files"]')).not.toBeNull();
   const dock = screen.container.querySelector<HTMLElement>("[data-workspace-dock]")!;
-  const titlebar = screen.container.querySelector<HTMLElement>("[data-workspace-titlebar]")!;
+  const controls = screen.container.querySelector<HTMLElement>("[data-workspace-controls]")!;
   const rightToggles = screen
     .getByRole("button", { name: "Toggle Right panel" })
     .element().parentElement!;
@@ -545,10 +545,11 @@ it("applies 7px concentric window cards, unmasked stratified translucency, with 
   };
 
   expect(document.documentElement.classList.contains("electron-macos")).toBe(true);
-  expect(getComputedStyle(titlebar).height).toBe("34px");
+  expect(getComputedStyle(controls).position).toBe("absolute");
+  expect(mainPanel.getBoundingClientRect().top - dock.getBoundingClientRect().top).toBe(6);
   expect(alphaOf(document.body)).toBe(0);
   expect(alphaOf(mainPanel)).toBe(0);
-  expect(alphaOf(titlebar)).toBe(0);
+  expect(alphaOf(controls)).toBe(0);
   expect(alphaOf(rightToggles)).toBe(0);
 
   // Inner portal containers and sidebar wrappers never paint an opaque fill over window cards or split seams.
@@ -557,8 +558,11 @@ it("applies 7px concentric window cards, unmasked stratified translucency, with 
   expect(alphaOf(rightWindowContainer)).toBe(0);
   expect(alphaOf(mainGroup)).toBe(255);
   expect(alphaOf(mainWindowContainer)).toBe(0);
-  expect(getComputedStyle(mainGroup).borderRadius).toBe("7px");
-  expect(getComputedStyle(rightGroup).borderRadius).toBe("7px");
+  expect(getComputedStyle(mainGroup).borderRadius).toBe("10px");
+  for (const panel of [leftGroup, rightGroup]) {
+    expect(getComputedStyle(panel).boxShadow).toBe("none");
+    expect(getComputedStyle(panel).borderTopWidth).toBe("0px");
+  }
   await userEvent.click(screen.getByRole("tab", { name: "Details", exact: true }));
   await expect.element(inspector).toBeVisible();
   await userEvent.click(screen.getByRole("tab", { name: "Files", exact: true }));
@@ -592,14 +596,10 @@ it("applies 7px concentric window cards, unmasked stratified translucency, with 
     5,
   );
 
-  // Default 80% tier: Z0 < Left (~70%) < Right (~79%) < Main conversation (100% solid).
   expect(alphaOf(dock)).toBeGreaterThan(100);
   expect(alphaOf(dock)).toBeLessThan(160);
-  expect(alphaOf(leftGroup)).toBeGreaterThan(alphaOf(dock));
-  expect(alphaOf(leftGroup)).toBeLessThan(195);
-  expect(alphaOf(rightGroup)).toBeGreaterThan(alphaOf(leftGroup));
-  expect(alphaOf(rightGroup)).toBeLessThan(220);
-  expect(alphaOf(mainGroup)).toBe(255);
+  expect(alphaOf(leftGroup)).toBe(0);
+  expect(alphaOf(rightGroup)).toBe(0);
 
   using _glassStyle = {
     [Symbol.dispose]: () => {
@@ -607,32 +607,27 @@ it("applies 7px concentric window cards, unmasked stratified translucency, with 
       document.documentElement.style.removeProperty("--glass-blur");
     },
   };
-  // 40% ultra-glass tier: Z0 (~6%) < Left (~34%) < Right (~50%) < Main conversation (100% solid).
   document.documentElement.style.setProperty("--glass-opacity", "40%");
   expect(alphaOf(dock)).toBeLessThan(30);
-  expect(alphaOf(leftGroup)).toBeGreaterThan(70);
-  expect(alphaOf(leftGroup)).toBeLessThan(110);
-  expect(alphaOf(rightGroup)).toBeGreaterThan(115);
-  expect(alphaOf(rightGroup)).toBeLessThan(150);
+  expect(alphaOf(leftGroup)).toBe(0);
+  expect(alphaOf(rightGroup)).toBe(0);
   expect(alphaOf(mainGroup)).toBe(255);
 
-  // 100% solid mode turns off all translucency across Z0, Left, and Right.
   document.documentElement.style.setProperty("--glass-opacity", "100%");
   document.documentElement.style.setProperty("--glass-blur", "0px");
   expect(alphaOf(dock)).toBe(255);
-  expect(alphaOf(leftGroup)).toBe(255);
-  expect(alphaOf(rightGroup)).toBe(255);
+  expect(alphaOf(leftGroup)).toBe(0);
+  expect(alphaOf(rightGroup)).toBe(0);
   document.documentElement.style.removeProperty("--glass-opacity");
   document.documentElement.style.removeProperty("--glass-blur");
 
-  // Fullscreen also falls back to 100% solid.
   await screen.rerender(ui(true, false));
   expect(alphaOf(dock)).toBe(255);
-  expect(alphaOf(leftGroup)).toBe(255);
-  expect(alphaOf(rightGroup)).toBe(255);
+  expect(alphaOf(leftGroup)).toBe(0);
+  expect(alphaOf(rightGroup)).toBe(0);
 });
 
-it("dismisses the floating modal overlay on backdrop click or Escape, restores from titlebar, and docks back", async () => {
+it("dismisses the floating modal overlay on backdrop click or Escape, restores from the window corner, and docks back", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   localStorage.setItem(
@@ -669,7 +664,7 @@ it("dismisses the floating modal overlay on backdrop click or Escape, restores f
   await userEvent.click(backdrop, { position: { x: 8, y: 8 } });
   await vi.waitFor(() => expect(overlay.hasAttribute("hidden")).toBe(true));
 
-  // Clicking the titlebar toggle restores it.
+  // Clicking the window toggle restores it.
   await userEvent.click(screen.getByRole("button", { name: "Toggle Floating panel" }));
   await vi.waitFor(() => expect(overlay.hasAttribute("hidden")).toBe(false));
 

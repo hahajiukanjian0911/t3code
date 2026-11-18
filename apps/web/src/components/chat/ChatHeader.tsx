@@ -10,7 +10,7 @@ import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, CornerLeftUpIcon } from "lucide-react";
 import {
   memo,
   useEffect,
@@ -122,7 +122,7 @@ export const ChatHeader = memo(function ChatHeader({
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- measures the breadcrumb list DOM via ResizeObserver, a frame and font loads to collapse the parent title
   useEffect(() => {
     const list = breadcrumbContainerRef.current?.querySelector("ol");
-    if (!list || !parentThreadLink) return;
+    if (!list || !parentThreadLink || workspaceDock) return;
     const measure = () => {
       const gap = Number.parseFloat(getComputedStyle(list).columnGap) || 0;
       const width = Array.from(list.children).reduce(
@@ -156,6 +156,7 @@ export const ChatHeader = memo(function ChatHeader({
     activeProjectName,
     activeThreadTitle,
     parentThreadLink,
+    workspaceDock,
     interfaceFont,
     isRenamingTitle,
   ]);
@@ -262,7 +263,7 @@ export const ChatHeader = memo(function ChatHeader({
         ariaLabel="Thread breadcrumb"
         className="flex-1 overflow-clip [overflow-clip-margin:2px]"
       >
-        {activeProject ? (
+        {activeProject && !workspaceDock ? (
           <>
             <WorkspaceBreadcrumbItem className="shrink">
               <Tooltip>
@@ -300,33 +301,45 @@ export const ChatHeader = memo(function ChatHeader({
                   render={
                     <button
                       type="button"
+                      data-workspace-parent-link={workspaceDock ? "" : undefined}
                       aria-label={`Open parent thread: ${parentThreadLink.title}`}
                       onClick={() => onOpenThread(parentThreadLink.threadId)}
                       className="inline-flex min-w-0 max-w-full cursor-pointer items-center rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                     />
                   }
                 >
-                  <WorkspaceBreadcrumbText
-                    aria-hidden
-                    className={collapseParentTitle ? "w-0" : undefined}
-                  >
-                    {parentThreadLink.title}
-                  </WorkspaceBreadcrumbText>
-                  {collapseParentTitle ? (
-                    <span aria-hidden data-parent-breadcrumb-ellipsis>
-                      ...
-                    </span>
-                  ) : null}
+                  {workspaceDock ? (
+                    <CornerLeftUpIcon aria-hidden className="size-4" />
+                  ) : (
+                    <>
+                      <WorkspaceBreadcrumbText
+                        aria-hidden
+                        className={collapseParentTitle ? "w-0" : undefined}
+                      >
+                        {parentThreadLink.title}
+                      </WorkspaceBreadcrumbText>
+                      {collapseParentTitle ? (
+                        <span aria-hidden data-parent-breadcrumb-ellipsis>
+                          ...
+                        </span>
+                      ) : null}
+                    </>
+                  )}
                 </TooltipTrigger>
                 <TooltipPopup side="top">{parentThreadLink.title}</TooltipPopup>
               </Tooltip>
             </WorkspaceBreadcrumbItem>
-            <WorkspaceBreadcrumbSeparator>
-              <WorkspaceBreadcrumbText>/</WorkspaceBreadcrumbText>
-            </WorkspaceBreadcrumbSeparator>
+            {!workspaceDock ? (
+              <WorkspaceBreadcrumbSeparator>
+                <WorkspaceBreadcrumbText>/</WorkspaceBreadcrumbText>
+              </WorkspaceBreadcrumbSeparator>
+            ) : null}
           </>
         ) : null}
-        <WorkspaceBreadcrumbItem current className="min-w-10 flex-1">
+        <WorkspaceBreadcrumbItem
+          current
+          className={cn(!workspaceDock && "min-w-10 flex-1", isRenamingTitle && "flex-1")}
+        >
           {renamingTitle !== null ? (
             <input
               autoFocus

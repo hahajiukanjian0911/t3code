@@ -23,6 +23,8 @@ export interface WorkspaceLayout {
   maximized: WorkspaceMaximizeState | null;
   floating: { x: number; y: number; width: number; height: number };
 }
+export const workspaceLeftMinWidth = 246;
+
 export function createWorkspaceLayout(): WorkspaceLayout {
   return {
     placements: {},
@@ -31,7 +33,7 @@ export function createWorkspaceLayout(): WorkspaceLayout {
     vertical: {},
     hidden: {},
     dismissed: [],
-    sizes: { left: 232, right: 320, bottom: 220, companion: 320 },
+    sizes: { left: 256, right: 280, bottom: 152, companion: 320 },
     groupWeights: {},
     panelZoomedGroup: {},
     maximized: null,
@@ -208,7 +210,7 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
     panelZoomedGroup,
     maximized,
     sizes: {
-      left: finite(sizes.left, fallback.sizes.left, 180, 600),
+      left: finite(sizes.left, fallback.sizes.left, workspaceLeftMinWidth, 600),
       right: finite(sizes.right, fallback.sizes.right, 180, 600),
       bottom: finite(sizes.bottom, fallback.sizes.bottom, 120, 600),
       companion: finite(sizes.companion, fallback.sizes.companion, 220, 640),

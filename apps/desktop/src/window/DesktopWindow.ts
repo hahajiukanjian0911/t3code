@@ -43,7 +43,8 @@ import * as DesktopRendererHistory from "../telemetry/DesktopRendererHistory.ts"
 import { makeQuitShortcutHandler } from "./QuitHold.ts";
 import { copyContextMenuImage } from "./ContextMenuImage.ts";
 
-const TITLEBAR_HEIGHT = 30;
+// The 6px workspace inset and 32px panel heading put the control row center at 22 CSS pixels.
+const TITLEBAR_HEIGHT = 44;
 
 class ContextMenuImageCopyError extends Schema.TaggedError<ContextMenuImageCopyError>()(
   "ContextMenuImageCopyError",
@@ -53,8 +54,7 @@ class ContextMenuImageCopyError extends Schema.TaggedError<ContextMenuImageCopyE
     return "Could not copy the context-menu image.";
   }
 }
-// Match the 30px workspace titlebar; native macOS buttons stay 14 points at any zoom.
-const MACOS_WORKSPACE_TOPBAR_HEIGHT = 30;
+// Native buttons stay 14 points at any zoom.
 const MACOS_WINDOW_BUTTON_RADIUS = 7;
 
 function parseMailtoAddress(rawUrl: string): Option.Option<string> {
@@ -77,8 +77,7 @@ function syncMacosWindowButtons(window: Electron.BrowserWindow): void {
   window.setWindowButtonPosition({
     x: 16,
     y: Math.round(
-      (MACOS_WORKSPACE_TOPBAR_HEIGHT * window.webContents.getZoomFactor()) / 2 -
-        MACOS_WINDOW_BUTTON_RADIUS,
+      (TITLEBAR_HEIGHT * window.webContents.getZoomFactor()) / 2 - MACOS_WINDOW_BUTTON_RADIUS,
     ),
   });
 }
@@ -327,7 +326,7 @@ function getWindowTitleBarOptions(
       titleBarStyle: "hiddenInset",
       trafficLightPosition: {
         x: 16,
-        y: MACOS_WORKSPACE_TOPBAR_HEIGHT / 2 - MACOS_WINDOW_BUTTON_RADIUS,
+        y: TITLEBAR_HEIGHT / 2 - MACOS_WINDOW_BUTTON_RADIUS,
       },
     };
   }

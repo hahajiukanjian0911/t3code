@@ -523,6 +523,7 @@ export interface GhosttySelectionPosition {
 }
 
 export interface GhosttyTerminalSurfaceOptions {
+  readonly transparentBackground?: boolean;
   readonly theme: GhosttyTheme;
   readonly font?: GhosttyTerminalFont;
   /** Read after font and WASM loading. */
@@ -722,10 +723,12 @@ export class GhosttyTerminalSurface {
     scrollbar.append(scrollbarThumb);
     mount.replaceChildren(canvas, input, scrollbar);
 
-    const context = canvas.getContext("2d", { alpha: false });
+    const context = canvas.getContext("2d", { alpha: options.transparentBackground ?? false });
     if (!context) throw new Error("Canvas 2D is unavailable");
-    context.fillStyle = `rgb(${options.theme.background.r}, ${options.theme.background.g}, ${options.theme.background.b})`;
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    if (!options.transparentBackground) {
+      context.fillStyle = `rgb(${options.theme.background.r}, ${options.theme.background.g}, ${options.theme.background.b})`;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    }
     const fontSize = terminalFontSize(options.font?.size);
     try {
       // Load bundled fonts before measuring; fallback metrics would size the wrong grid.
@@ -2086,6 +2089,9 @@ export class GhosttyTerminalSurface {
       padding: CONTENT_PADDING,
       originY: this.originY,
       forceFull: this.forceFullRender,
+      transparentBackground:
+        this.options.transparentBackground === true &&
+        ghosttyColorsEqual(this.snapshot.background, this.theme.background),
       cursorOn: this.cursorOn,
       previousCursorY: this.renderedCursorY,
       focused: this.focused,

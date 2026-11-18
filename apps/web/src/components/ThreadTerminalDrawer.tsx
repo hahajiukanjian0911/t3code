@@ -721,6 +721,7 @@ function TerminalSessionViewport({
       const setupFont = terminalFontRef.current;
       const terminalOptions = withLiveVisibility(visibleRef, {
         theme: terminalThemeFromApp(mount),
+        transparentBackground: Boolean(mount.closest("[data-workspace-dock]")),
         font: terminalFontOptions(setupFont.family, setupFont.size),
         onData: (data) => handleData(data),
         onBinary: (data) => void sendTerminalInput(data, "Terminal write failed", "binary"),
