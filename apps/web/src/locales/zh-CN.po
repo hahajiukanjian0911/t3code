@@ -138,6 +138,7 @@ msgstr "{0}，共 {1} {2}"
 #: src/components/GitActionsControl.tsx
 #: src/components/GitActionsControl.tsx
 #: src/components/PullRequestThreadDialog.tsx
+#: src/components/SavedViewsMenu.tsx
 #: src/components/chat/AssistantCitationCommentEditor.tsx
 #: src/components/chat/ChatOverlayHosts.tsx
 #: src/components/chat/ChatOverlayHosts.tsx
@@ -153,6 +154,7 @@ msgstr "{0}，共 {1} {2}"
 #: src/components/desktop/SshPasswordPromptDialog.tsx
 #: src/components/device/DeviceSetup.tsx
 #: src/components/diffs/DiffCommentAnnotation.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/projectScriptEditor.tsx
 #: src/components/projectScriptEditor.tsx
 #: src/components/pullRequest/LinkPullRequestDialog.tsx
@@ -419,6 +421,7 @@ msgstr "工作区"
 #: src/components/chat/MarkdownFileLink.tsx
 #: src/components/chat/MarkdownFileLink.tsx
 #: src/components/chat/MarkdownFileLink.tsx
+#: src/components/chat/QueuedRunsControl.tsx
 #: src/components/chat/UsageLimitRecoveryBanner.tsx
 #: src/components/chat/useProjectCloneBanner.tsx
 #: src/components/chat/useThreadLifecycle.tsx
@@ -503,6 +506,7 @@ msgstr "运行上下文：{0}"
 #: src/components/onboarding/WelcomePage.tsx
 #: src/components/onboarding/WelcomePage.tsx
 #: src/components/onboarding/WelcomePage.tsx
+#: src/components/settings/IssueTrackerSettings.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Projects"
 msgstr "项目"
@@ -1845,6 +1849,7 @@ msgstr "拉取请求"
 
 #: src/components/RightPanelTabs.tsx
 #: src/components/RightPanelTabs.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 msgid "Linked pull requests"
 msgstr "关联的拉取请求"
 
@@ -2820,6 +2825,8 @@ msgstr "每夜版插图"
 
 #: src/components/AddProjectToMachineDialog.tsx
 #: src/components/device/DeviceToolVersions.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestGhosts.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
@@ -4714,6 +4721,8 @@ msgstr "展开图表"
 #: src/components/device/DevicePanel.tsx
 #: src/components/device/DevicePanel.tsx
 #: src/components/files/AudioPreview.tsx
+#: src/components/issue/IssuesPage.tsx
+#: src/components/issue/IssuesPage.tsx
 #: src/components/onboarding/FirstRunGate.tsx
 #: src/components/onboarding/WelcomePage.tsx
 #: src/components/onboarding/WelcomePage.tsx
@@ -4723,6 +4732,7 @@ msgstr "展开图表"
 #: src/components/pullRequest/PullRequestsPage.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/DeviceSourcesSettings.tsx
+#: src/components/settings/IssueTrackerSettings.tsx
 #: src/components/sidebar/SidebarUpdateCapsule.tsx
 #: src/components/sidebar/SidebarUpdateCapsule.tsx
 msgid "Retry"
@@ -4817,6 +4827,8 @@ msgstr "只读。这些子 Agent 无法接收消息。"
 #: src/components/files/FileBrowserPanel.tsx
 #: src/components/files/FilePreviewPanel.tsx
 #: src/components/files/FilePreviewPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssuesPage.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 #: src/components/settings/ConnectionsSettings.tsx
 msgid "Loading…"
@@ -5703,6 +5715,7 @@ msgid "What went wrong?"
 msgstr "发生了什么问题？"
 
 #: src/components/chat/TimelineWorkGroupRows.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "Activity"
 msgstr "动态"
@@ -7990,7 +8003,7 @@ msgstr "将 {0} 价格恢复为自动"
 msgid "Blank cache rates use the input price. Enter 0 for free tokens. A mapped model’s usage counts as the model it maps to. {0}"
 msgstr "缓存费率留空时使用输入价格。免费 token 请填 0。映射模型的用量会计入目标模型。{0}"
 
-#: src/components/pullRequest/PullRequestChangeBreakdownStat.tsx
+#: src/components/pullRequest/ChangeBreakdownGrid.tsx
 #: src/components/usage/UsagePage.tsx
 #: src/components/usage/UsageProviderChart.tsx
 #: src/components/usage/UsageProviderChart.tsx
@@ -8259,6 +8272,7 @@ msgstr "正在加载分类统计"
 msgid "Could not post the comment"
 msgstr "无法发布评论"
 
+#: src/components/issue/IssueCommentComposer.tsx
 #: src/components/pullRequest/PullRequestCommentForm.tsx
 msgid "Leave a comment"
 msgstr "发表评论"
@@ -8292,6 +8306,7 @@ msgstr "审阅 {0}"
 msgid "Comment on {0}"
 msgstr "评论 {0}"
 
+#: src/components/issue/IssueCommentComposer.tsx
 #: src/components/pullRequest/PullRequestCommentForm.tsx
 #: src/components/pullRequest/PullRequestComposer.tsx
 msgid "Comment"
@@ -8594,10 +8609,12 @@ msgstr "无法添加标签 {0}"
 msgid "The host refused it. Check that you have triage access on this repository."
 msgstr "托管服务拒绝了操作。请确认你拥有此仓库的分类权限。"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestLabelPicker.tsx
 msgid "Applied"
 msgstr "已应用"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestLabelPicker.tsx
 msgid "Change labels"
 msgstr "更改标签"
@@ -8661,6 +8678,8 @@ msgstr "正在加载标签"
 msgid "<0/> Labels"
 msgstr "<0/> 标签"
 
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestGhosts.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
 msgid "Description"
@@ -8689,12 +8708,12 @@ msgstr "正在加载 {0} 对话"
 msgid "<0/> Open on {0}"
 msgstr "<0/> 在 {0} 中打开"
 
-#: src/components/pullRequest/PullRequestListFilters.tsx
+#: src/components/pullRequest/PullRequestsPage.tsx
 msgid "Search pull requests, or label:bug"
 msgstr "搜索拉取请求，或输入 label:bug"
 
-#: src/components/pullRequest/PullRequestListFilters.tsx
 #: src/components/pullRequest/PullRequestsColumn.tsx
+#: src/components/pullRequest/PullRequestsPage.tsx
 msgid "Search pull requests"
 msgstr "搜索拉取请求"
 
@@ -8707,6 +8726,7 @@ msgstr "· 不可用"
 msgid "Search authors"
 msgstr "搜索作者"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "<0/> Anyone"
 msgstr "<0/> 任何人"
@@ -8715,25 +8735,33 @@ msgstr "<0/> 任何人"
 msgid "Author"
 msgstr "作者"
 
+#: src/components/issue/IssueListFilterPickers.tsx
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "Search labels"
 msgstr "搜索标签"
 
+#: src/components/issue/IssueDetailGhost.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
 msgid "Labels"
 msgstr "标签"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 #: src/components/settings/ScheduledTasksSettings.tsx
 msgid "Filters"
 msgstr "筛选"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "State"
 msgstr "状态"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "Involvement"
 msgstr "参与情况"
@@ -8997,6 +9025,7 @@ msgstr "{0}描述"
 msgid "Describe this {0}"
 msgstr "描述此{0}"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestSummaryTab.tsx
 msgid "Edit description"
 msgstr "编辑说明"
@@ -9099,6 +9128,7 @@ msgstr "无法保存标题"
 msgid "The host refused the new title."
 msgstr "托管服务拒绝了新标题。"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestTitleEditor.tsx
 msgid "Edit title"
 msgstr "编辑标题"
@@ -9221,6 +9251,7 @@ msgid "Narrow your search to find more pull requests."
 msgstr "请缩小搜索范围以查找更多拉取请求。"
 
 #: src/components/AddProjectToMachineDialog.tsx
+#: src/components/issue/IssuesPage.tsx
 #: src/components/pullRequest/PullRequestsPage.tsx
 msgid "All"
 msgstr "全部"
@@ -10412,8 +10443,10 @@ msgid "No custom options. The composer uses the provider's default options."
 msgstr "没有自定义选项，输入区将使用服务提供方的默认选项。"
 
 #: src/browser/ServerBrowserSurface.tsx
+#: src/components/SavedViewsMenu.tsx
 #: src/components/chat/AssistantCitationCommentEditor.tsx
 #: src/components/chat/ProposedPlanCard.tsx
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestMarkdownEditor.tsx
 #: src/components/pullRequest/PullRequestTitleEditor.tsx
 #: src/components/settings/AcpSessionManagementSection.tsx
@@ -11211,7 +11244,7 @@ msgstr "生效条件表达式"
 msgid "Fix the expression above to continue editing visually."
 msgstr "请先修正上方表达式，再继续使用可视化编辑。"
 
-#. 0: commandLabel(row.command); 1: formatShortcutLabel(row.binding.shortcut)
+#. 0: commandLabel(row.command); 1: row.isUnassigned ? "Unassigned" \\: formatShortcutLabel(row.binding.shortcut)
 #: src/components/settings/KeybindingsSettings.tsx
 msgid "Edit shortcut for {0}: {1}"
 msgstr "编辑 {0} 的快捷键：{1}"
@@ -11223,6 +11256,8 @@ msgstr "编辑 {0} 的快捷键：{1}"
 msgid "Keybinding for {0}"
 msgstr "{0} 的快捷键"
 
+#: src/components/settings/KeybindingsSettings.tsx
+#: src/components/settings/KeybindingsSettings.tsx
 #: src/components/settings/KeybindingsSettings.tsx
 #: src/components/settings/KeybindingsSettings.tsx
 msgid "Unassigned"
@@ -13761,7 +13796,9 @@ msgstr "可用"
 msgid "Coming Soon"
 msgstr "即将支持"
 
+#. 0: tracker.displayName
 #. 0: item.label
+#: src/components/settings/IssueTrackerSettings.tsx
 #: src/components/settings/SourceControlSettings.tsx
 msgid "Toggle {0} details"
 msgstr "展开或收起 {0} 详情"
@@ -14887,11 +14924,6 @@ msgstr "每个模型都会在独立的工作树中启动。"
 msgid "Setup Required"
 msgstr "需要设置"
 
-#: src/components/CommandPalette.tsx
-#: src/components/GitActionsControl.tsx
-msgid "Open Settings -> Source control to configure this provider."
-msgstr "打开“设置 → 源代码管理”以配置此服务提供方。"
-
 #. 0: props.pathPreview
 #: src/components/CommandPaletteAddProject.tsx
 msgid "Creates {0}"
@@ -15677,10 +15709,12 @@ msgstr "未找到作者"
 msgid "Couldn't search authors on the host"
 msgstr "无法在托管平台搜索作者"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "Anyone"
 msgstr "任何人"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "No labels found"
 msgstr "未找到标签"
@@ -15689,6 +15723,7 @@ msgstr "未找到标签"
 msgid "Couldn't search labels on the host"
 msgstr "无法在托管平台搜索标签"
 
+#: src/components/issue/IssueListFilterPickers.tsx
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "Any"
 msgstr "任意"
@@ -15800,14 +15835,17 @@ msgstr "正在加载堆栈…"
 msgid "This pull request is no longer in a stack."
 msgstr "此拉取请求已不属于堆栈。"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestThreadLinks.tsx
 msgid "Unlink from this thread"
 msgstr "从此对话解除关联"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestThreadLinks.tsx
 msgid "Link to this thread"
 msgstr "链接到此对话"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/PullRequestThreadLinks.tsx
 msgid "Link to thread"
 msgstr "关联到任务"
@@ -15882,6 +15920,7 @@ msgstr "关注更改"
 msgid "Dismiss from thread"
 msgstr "从对话中关闭"
 
+#: src/components/issue/IssueDetailPanel.tsx
 #: src/components/pullRequest/ThreadPullRequestsPanel.tsx
 msgid "Unlink from thread"
 msgstr "取消关联任务"
@@ -16319,6 +16358,7 @@ msgstr "正在导入"
 msgid "Deleting"
 msgstr "正在删除"
 
+#: src/components/issue/IssuesPage.tsx
 #: src/components/settings/AcpSessionManagementSection.tsx
 msgid "Load more"
 msgstr "加载更多"
@@ -17344,7 +17384,9 @@ msgid "Remote \"{0}\" is set up. Make a commit and push it to share your code."
 msgstr "已设置远程仓库“{0}”。提交并推送后即可共享代码。"
 
 #. 0: publishProviderLabel
+#. 0: tracker.providerName
 #: src/components/GitActionsControl.tsx
+#: src/components/issue/IssueDetailGhost.tsx
 msgid "Open on {0}"
 msgstr "在 {0} 中打开"
 
@@ -17391,6 +17433,8 @@ msgid "({0} of {1})"
 msgstr "（{0}/{1}）"
 
 #: src/components/GitActionsControl.tsx
+#: src/components/issue/IssueDetailGhost.tsx
+#: src/components/issue/IssueDetailGhost.tsx
 msgid "none"
 msgstr "无"
 
@@ -20081,12 +20125,7 @@ msgstr "查看 Agent、导入项目并设置手机。"
 msgid "<0/> ( {0}% error)"
 msgstr "<0/>（错误率 {0}%）"
 
-#. 0.0: seconds
-#: src/components/settings/SpeechModelComparison.tsx
-msgid "<0>{0} s</0> / 30 s"
-msgstr "<0>{0} 秒</0> / 30 秒"
-
-#. 0: " "; 1: tier === "cpu" && data && data.secondsPer30s.cpu === undefined ? ( "update server" ) \\: seconds == null ? ( "not benchmarked" ) \\: ( <> <strong className="font-medium text-foreground">{seconds} s</strong> / 30 s </> )
+#. 0: " "; 1: seconds === undefined ? ( "update server for this benchmark" ) \\: seconds === null ? ( "not benchmarked" ) \\: ( <> <strong className="font-medium text-foreground"> {Number(seconds.toFixed(2))} s </strong>{" "} / 30 s </> )
 #: src/components/settings/SpeechModelComparison.tsx
 msgid "Speed:{0} {1}"
 msgstr "速度：{0} {1}"
@@ -20227,10 +20266,6 @@ msgstr "{0} 模型"
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Recommended"
 msgstr "推荐"
-
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "A good default pick for the languages it covers."
-msgstr "适合作为其支持语言的默认选择。"
 
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Live preview"
@@ -21055,11 +21090,6 @@ msgstr "已在其他位置下载？粘贴模型文件或文件夹路径"
 msgid "Use existing"
 msgstr "使用已有模型"
 
-#. 0: status.benchmarkTier === "cpu" ? "CPU" \\: "GPU"
-#: src/components/settings/VoiceSettingsPanel.tsx
-msgid "Grades are error rates and speed is seconds per 30 s of audio, from Handy’s benchmark {0}."
-msgstr "评级为错误率，速度为每 30 秒音频所需的秒数，数据来自 Handy 的基准测试 {0}。"
-
 #: src/components/settings/VoiceSettingsPanel.tsx
 msgid "Say a sentence. Cleanup is skipped, so you see exactly what the model heard."
 msgstr "说一句话。本次跳过文本整理，直接显示模型听到的内容。"
@@ -21354,3 +21384,425 @@ msgstr "已加载 1 次合并"
 #: src/components/pullRequest/PullRequestListFilters.tsx
 msgid "{0} merges loaded"
 msgstr "已加载 {0} 次合并"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Source control & issues"
+msgstr "版本控制与议题"
+
+#: src/i18n/staticUiLabels.ts
+msgid "Terminal close confirmation"
+msgstr "终端关闭确认"
+
+#: src/components/settings/IssueTrackerSettings.tsx
+#: src/components/settings/IssueTrackerSettings.tsx
+#: src/components/settings/IssueTrackerSettings.tsx
+#: src/i18n/staticUiLabels.ts
+msgid "Issue trackers"
+msgstr "议题追踪服务"
+
+#: src/components/CommandPalette.tsx
+#: src/components/GitActionsControl.tsx
+msgid "Open Settings -> Source control & issues to configure this provider."
+msgstr "打开 设置 -> 版本控制与议题 以配置此提供方。"
+
+#: src/components/CommandPalette.tsx
+msgid "Open issues"
+msgstr "打开议题"
+
+#: src/components/GitActionsControl.tsx
+msgid "Include all files"
+msgstr "包含全部文件"
+
+#. 0: file.path
+#: src/components/GitActionsControl.tsx
+msgid "Include {0}"
+msgstr "包含 {0}"
+
+#. 0: kind.shortNoun
+#: src/components/SavedViewsMenu.tsx
+msgid "Could not save {0} views"
+msgstr "无法保存 {0} 视图"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Local storage is unavailable or full. Try again after freeing space or allowing storage."
+msgstr "本地存储不可用或已满。请释放空间或允许访问存储后重试。"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "This saved view was removed"
+msgstr "此已保存视图已被移除"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Your name has been kept. Save it as a new view or cancel."
+msgstr "已保留你输入的名称。可另存为新视图或取消。"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Views"
+msgstr "视图"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Modified view"
+msgstr "已修改视图"
+
+#. 0: kind.noun
+#. 0: kind.noun
+#: src/components/SavedViewsMenu.tsx
+#: src/components/SavedViewsMenu.tsx
+msgid "Saved {0} views"
+msgstr "已保存的 {0} 视图"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Update saved view"
+msgstr "更新已保存视图"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Rename view…"
+msgstr "重命名视图…"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Delete view"
+msgstr "删除视图"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "<0/> Save current view…"
+msgstr "<0/> 保存当前视图…"
+
+#. 0: kind.shortNoun
+#: src/components/SavedViewsMenu.tsx
+msgid "Rename {0} view"
+msgstr "重命名 {0} 视图"
+
+#. 0: kind.shortNoun
+#: src/components/SavedViewsMenu.tsx
+msgid "Save {0} view"
+msgstr "保存 {0} 视图"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "Save your search, filters, and sort order on this device."
+msgstr "在此设备上保存搜索条件、筛选器与排序方式。"
+
+#: src/components/SavedViewsMenu.tsx
+msgid "View name"
+msgstr "视图名称"
+
+#: src/components/Sidebar.tsx
+msgid "Couldn't search thread messages"
+msgstr "无法搜索会话消息"
+
+#: src/components/issue/IssueCommentComposer.tsx
+msgid "The comment could not be posted"
+msgstr "无法发表评论"
+
+#: src/components/issue/IssueCommentComposer.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "The tracker refused it."
+msgstr "议题追踪服务拒绝了该操作。"
+
+#: src/components/issue/IssueCommentComposer.tsx
+msgid "Add a comment"
+msgstr "添加评论"
+
+#: src/components/issue/IssueCommentComposer.tsx
+msgid "Posting comment"
+msgstr "正在发表评论"
+
+#. 0: formatRelativeTimeLabel(seed.closedAt)
+#. 0: formatRelativeTimeLabel(detail.closedAt)
+#: src/components/issue/IssueDetailGhost.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "closed {0}"
+msgstr "关闭于 {0}"
+
+#. 0: formatRelativeTimeLabel(seed.createdAt)
+#. 0: formatRelativeTimeLabel(detail.createdAt)
+#: src/components/issue/IssueDetailGhost.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "opened {0}"
+msgstr "创建于 {0}"
+
+#: src/components/issue/IssueDetailGhost.tsx
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Assignees"
+msgstr "负责人"
+
+#: src/components/issue/IssueDetailGhost.tsx
+msgid "Loading issue"
+msgstr "正在加载议题"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Could not unlink the issue"
+msgstr "无法取消关联议题"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Could not link the issue"
+msgstr "无法关联议题"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "The server refused it."
+msgstr "服务器拒绝了该操作。"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Could not change labels"
+msgstr "无法更改标签"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "This tracker has no labels."
+msgstr "此追踪服务暂无标签。"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Could not change assignees"
+msgstr "无法更改负责人"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Assigned"
+msgstr "已指派"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Change assignees"
+msgstr "更改负责人"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Nobody can be assigned here."
+msgstr "此处没有可指派的成员。"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Closes this issue"
+msgstr "关闭此议题"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Could not load this issue"
+msgstr "无法加载此议题"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Older comments could not be read"
+msgstr "无法读取更早的评论"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "The issue could not be updated"
+msgstr "无法更新此议题"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "The state could not be changed"
+msgstr "无法更改状态"
+
+#. 0: currentState.label
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Issue state, {0}"
+msgstr "议题状态：{0}"
+
+#. 0: detail.displayKey; 1: tracker.providerName
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Open {0} on {1}"
+msgstr "在 {1} 上打开 {0}"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Refresh issue"
+msgstr "刷新议题"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Issue title"
+msgstr "议题标题"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Read-only"
+msgstr "只读"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Load older comments"
+msgstr "加载更早评论"
+
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Nothing has happened here yet."
+msgstr "此处暂无动态。"
+
+#. 0: detail.commentCount
+#: src/components/issue/IssueDetailPanel.tsx
+msgid "Activity ({0})"
+msgstr "动态 ({0})"
+
+#. 0: props.labels.length
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "{0} labels"
+msgstr "{0} 个标签"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "Assignee"
+msgstr "负责人"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "The labels could not be read"
+msgstr "无法读取标签"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "More labels exist than are listed here."
+msgstr "还有更多标签未在此处全部列出。"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "Search people"
+msgstr "搜索成员"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "The people could not be read"
+msgstr "无法读取成员列表"
+
+#: src/components/issue/IssueListFilterPickers.tsx
+msgid "More people exist than are listed here."
+msgstr "还有更多成员未在此处全部列出。"
+
+#: src/components/chat/RightPanelSurfaceContent.tsx
+#: src/components/issue/IssuesPage.tsx
+msgid "Issues unavailable"
+msgstr "议题不可用"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "No trackers to read"
+msgstr "暂无可读取的追踪服务"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Add a project whose remote is on a supported tracker."
+msgstr "请添加远程仓库托管在受支持追踪服务上的项目。"
+
+#. 0: list.error
+#: src/components/issue/IssuesPage.tsx
+msgid "{0} Showing the issues that loaded."
+msgstr "{0} 当前仅显示已加载的议题。"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "This tracker cannot be read right now."
+msgstr "当前无法读取此追踪服务。"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Nothing matches that."
+msgstr "没有匹配结果。"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "No issues under these filters."
+msgstr "当前筛选条件下没有议题。"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Issues"
+msgstr "议题"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Issues breadcrumb"
+msgstr "议题路径导航"
+
+#: src/components/issue/IssuesPage.tsx
+#: src/components/issue/IssuesPage.tsx
+msgid "Search issues"
+msgstr "搜索议题"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Sort issues"
+msgstr "排序议题"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Filter by tracker"
+msgstr "按追踪服务筛选"
+
+#: src/components/issue/IssuesPage.tsx
+msgid "Refresh issues"
+msgstr "刷新议题列表"
+
+#: src/components/chat/QueuedRunsControl.tsx
+msgid "Could not send queued message"
+msgstr "无法发送排队消息"
+
+#. 0: link.displayKey; 1: link.title
+#: src/components/chat/ThreadDetailsIssueRows.tsx
+msgid "Issue {0}: {1}"
+msgstr "议题 {0}：{1}"
+
+#: src/components/settings/EnvironmentRoutesList.tsx
+msgid "Sign-in refused"
+msgstr "登录被拒绝"
+
+#: src/components/settings/EnvironmentRoutesList.tsx
+msgid "The host refused this device's sign-in. Pair this address again with Add route."
+msgstr "主机拒绝了此设备的登录请求。请通过“添加路由”重新配对此地址。"
+
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Could not load issue trackers"
+msgstr "无法加载议题追踪服务"
+
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Credential rejected"
+msgstr "凭据被拒绝"
+
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Create one <0/>"
+msgstr "创建一个 <0/>"
+
+#. 0: tracker.credential.helpUrl ? ( <> {" "} <InlineButton render={ <a href={tracker.credential.helpUrl} target="_blank" rel="noreferrer noopener" /> } > Create one <ExternalLinkIcon aria-hidden className="size-3" /> </InlineButton> </> ) \\: null; 1: failure ? <span className="block text-destructive">{failure}</span> \\: null
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Stored on the server. {0} {1}"
+msgstr "保存在服务器上。{0} {1}"
+
+#. 0: tracker.displayName
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Disconnect {0}"
+msgstr "断开 {0}"
+
+#. 0: tracker.displayName; 1: tracker.scopeNoun
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Pick the {0} {1} whose issues each project lists beside its repository's own."
+msgstr "为每个项目选择要在仓库自带议题旁一并列出的 {0} {1}。"
+
+#: src/components/settings/IssueTrackerSettings.tsx
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "Not bound"
+msgstr "未绑定"
+
+#. 0: tracker.displayName; 1: tracker.scopeNoun; 2: project.title
+#: src/components/settings/IssueTrackerSettings.tsx
+msgid "{0} {1} for {2}"
+msgstr "{2} 的 {0} {1}"
+
+#: src/components/settings/KeybindingsSettings.tsx
+msgid "Unassign"
+msgstr "清除快捷键"
+
+#: src/components/settings/KeybindingsSettings.tsx
+msgid "No keyboard shortcut assigned. Click Unassigned to set one."
+msgstr "尚未设置键盘快捷键。点击“未设置”进行绑定。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Ask before closing terminals and stopping their running processes."
+msgstr "关闭终端并停止正在运行的进程前先询问。"
+
+#: src/components/settings/SettingsPanels.tsx
+msgid "Confirm terminal closing"
+msgstr "关闭终端前确认"
+
+#. 0.0: Number(seconds.toFixed(2)); 0: " "
+#: src/components/settings/SpeechModelComparison.tsx
+msgid "<0>{0} s</0>{0} / 30 s"
+msgstr "<0>{0} 秒</0>{0} / 30 秒"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Faster"
+msgstr "更快"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "More accurate"
+msgstr "更准"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Balanced accuracy and speed for your selected languages on Handy’s reference benchmarks."
+msgstr "在 Handy 参考基准测试中，针对所选语言兼顾准确率与速度。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Quicker than Recommended on this reference tier, with useful accuracy."
+msgstr "在此参考档位下比“推荐”更快，同时保持实用准确率。"
+
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Higher accuracy with a longer reference processing budget for your selected languages."
+msgstr "针对所选语言提供更高准确率，参考处理耗时相对更长。"
+
+#. 0: status.benchmarkTier === "cpu" ? "CPU" \\: "GPU"
+#: src/components/settings/VoiceSettingsPanel.tsx
+msgid "Grades and seconds per 30 s use Handy’s reference {0}, not your hardware. Select languages for balanced recommendations."
+msgstr "评级与每 30 秒处理耗时基于 Handy 的参考 {0}，而非你的实际硬件。选择语言即可获得均衡推荐。"
