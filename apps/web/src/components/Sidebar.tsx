@@ -1031,9 +1031,16 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
   const highlightedProjectScopeKeyRef = useRef<string | null>(null);
   // Hold dropped rows until server placement is confirmed; block another pickup from replacing the hold.
   const [optimisticDrop, setOptimisticDrop] = useState<SidebarOptimisticDrop | null>(null);
+  const threadSearchToggleRef = useRef<HTMLButtonElement>(null);
   const threadSearchInputRef = useRef<HTMLInputElement>(null);
+  const [threadSearchOpen, setThreadSearchOpen] = useState(false);
   const [threadSearchQuery, setThreadSearchQuery] = useState("");
   const [searchHighlightKey, setSearchHighlightKey] = useState<string | null>(null);
+
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- focuses the search input DOM node after the search tray opens
+  useEffect(() => {
+    if (threadSearchOpen) threadSearchInputRef.current?.focus();
+  }, [threadSearchOpen]);
   const connectedEnvironmentIds = useConnectedEnvironmentIds();
   const queuePendingFileDrop = useSidebarPendingFileDropStore((s) => s.queuePendingFileDrop);
   const clearPendingFileDrop = useSidebarPendingFileDropStore((s) => s.clearPendingFileDrop);
@@ -1508,6 +1515,14 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
     setThreadSearchQuery("");
     setSearchHighlightKey(null);
   };
+  const toggleThreadSearch = () => {
+    if (threadSearchOpen) {
+      clearThreadSearch();
+      setThreadSearchOpen(false);
+      return;
+    }
+    setThreadSearchOpen(true);
+  };
   const selectThreadSearchResult = (thread: EnvironmentThreadShell) => {
     const ref = scopeThreadRef(thread.environmentId, thread.id);
     // A row listed for a message match opens find on it, as the palette does.
@@ -1516,16 +1531,26 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
     );
     const query = threadSearch.query;
     clearThreadSearch();
+    setThreadSearchOpen(false);
     navigateToThread(ref);
     if (match) openThreadFindOnQuery(scopedThreadKey(ref), findForMessageMatch(match, query));
   };
   const handleThreadSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.nativeEvent.isComposing || event.keyCode === 229) return;
-    if (event.key === "Escape" && isSearchingThreads) {
-      event.preventDefault();
-      event.stopPropagation();
-      clearThreadSearch();
-      return;
+    if (event.key === "Escape") {
+      if (threadSearchQuery.length > 0) {
+        event.preventDefault();
+        event.stopPropagation();
+        clearThreadSearch();
+        return;
+      }
+      if (threadSearchOpen) {
+        event.preventDefault();
+        event.stopPropagation();
+        setThreadSearchOpen(false);
+        threadSearchToggleRef.current?.focus();
+        return;
+      }
     }
     if (threadSearchResults.length === 0) return;
     if (event.key === "ArrowDown") {
@@ -2991,6 +3016,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
           <SidebarGroup className="z-[1]" data-thread-tools="">
             <SidebarThreadHeader
               hasProjects={projectGroups.length > 0}
+              dragRegion={isElectron && workspaceDock}
               projectScope={
                 <Combobox
                   items={projectScopeItems}
@@ -3204,6 +3230,9 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
                   projectGroups.length,
                 )
               }
+              searchOpen={threadSearchOpen}
+              onToggleSearch={toggleThreadSearch}
+              searchToggleRef={threadSearchToggleRef}
               searchInputRef={threadSearchInputRef}
               searchQuery={threadSearchQuery}
               onSearchQueryChange={(value) => {

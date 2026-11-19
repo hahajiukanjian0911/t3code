@@ -663,13 +663,16 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 
 .workspace-docked-sidebar:not(:has(> [data-workspace-panel-heading])) [data-thread-tools] {
   padding-top: 0;
-  padding-inline-start: calc(var(--leading-controls) - var(--workspace-seam));
-  padding-inline-end: 0;
+  padding-inline: 0;
 }
 
-.workspace-docked-sidebar [data-thread-search] {
-  padding-inline: 2px;
-  gap: 4px;
+.workspace-docked-sidebar:not(:has(> [data-workspace-panel-heading])) [data-thread-tools-bar] {
+  padding-inline-start: calc(var(--leading-controls) - var(--workspace-seam));
+  padding-inline-end: 4px;
+}
+
+.workspace-docked-sidebar:not(:has(> [data-workspace-panel-heading])) [data-thread-search-tray] {
+  padding-inline: var(--sidebar-content-inset);
 }
 
 [data-workspace-owner]:not([data-workspace-owner="main"]) [data-thread-terminal-drawer] {
