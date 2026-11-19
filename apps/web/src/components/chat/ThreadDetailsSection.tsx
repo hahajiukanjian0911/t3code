@@ -6,7 +6,6 @@ export function ThreadDetailsSection({
   headingId,
   title,
   actions,
-  separated = true,
   showHeading = true,
   children,
   ...props
@@ -14,7 +13,6 @@ export function ThreadDetailsSection({
   headingId: string;
   title: string;
   actions?: ReactNode;
-  separated?: boolean;
   showHeading?: boolean;
 }) {
   return (
@@ -22,12 +20,8 @@ export function ThreadDetailsSection({
       {...props}
       aria-labelledby={showHeading ? headingId : undefined}
       aria-label={showHeading ? undefined : title}
-      // A row can still render nothing (a fresh draft quiets Git actions), so an empty section
-      // collapses, and a divider only follows a section that has content.
-      className={cn(
-        "px-2.5 py-2 has-[>div:last-child:empty]:hidden",
-        separated && "border-border/60 [section:not(:has(>div:last-child:empty))~&]:border-t",
-      )}
+      // A row can still render nothing (a fresh draft quiets Git actions), so an empty section collapses.
+      className="px-2.5 py-1 has-[>div:last-child:empty]:hidden"
     >
       <div
         className={cn(

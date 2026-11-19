@@ -28,8 +28,7 @@ import { ThreadAutomationsPanel } from "./ThreadAutomationsPanel";
 import { ThreadRelationshipsPanel } from "./ThreadRelationshipsControl";
 import { ThreadServersPanel } from "./ThreadServersPanel";
 import {
-  ThreadDetailsContext,
-  ThreadDetailsUsage,
+  ThreadDetailsUsageAndContextCard,
   type ThreadDetailsUsageInput,
 } from "./ThreadDetailsUsage";
 import { ThreadDetailsItemsMenuItems } from "./ThreadDetailsItemsMenu";
@@ -195,12 +194,11 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
         };
         return (
           <>
-            <div className="group/details-items">
+            <div className="group/details-items py-1">
               {show.environment || show.openIn || show.scripts ? (
                 <ThreadDetailsSection
                   headingId="thread-details-workspace-heading"
                   title="Workspace"
-                  separated={false}
                   showHeading={false}
                 >
                   <div className="flex flex-col gap-1.5">
@@ -251,9 +249,6 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
                   headingId="thread-details-version-control-heading"
                   title="Version Control"
                   showHeading={false}
-                  separated={
-                    density === "full" && (show.environment || show.openIn || show.scripts)
-                  }
                 >
                   <div className="flex flex-col gap-1.5">
                     {show.gitSummary && props.gitCwd ? (
@@ -332,20 +327,18 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
                 />
               ) : null}
 
-              {visible.usage ? (
-                <ThreadDetailsUsage
-                  key={JSON.stringify([
+              {visible.usage || (visible.context && props.usage.contextWindow) ? (
+                <ThreadDetailsUsageAndContextCard
+                  usage={props.usage}
+                  showUsage={visible.usage}
+                  showContext={visible.context}
+                  usageKey={JSON.stringify([
                     props.environmentId,
                     props.usage.providerInstanceId,
                     props.usage.model,
                     props.threadId,
                   ])}
-                  {...props.usage}
                 />
-              ) : null}
-
-              {visible.context && props.usage.contextWindow ? (
-                <ThreadDetailsContext usage={props.usage.contextWindow} />
               ) : null}
 
               {/* Shown only when no section above has content, so an emptied card can be refilled. */}

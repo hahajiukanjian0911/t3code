@@ -24,11 +24,79 @@ interface PanelStart {
   wasStage: boolean;
 }
 
+interface PanelTarget {
+  panel: HTMLElement;
+  surface: HTMLElement;
+  start: PanelStart;
+}
+
 function frame(rect: DOMRect, destination: DOMRect, width: number, height: number): Keyframe {
   return {
     transform: `translate3d(${rect.x - destination.x}px, ${rect.y - destination.y}px, 0)`,
     clipPath: `inset(0 ${width - rect.width}px ${height - rect.height}px 0 round 10px)`,
   };
+}
+
+function animateStage(targets: PanelTarget[], timing: KeyframeAnimationOptions) {
+  for (const { panel, surface, start } of targets) {
+    const stage = start.wasStage || panel.hasAttribute("data-workspace-maximized-stage");
+    surface.style.width = `max(100%, ${start.width}px)`;
+    surface.style.height = `max(100%, ${start.height}px)`;
+    panel.setAttribute("data-workspace-moving", stage ? "stage" : "panel");
+  }
+  const animations: Animation[] = [];
+  const bounds = targets.map(({ panel }) => panel.getBoundingClientRect());
+  for (const [index, { panel, surface, start }] of targets.entries()) {
+    const { from } = start;
+    const to = bounds[index]!;
+    if (
+      !to.height ||
+      (from.x === to.x && from.y === to.y && from.width === to.width && from.height === to.height)
+    )
+      continue;
+    const width = Math.max(start.width, to.width);
+    const height = Math.max(start.height, to.height);
+    const animation = surface.animate(
+      [frame(from, to, width, height), frame(to, to, width, height)],
+      timing,
+    );
+    animations.push(animation);
+    const handle = panel.querySelector<HTMLElement>(':scope > [role="separator"]');
+    if (handle) {
+      const dx = panel.dataset.workspacePanel === "left" ? from.right - to.right : from.x - to.x;
+      animations.push(
+        handle.animate(
+          [{ transform: `translate(${dx}px, ${from.y - to.y}px)` }, { transform: "none" }],
+          timing,
+        ),
+      );
+    }
+    workspacePanelClip.set(panel, () => {
+      const progress = animation.effect?.getComputedTiming().progress ?? 0;
+      return new DOMRect(
+        from.x + (to.x - from.x) * progress,
+        from.y + (to.y - from.y) * progress,
+        from.width + (to.width - from.width) * progress,
+        from.height + (to.height - from.height) * progress,
+      );
+    });
+  }
+  return animations;
+}
+
+function animateSplit(main: PanelTarget, right: PanelTarget, timing: KeyframeAnimationOptions) {
+  const grid = right.panel.parentElement!;
+  const from = right.start.from.right - main.start.from.right;
+  const to = grid.style.getPropertyValue("--workspace-right-track");
+  main.panel.setAttribute("data-workspace-moving", "split");
+  right.panel.setAttribute("data-workspace-moving", "split");
+  workspacePanelClip.set(right.panel, () => right.panel.getBoundingClientRect());
+  return [
+    grid.animate(
+      [{ "--workspace-right-track": `${from}px` }, { "--workspace-right-track": to }],
+      timing,
+    ),
+  ];
 }
 
 export function useWorkspaceResizeTransition() {
@@ -75,16 +143,10 @@ export function useWorkspaceResizeTransition() {
     running.current?.(false);
     const dock = before.keys().next().value?.closest<HTMLElement>("[data-workspace-dock]");
     if (!dock || !active) return;
-    const targets: { panel: HTMLElement; surface: HTMLElement; start: PanelStart }[] = [];
+    const targets: PanelTarget[] = [];
     for (const [panel, start] of before) {
       const surface = panel.querySelector<HTMLElement>(":scope > [data-workspace-panel-surface]");
       if (!surface || !panel.isConnected || !canAnimatePanel(panel)) continue;
-      if (panel.inert && !surface.querySelector("[data-workspace-window]")) continue;
-      const stage = start.wasStage || panel.hasAttribute("data-workspace-maximized-stage");
-      // Pin before measuring the grid so the browser lays out text only at the larger endpoint.
-      surface.style.width = `max(100%, ${start.width}px)`;
-      surface.style.height = `max(100%, ${start.height}px)`;
-      panel.setAttribute("data-workspace-moving", stage ? "stage" : "panel");
       targets.push({ panel, surface, start });
     }
     if (!targets.length) return;
@@ -94,44 +156,13 @@ export function useWorkspaceResizeTransition() {
       easing: getComputedStyle(dock).getPropertyValue("--ease-drawer").trim() || "ease-out",
       fill: "both",
     } as const;
-    const animations: Animation[] = [];
-    const bounds = targets.map(({ panel }) => panel.getBoundingClientRect());
-    for (let index = 0; index < targets.length; index++) {
-      const { panel, surface, start } = targets[index]!;
-      const { from } = start;
-      const to = bounds[index]!;
-      if (
-        !to.height ||
-        (from.x === to.x && from.y === to.y && from.width === to.width && from.height === to.height)
-      )
-        continue;
-      const width = Math.max(start.width, to.width);
-      const height = Math.max(start.height, to.height);
-      const animation = surface.animate(
-        [frame(from, to, width, height), frame(to, to, width, height)],
-        timing,
-      );
-      animations.push(animation);
-      const handle = panel.querySelector<HTMLElement>(':scope > [role="separator"]');
-      if (handle) {
-        const dx = panel.dataset.workspacePanel === "left" ? from.right - to.right : from.x - to.x;
-        animations.push(
-          handle.animate(
-            [{ transform: `translate(${dx}px, ${from.y - to.y}px)` }, { transform: "none" }],
-            timing,
-          ),
-        );
-      }
-      workspacePanelClip.set(panel, () => {
-        const progress = animation.effect?.getComputedTiming().progress ?? 0;
-        return new DOMRect(
-          from.x + (to.x - from.x) * progress,
-          from.y + (to.y - from.y) * progress,
-          from.width + (to.width - from.width) * progress,
-          from.height + (to.height - from.height) * progress,
-        );
-      });
-    }
+    const main = targets.find(({ panel }) => panel.dataset.workspacePanel === "main");
+    const right = targets.find(({ panel }) => panel.dataset.workspacePanel === "right");
+    const staging = targets.some(
+      ({ panel, start }) => start.wasStage || panel.hasAttribute("data-workspace-maximized-stage"),
+    );
+    const split = main && right && !staging;
+    const animations = split ? animateSplit(main, right, timing) : animateStage(targets, timing);
     const finish = (notify = true) => {
       if (running.current !== finish) return;
       running.current = null;
@@ -149,7 +180,8 @@ export function useWorkspaceResizeTransition() {
     };
     const settle = () => finish();
     const onPointerDown = (event: PointerEvent) => {
-      if (event.target instanceof Element && event.target.closest('[role="separator"]')) finish();
+      const handle = event.target instanceof Element && event.target.closest('[role="separator"]');
+      if (handle && !(split && handle.parentElement === right.panel)) finish();
     };
     running.current = finish;
     window.addEventListener("resize", settle);

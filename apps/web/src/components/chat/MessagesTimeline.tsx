@@ -1131,7 +1131,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
       node.scrollTo({ top: node.scrollHeight, behavior: "instant" });
       return;
     }
-    if (!followsEnd && viewportElement.closest("[data-dock-animating]")) {
+    if (!followsEnd && isDockAnimating(viewportElement)) {
       const scrollRect = node.getBoundingClientRect();
       let anchor = readingResizeAnchorRef.current;
       if (!anchor) {

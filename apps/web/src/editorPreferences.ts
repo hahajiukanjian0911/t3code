@@ -46,13 +46,18 @@ export class PreferredEditorUnavailableError extends Schema.TaggedError<Preferre
   }
 }
 
+function resolveDefaultPreferredEditor(availableEditors: ReadonlyArray<EditorId>): EditorId | null {
+  if (availableEditors.includes("zed")) return "zed";
+  return EDITORS.find((editor) => availableEditors.includes(editor.id))?.id ?? null;
+}
+
 export function usePreferredEditor(availableEditors: ReadonlyArray<EditorId>) {
   const [lastEditor, setLastEditor] = useLocalStorage(LAST_EDITOR_KEY, null, EditorId);
 
   const effectiveEditor =
     lastEditor && availableEditors.includes(lastEditor)
       ? lastEditor
-      : (EDITORS.find((editor) => availableEditors.includes(editor.id))?.id ?? null);
+      : resolveDefaultPreferredEditor(availableEditors);
 
   return [effectiveEditor, setLastEditor] as const;
 }
@@ -66,7 +71,7 @@ function resolveAndPersistPreferredEditor(availableEditors: readonly EditorId[])
     console.warn("Could not read the preferred editor.", error);
   }
   if (stored && availableEditorIds.has(stored)) return stored;
-  const editor = EDITORS.find((editor) => availableEditorIds.has(editor.id))?.id ?? null;
+  const editor = resolveDefaultPreferredEditor(availableEditors);
   if (editor) {
     try {
       setLocalStorageItem(LAST_EDITOR_KEY, editor, EditorId);

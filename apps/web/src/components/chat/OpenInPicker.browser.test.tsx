@@ -188,25 +188,48 @@ describe("host editor access", () => {
     expect((await pressOpenFavorite()).defaultPrevented).toBe(false);
   });
 
-  it("opens Finder from panel quick-actions without overwriting the preferred editor shortcut", async () => {
+  it("renders Finder first and a Zed-default split editor dropdown in panel mode, updating default from the menu without Finder hijacking it", async () => {
     await using fixture = await setup();
-    const { renderPicker, click, pressOpenFavorite } = fixture;
+    const { renderPicker, byLabel, menuItems, click, pressOpenFavorite } = fixture;
     state.allowed.add(selected);
     await renderPicker(["vscode", "zed", "file-manager"], true, { revealFileManager: true });
     using _timers = fakeTimers();
 
-    const finderButton = [...document.querySelectorAll<HTMLButtonElement>("button")].find((btn) =>
-      btn.textContent?.includes("Files"),
-    );
-    expect(finderButton).not.toBeUndefined();
-    await click(finderButton!);
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>("button")];
+    expect(buttons[0]?.textContent).toContain("Files");
+    expect(buttons[1]?.textContent).toContain("Zed");
 
+    await click(buttons[0]!);
     expect(state.run).toHaveBeenCalledWith(
       expect.objectContaining({
         input: expect.objectContaining({ editor: "file-manager" }),
       }),
     );
     expect(state.setPreferred).not.toHaveBeenCalled();
+
+    await pressOpenFavorite();
+    expect(state.run).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({ editor: "zed" }),
+      }),
+    );
+
+    await click(byLabel("Choose editor"));
+    await vi.waitFor(() => {
+      expect(menuItems().map((item) => item.textContent)).toEqual(["VS Code", "Zed"]);
+    });
+    await click(menuItems()[0]!);
+    expect(state.setPreferred).toHaveBeenCalledWith("vscode");
+    expect(state.run).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({ editor: "vscode" }),
+      }),
+    );
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll<HTMLButtonElement>("button")[1]?.textContent).toContain(
+        "VS Code",
+      );
+    });
 
     await pressOpenFavorite();
     expect(state.run).toHaveBeenLastCalledWith(

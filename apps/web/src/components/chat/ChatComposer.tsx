@@ -86,8 +86,6 @@ import {
   extendReplacementRangeForTrailingSpace,
   replaceTextRange,
 } from "../../composer-logic";
-import { DEFAULT_COMPOSER_PLACEHOLDER } from "../../composerPlaceholder";
-import { useUiLabel } from "../../i18n/staticUiLabels";
 import { deriveComposerSendState, getAntigravitySendBlockReason } from "../ChatView.logic";
 import { threadHasStarted } from "../../lib/chatThreadActions";
 import {
@@ -494,7 +492,6 @@ const NO_PROVIDER_SKILLS: ServerProvider["skills"] = [];
 const NO_PROVIDER_SLASH_COMMANDS: ServerProvider["slashCommands"] = [];
 
 export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps) {
-  const uiLabel = useUiLabel();
   const {
     composerDraftTarget,
     environmentId,
@@ -3746,7 +3743,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                             ? "Choose a project above to start a thread"
                             : showProviderUnavailable
                               ? "Enable a provider in Settings to send a message"
-                              : (offeredPromptSuggestion ?? uiLabel(DEFAULT_COMPOSER_PLACEHOLDER))
+                              : (offeredPromptSuggestion ?? "")
                     }
                     placeholderSuffix={
                       offeredPromptSuggestion !== null ? (

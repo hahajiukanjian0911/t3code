@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -147,7 +148,9 @@ function createDockStore(
         body &&
         !after.full &&
         (before.panelOpen("right") !== after.panelOpen("right") ||
-          (after.panelVisible("right") && before.rightContentMode !== after.rightContentMode))
+          (after.panelVisible("right") &&
+            (before.rightContentMode !== after.rightContentMode ||
+              (after.rightContentMode && before.panelOpen("left") !== after.panelOpen("left")))))
       ) {
         captureResize(body, ["main", "right"]);
       }
@@ -939,7 +942,9 @@ function WindowContents({
     >
       {fixed || (id === "route" && !visible) ? null : (
         <>
-          <WindowGrab store={store} id={id} title={title} />
+          {isInspectorWorkspaceWindowId(id) ? null : (
+            <WindowGrab store={store} id={id} title={title} />
+          )}
           <div
             role="toolbar"
             aria-label={title}
@@ -1381,14 +1386,28 @@ function DockFrame({
           })()
         : undefined;
     const raiseRightCard = key === "right" && rightContentMode;
+    const focusedPanel = snapshot.focused
+      ? (layout.placements[snapshot.focused]?.panel ?? null)
+      : null;
+    const multiPanelVisible =
+      (panelVisible("left") ? 1 : 0) +
+        (panelVisible("main") ? 1 : 0) +
+        (panelVisible("right") ? 1 : 0) >
+      1;
+    const isFocusedPanel = !isStage && focusedPanel === key;
+    const showFocusIndicator = isFocusedPanel && multiPanelVisible;
+    const cardClass = "workspace-window-card workspace-window-surface-main overflow-hidden";
+    const focusedCardClass =
+      "border-foreground/20 ring-1 ring-inset ring-foreground/10 transition-[border-color,box-shadow] duration-150";
     const maximizeLabel = isStage ? "Restore from app maximize" : "Maximize in app";
     const panelBody = (
       <>
         {showTabs ? (
           <div
             className={cn(
-              "workspace-panel-heading drag-region",
+              "workspace-panel-heading drag-region transition-opacity duration-150",
               (raiseRightCard || isStage) && "border-b border-border/60",
+              multiPanelVisible && !isFocusedPanel && "opacity-65",
             )}
             data-workspace-panel-heading={key}
             data-workspace-stage-heading={isStage ? "" : undefined}
@@ -1479,6 +1498,7 @@ function DockFrame({
                   className={cn(
                     "relative flex min-h-0 min-w-0 flex-col overflow-hidden",
                     raiseCard && "workspace-window-card workspace-window-surface-main",
+                    raiseCard && showFocusIndicator && focusedCardClass,
                     raiseRightCard &&
                       visibleIdx > 0 &&
                       (isVertical ? "border-t border-border/60" : "border-l border-border/60"),
@@ -1501,6 +1521,7 @@ function DockFrame({
         data-workspace-covered={full && !isStage && panelOpen(key) ? "" : undefined}
         data-workspace-maximized-stage={isStage ? "full" : undefined}
         data-workspace-panel={key}
+        data-workspace-panel-focused={isFocusedPanel ? "" : undefined}
         data-workspace-right-mode={
           key === "right" ? (rightContentMode ? "content" : "inspector") : undefined
         }
@@ -1516,6 +1537,7 @@ function DockFrame({
           key === "main" &&
             groups.main.length === 0 &&
             "workspace-window-card workspace-window-surface-main",
+          key === "main" && groups.main.length === 0 && showFocusIndicator && focusedCardClass,
         )}
         style={
           isStage
@@ -1528,14 +1550,42 @@ function DockFrame({
       >
         <div
           data-workspace-panel-surface=""
-          data-workspace-right-card={raiseRightCard ? "" : undefined}
           className={cn(
-            "flex min-h-0 min-w-0 flex-1 flex-col",
-            (raiseRightCard || isStage) &&
-              "workspace-window-card workspace-window-surface-main overflow-hidden",
+            "relative flex min-h-0 min-w-0 flex-1 flex-col",
+            isStage && key !== "right" && cardClass,
+            key === "left" && "rounded-xl ring-1 ring-inset transition-shadow duration-150",
+            key === "left" && (showFocusIndicator ? "ring-foreground/15" : "ring-transparent"),
           )}
         >
-          {panelBody}
+          <span
+            aria-hidden
+            data-workspace-focus-beam=""
+            className={cn(
+              "pointer-events-none absolute top-0 right-3.5 left-3.5 z-30 h-0.5 rounded-b-full bg-foreground/55 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none",
+              showFocusIndicator ? "scale-x-100 opacity-100" : "scale-x-50 opacity-0",
+            )}
+          />
+          {key === "right" ? (
+            <div
+              data-workspace-right-contents=""
+              data-workspace-right-card={raiseRightCard ? "" : undefined}
+              className={cn(
+                "flex min-h-0 min-w-0 flex-1 flex-col",
+                (raiseRightCard || isStage) && cardClass,
+                raiseRightCard && showFocusIndicator && focusedCardClass,
+                !raiseRightCard &&
+                  !isStage &&
+                  "rounded-xl ring-1 ring-inset transition-shadow duration-150",
+                !raiseRightCard &&
+                  !isStage &&
+                  (showFocusIndicator ? "ring-foreground/15" : "ring-transparent"),
+              )}
+            >
+              {panelBody}
+            </div>
+          ) : (
+            panelBody
+          )}
         </div>
         {!isStage && (key === "left" || key === "right") ? (
           <PanelResize
@@ -1543,7 +1593,6 @@ function DockFrame({
             panel={key}
             rightContentMode={key === "right" && rightContentMode}
             availableMainAndRight={availableMainAndRight}
-            currentRightWidth={effectiveRightWidth}
           />
         ) : null}
       </section>
@@ -1797,12 +1846,18 @@ function DockFrame({
       <div
         ref={(node) => store.setBody(node)}
         className="relative grid min-h-0 flex-1 gap-(--workspace-seam) overflow-clip p-(--workspace-seam)"
-        style={{
-          gap: 0,
-          gridTemplateColumns: `${leftGridColumn ? `${layout.sizes.left}px var(--workspace-seam) ` : ""}minmax(0,1fr) ${panelOpen("right") ? `calc(${effectiveRightWidth}px + var(--workspace-seam))` : "0px"}`,
-          gridTemplateRows: "minmax(0,1fr)",
-          gridTemplateAreas: leftGridColumn ? '"left . main right"' : '"main right"',
-        }}
+        style={
+          {
+            "--workspace-right-width": `${effectiveRightWidth}px`,
+            "--workspace-right-track": panelOpen("right")
+              ? "calc(var(--workspace-right-width) + var(--workspace-seam))"
+              : "0px",
+            gap: 0,
+            gridTemplateColumns: `${leftGridColumn ? `${layout.sizes.left}px var(--workspace-seam) ` : ""}minmax(0,1fr) var(--workspace-right-track)`,
+            gridTemplateRows: "minmax(0,1fr)",
+            gridTemplateAreas: leftGridColumn ? '"left . main right"' : '"main right"',
+          } as CSSProperties
+        }
       >
         <div className="pointer-events-none invisible absolute inset-0" aria-hidden inert>
           {children}
@@ -2010,13 +2065,11 @@ function PanelResize({
   panel,
   rightContentMode = false,
   availableMainAndRight = 900,
-  currentRightWidth = 280,
 }: {
   store: DockStore;
   panel: "left" | "right";
   rightContentMode?: boolean;
   availableMainAndRight?: number;
-  currentRightWidth?: number;
 }) {
   const panelLabels = workspacePanelLabel();
   return (
@@ -2044,10 +2097,8 @@ function PanelResize({
         event.preventDefault();
         const node = event.currentTarget;
         node.setPointerCapture(event.pointerId);
-        const initial =
-          panel === "right" && rightContentMode
-            ? currentRightWidth
-            : store.getSnapshot().layout.sizes[panel];
+        const owner = node.parentElement!;
+        const initial = owner.getBoundingClientRect().width;
         const start = event.clientX;
         const move = (next: PointerEvent) => {
           const delta = next.clientX - start;
@@ -2071,6 +2122,10 @@ function PanelResize({
           );
           store.updateLayout({ ...current, sizes: { ...current.sizes, [panel]: value } }, false);
         };
+        if (panel === "right" && owner.dataset.workspaceMoving === "split") {
+          move(event.nativeEvent);
+          for (const animation of owner.parentElement!.getAnimations()) animation.finish();
+        }
         const stop = () => {
           store.updateLayout(store.getSnapshot().layout);
           node.removeEventListener("pointermove", move);

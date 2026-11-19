@@ -4376,6 +4376,7 @@ msgstr "Stashed prompts"
 #: src/components/chat/ComposerUsageLimits.tsx
 #: src/components/chat/ThreadDetailsUsage.tsx
 #: src/components/chat/ThreadDetailsUsage.tsx
+#: src/components/chat/ThreadDetailsUsage.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "Usage limits"
 msgstr "Usage limits"
@@ -4876,9 +4877,13 @@ msgstr "Subagent"
 #. 0: fileManagerName
 #. 0: primaryOption?.label ?? "editor"
 #. 0: primaryOption.label
-#. 0: option.label
+#. 0: fileManagerOption.label
+#. 0: fileManagerOption.label
+#. 0: activeCodeEditorOption.label
 #. 0: fileManagerName
 #: src/components/CommandPalette.tsx
+#: src/components/chat/OpenInPicker.tsx
+#: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
@@ -4899,6 +4904,8 @@ msgid "No installed editors found"
 msgstr "No installed editors found"
 
 #. 0: environmentLabel
+#. 0: environmentLabel
+#: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 msgid "Opens over SSH. Needs your key on {0}"
 msgstr "Opens over SSH. Needs your key on {0}"
@@ -5352,6 +5359,7 @@ msgstr "This merges #{0} using {1}."
 msgid "Limits"
 msgstr "Limits"
 
+#: src/components/chat/ThreadDetailsUsage.tsx
 #: src/components/chat/ThreadDetailsUsage.tsx
 msgid "Context window"
 msgstr "Context window"
@@ -22019,7 +22027,7 @@ msgstr "Recording macro @{0}. Click or press q to stop."
 msgid "Image attachment, {0}{1}"
 msgstr "Image attachment, {0}{1}"
 
-#. 0: option.label; 1: isFavorite && openFavoriteEditorShortcutLabel ? ` (${openFavoriteEditorShortcutLabel})` \\: ""
+#. 0: activeCodeEditorOption.label; 1: openFavoriteEditorShortcutLabel ? ` (${openFavoriteEditorShortcutLabel})` \\: ""
 #: src/components/chat/OpenInPicker.tsx
 msgid "Open in {0} {1}"
 msgstr "Open in {0} {1}"

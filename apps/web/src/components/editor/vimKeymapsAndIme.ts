@@ -121,23 +121,83 @@ export function extractInsertEscapeSequences(
 }
 
 const IME_ESCAPE_TRAILING_KEYS = /^[!-~；：]*$/;
+const NON_ASCII_PREFIX_BOUNDARY = /[^\x20-\x7e]/;
 
-function matchImeInsertEscape(
-  committed: string,
-  sequences: ReadonlySet<string> = activeInsertEscapeSequences,
+interface ImeInsertEscapeMatch {
+  readonly escapeSeq: string;
+  readonly deleteText: string;
+  readonly trailingKeys: string;
+}
+
+function matchEscapeTail(
+  tail: string,
+  sequences: ReadonlySet<string>,
 ): { readonly escapeSeq: string; readonly trailingKeys: string } | null {
-  if (!committed) return null;
+  if (!tail) return null;
   let matchedSeq: string | null = null;
   for (const seq of sequences) {
-    if (committed.startsWith(seq) && (matchedSeq === null || seq.length > matchedSeq.length)) {
+    if (tail.startsWith(seq) && (matchedSeq === null || seq.length > matchedSeq.length)) {
       matchedSeq = seq;
     }
   }
   if (matchedSeq === null) return null;
-  const rawTrailing = committed.slice(matchedSeq.length);
+  const rawTrailing = tail.slice(matchedSeq.length);
   if (!IME_ESCAPE_TRAILING_KEYS.test(rawTrailing)) return null;
   const trailingKeys = rawTrailing.replaceAll("；", ";").replaceAll("：", ":");
   return { escapeSeq: matchedSeq, trailingKeys };
+}
+
+function matchImeInsertEscape(
+  committed: string,
+  sequences: ReadonlySet<string> = activeInsertEscapeSequences,
+): ImeInsertEscapeMatch | null {
+  if (!committed) return null;
+
+  // Case 1: Direct commit (`jk`, `jkm`) or CJK-to-ASCII auto-spaced commit (` jk`, ` jkm`).
+  const trimmedLeading = committed.replace(/^[ \u00a0]+/, "");
+  const direct = matchEscapeTail(trimmedLeading, sequences);
+  if (direct) {
+    return {
+      escapeSeq: direct.escapeSeq,
+      deleteText: committed,
+      trailingKeys: direct.trailingKeys,
+    };
+  }
+
+  // Case 2: Pinyin syllable space preserved inside the escape sequence (`j k` -> `jk`).
+  const collapsedSpaces = trimmedLeading.replaceAll(/[ \u00a0]+/g, "");
+  if (collapsedSpaces !== trimmedLeading) {
+    const collapsedMatch = matchEscapeTail(collapsedSpaces, sequences);
+    if (collapsedMatch) {
+      return {
+        escapeSeq: collapsedMatch.escapeSeq,
+        deleteText: committed,
+        trailingKeys: collapsedMatch.trailingKeys,
+      };
+    }
+  }
+
+  // Case 3: Single IME composition containing Chinese/CJK punctuation followed immediately by `jk` (e.g. `你好jk`, `。jk`).
+  let lastNonAsciiIndex = -1;
+  for (let index = committed.length - 1; index >= 0; index -= 1) {
+    if (NON_ASCII_PREFIX_BOUNDARY.test(committed[index]!)) {
+      lastNonAsciiIndex = index;
+      break;
+    }
+  }
+  if (lastNonAsciiIndex >= 0 && lastNonAsciiIndex < committed.length - 1) {
+    const asciiSuffix = committed.slice(lastNonAsciiIndex + 1);
+    const suffixMatch = matchImeInsertEscape(asciiSuffix, sequences);
+    if (suffixMatch) {
+      return {
+        escapeSeq: suffixMatch.escapeSeq,
+        deleteText: asciiSuffix,
+        trailingKeys: suffixMatch.trailingKeys,
+      };
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -266,55 +326,110 @@ const vimImeEditableSyncPlugin = ViewPlugin.fromClass(
   class {
     private cm: ReturnType<typeof getCM> = null;
     private readonly onVimEvent: () => void;
-    private pendingImeEscape: { fullText: string; trailingKeys: string } | null = null;
+    private pendingImeEscape: {
+      deleteCandidates: readonly string[];
+      trailingKeys: string;
+    } | null = null;
+    private pendingImeTimers: number[] = [];
+    private lastCompositionData = "";
     private readonly onCompositionStart: () => void;
+    private readonly onCompositionUpdate: (event: CompositionEvent) => void;
+    private readonly onBeforeInput: (event: InputEvent) => void;
     private readonly onCompositionEnd: (event: CompositionEvent) => void;
 
     constructor(private readonly view: EditorView) {
       this.onVimEvent = () => syncVimImeEditable(this.view, false);
       this.onCompositionStart = () => {
-        this.pendingImeEscape = null;
+        this.clearPendingImeEscape();
+        this.lastCompositionData = "";
+      };
+      this.onCompositionUpdate = (event) => {
+        if (event.data) {
+          this.lastCompositionData = event.data;
+        }
+      };
+      this.onBeforeInput = (event) => {
+        if (
+          (event.inputType === "insertCompositionText" ||
+            event.inputType === "insertFromComposition") &&
+          typeof event.data === "string" &&
+          event.data.length > 0
+        ) {
+          this.lastCompositionData = event.data;
+        }
       };
       this.onCompositionEnd = (event) => {
         const vim = getCM(this.view)?.state.vim;
         if (!vim?.insertMode) return;
-        const committed = event.data;
+        const committed = event.data || this.lastCompositionData;
+        this.lastCompositionData = "";
         if (!committed) return;
         const matched = matchImeInsertEscape(committed);
         if (!matched) return;
-        this.pendingImeEscape = { fullText: committed, trailingKeys: matched.trailingKeys };
-        // Run after CodeMirror's own compositionend microtask observer flush; `update()` also retries when the DOM flush lands later.
-        Promise.resolve().then(() => queueMicrotask(() => this.flushPendingImeEscape(false)));
+        const deleteCandidates = [matched.deleteText];
+        const compactDelete = matched.deleteText.replaceAll(/[ \u00a0]+/g, "");
+        if (compactDelete && !deleteCandidates.includes(compactDelete)) {
+          deleteCandidates.push(compactDelete);
+        }
+        const trimmedLeadingDelete = matched.deleteText.replace(/^[ \u00a0]+/, "");
+        if (trimmedLeadingDelete && !deleteCandidates.includes(trimmedLeadingDelete)) {
+          deleteCandidates.push(trimmedLeadingDelete);
+        }
+        this.clearPendingImeEscape();
+        this.pendingImeEscape = {
+          deleteCandidates,
+          trailingKeys: matched.trailingKeys,
+        };
+        // CodeMirror 6 flushes compositionend mutations either on a microtask or via a 50ms fallback timer.
+        // Keep retrying across intermediate DOM updates until the committed text lands or the short window expires.
+        Promise.resolve().then(() => queueMicrotask(() => this.flushPendingImeEscape()));
+        this.pendingImeTimers.push(
+          window.setTimeout(() => this.flushPendingImeEscape(), 0),
+          window.setTimeout(() => {
+            this.flushPendingImeEscape();
+            this.clearPendingImeEscape();
+          }, 80),
+        );
       };
       this.view.contentDOM.addEventListener("compositionstart", this.onCompositionStart);
+      this.view.contentDOM.addEventListener("compositionupdate", this.onCompositionUpdate);
+      this.view.contentDOM.addEventListener("beforeinput", this.onBeforeInput);
       this.view.contentDOM.addEventListener("compositionend", this.onCompositionEnd);
       this.attach(true);
     }
 
-    private flushPendingImeEscape(fromDocUpdate: boolean): void {
+    private clearPendingImeEscape(): void {
+      this.pendingImeEscape = null;
+      for (const timer of this.pendingImeTimers) {
+        window.clearTimeout(timer);
+      }
+      this.pendingImeTimers = [];
+    }
+
+    private flushPendingImeEscape(): void {
       const pending = this.pendingImeEscape;
       if (!pending || !this.view.dom.isConnected) return;
       const cm = getCM(this.view);
       const vim = cm?.state.vim;
       if (!cm || !vim?.insertMode) {
-        this.pendingImeEscape = null;
+        this.clearPendingImeEscape();
         return;
       }
-      const { fullText, trailingKeys } = pending;
+      const { deleteCandidates, trailingKeys } = pending;
       const head = this.view.state.selection.main.head;
-      if (
-        head < fullText.length ||
-        this.view.state.sliceDoc(head - fullText.length, head) !== fullText
-      ) {
-        if (fromDocUpdate) {
-          this.pendingImeEscape = null;
-        }
+      const matchedDelete = deleteCandidates.find(
+        (candidate) =>
+          candidate.length > 0 &&
+          head >= candidate.length &&
+          this.view.state.sliceDoc(head - candidate.length, head) === candidate,
+      );
+      if (!matchedDelete) {
         return;
       }
-      this.pendingImeEscape = null;
+      this.clearPendingImeEscape();
       this.view.dispatch({
-        changes: { from: head - fullText.length, to: head, insert: "" },
-        selection: { anchor: head - fullText.length },
+        changes: { from: head - matchedDelete.length, to: head, insert: "" },
+        selection: { anchor: head - matchedDelete.length },
         userEvent: "delete",
       });
       Vim.multiSelectHandleKey(cm, "<Esc>", "user");
@@ -351,13 +466,16 @@ const vimImeEditableSyncPlugin = ViewPlugin.fromClass(
     update(update: ViewUpdate): void {
       if (!this.cm) this.attach(true);
       if (update.docChanged && this.pendingImeEscape) {
-        queueMicrotask(() => this.flushPendingImeEscape(true));
+        queueMicrotask(() => this.flushPendingImeEscape());
       }
       syncVimImeEditable(this.view, true);
     }
 
     destroy(): void {
+      this.clearPendingImeEscape();
       this.view.contentDOM.removeEventListener("compositionstart", this.onCompositionStart);
+      this.view.contentDOM.removeEventListener("compositionupdate", this.onCompositionUpdate);
+      this.view.contentDOM.removeEventListener("beforeinput", this.onBeforeInput);
       this.view.contentDOM.removeEventListener("compositionend", this.onCompositionEnd);
       this.detach();
     }

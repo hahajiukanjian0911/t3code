@@ -4376,6 +4376,7 @@ msgstr "已暂存内容"
 #: src/components/chat/ComposerUsageLimits.tsx
 #: src/components/chat/ThreadDetailsUsage.tsx
 #: src/components/chat/ThreadDetailsUsage.tsx
+#: src/components/chat/ThreadDetailsUsage.tsx
 #: src/components/settings/SettingsPanels.tsx
 msgid "Usage limits"
 msgstr "用量限额"
@@ -4876,9 +4877,13 @@ msgstr "子 Agent"
 #. 0: fileManagerName
 #. 0: primaryOption?.label ?? "editor"
 #. 0: primaryOption.label
-#. 0: option.label
+#. 0: fileManagerOption.label
+#. 0: fileManagerOption.label
+#. 0: activeCodeEditorOption.label
 #. 0: fileManagerName
 #: src/components/CommandPalette.tsx
+#: src/components/chat/OpenInPicker.tsx
+#: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
@@ -4899,6 +4904,8 @@ msgid "No installed editors found"
 msgstr "未找到已安装的编辑器"
 
 #. 0: environmentLabel
+#. 0: environmentLabel
+#: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 msgid "Opens over SSH. Needs your key on {0}"
 msgstr "将通过 SSH 打开，需要在 {0} 上配置你的密钥"
@@ -5352,6 +5359,7 @@ msgstr "这将使用 {1} 合并 #{0}。"
 msgid "Limits"
 msgstr "限额"
 
+#: src/components/chat/ThreadDetailsUsage.tsx
 #: src/components/chat/ThreadDetailsUsage.tsx
 msgid "Context window"
 msgstr "上下文窗口"
@@ -22019,7 +22027,7 @@ msgstr "正在录制宏 @{0}。点击或按 q 停止。"
 msgid "Image attachment, {0}{1}"
 msgstr "图片附件，{0}{1}"
 
-#. 0: option.label; 1: isFavorite && openFavoriteEditorShortcutLabel ? ` (${openFavoriteEditorShortcutLabel})` \\: ""
+#. 0: activeCodeEditorOption.label; 1: openFavoriteEditorShortcutLabel ? ` (${openFavoriteEditorShortcutLabel})` \\: ""
 #: src/components/chat/OpenInPicker.tsx
 msgid "Open in {0} {1}"
 msgstr "在 {0} 中打开{1}"

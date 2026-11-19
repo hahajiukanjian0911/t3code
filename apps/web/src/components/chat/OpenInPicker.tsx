@@ -20,9 +20,9 @@ import {
 } from "../../remoteOpen";
 import { useEnvironment } from "../../state/environments";
 import {
+  CheckIcon,
   ChevronDownIcon,
   FolderClosedIcon,
-  MoreHorizontalIcon,
   SquareArrowOutUpRightIcon,
 } from "lucide-react";
 
@@ -205,38 +205,6 @@ const resolveOpenInOptions = (platform: string, availableEditors: ReadonlyArray<
     .map((option) => ({ ...option, label: editorLabelForPlatform(option.value, platform) }));
 };
 
-const QUICK_OPEN_PRIORITY: ReadonlyArray<EditorId> = [
-  "vscode",
-  "zed",
-  "cursor",
-  "antigravity",
-  "vscode-insiders",
-  "vscodium",
-];
-
-function resolvePanelQuickOpenOptions(
-  options: ReadonlyArray<OpenInOption>,
-  preferredEditor: EditorId | null,
-): ReadonlyArray<OpenInOption> {
-  const fileManager = options.find((option) => option.value === "file-manager") ?? null;
-  const codeEditors = options.filter((option) => option.value !== "file-manager");
-  const maxCodeEditors = fileManager ? 2 : 3;
-  const picked: OpenInOption[] = [];
-  const pushIfAvailable = (editorId: EditorId | null) => {
-    if (!editorId || picked.length >= maxCodeEditors) return;
-    if (picked.some((entry) => entry.value === editorId)) return;
-    const match = codeEditors.find((entry) => entry.value === editorId);
-    if (match) picked.push(match);
-  };
-  if (preferredEditor && preferredEditor !== "file-manager") {
-    pushIfAvailable(preferredEditor);
-  }
-  for (const id of QUICK_OPEN_PRIORITY) pushIfAvailable(id);
-  for (const entry of codeEditors) pushIfAvailable(entry.value);
-  if (fileManager) picked.push(fileManager);
-  return picked;
-}
-
 function getOpenInIconClass(kind: OpenInOption["kind"]) {
   return cn(kind === "brand" ? "text-foreground opacity-100" : "text-muted-foreground");
 }
@@ -408,94 +376,150 @@ export const OpenInPicker = memo(function OpenInPicker({
   }
 
   if (isPanel && unavailableReason === null && options.length > 0) {
-    const quickOptions = resolvePanelQuickOpenOptions(options, preferredEditor);
-    const hasMoreEditors = options.length > quickOptions.length;
-    const favoriteEditorId =
-      preferredEditor && quickOptions.some((option) => option.value === preferredEditor)
-        ? preferredEditor
-        : (quickOptions[0]?.value ?? null);
+    const fileManagerOption = options.find((option) => option.value === "file-manager") ?? null;
+    const codeEditorOptions = options.filter((option) => option.value !== "file-manager");
+    const activeCodeEditorOption =
+      (preferredEditor
+        ? codeEditorOptions.find((option) => option.value === preferredEditor)
+        : null) ??
+      codeEditorOptions.find((option) => option.value === "zed") ??
+      codeEditorOptions[0] ??
+      null;
+    const hasEditorDropdown = codeEditorOptions.length > 1;
+
     return (
       <div
         aria-label="Open in editor"
         role="group"
         ref={panelAnchorRef}
-        className="flex w-full items-center gap-1.5"
+        className={cn(
+          "grid w-full gap-1.5",
+          fileManagerOption && activeCodeEditorOption ? "grid-cols-2" : "grid-cols-1",
+        )}
       >
-        <div
-          className={cn(
-            "grid min-w-0 flex-1 gap-1.5",
-            quickOptions.length === 1
-              ? "grid-cols-1"
-              : quickOptions.length === 2
-                ? "grid-cols-2"
-                : "grid-cols-[1.16fr_0.86fr_0.98fr]",
-          )}
-        >
-          {quickOptions.map((option) => {
-            const isFavorite = option.value === favoriteEditorId;
-            return (
-              <Tooltip key={option.value}>
-                <TooltipTrigger
-                  render={
-                    <button
-                      type="button"
-                      aria-label={`Open in ${option.label}`}
-                      data-toolbar-control=""
-                      disabled={!openInCwd || !canOpenEditor}
-                      {...(enableShortcut && !backgroundThread && isFavorite
-                        ? { [OPEN_FAVORITE_EDITOR_ATTRIBUTE]: "" }
-                        : {})}
-                      onClick={() => {
-                        void openInEditor(option.value).then((opened) => {
-                          if (opened) announce(`Opened in ${option.label}`);
-                        });
-                      }}
-                      className="inline-flex h-7.5 min-w-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border/75 bg-background/85 px-1.5 text-xs font-medium text-foreground/85 outline-none transition-[background-color,border-color,scale] hover:border-foreground/15 hover:bg-black/[0.04] active:scale-[0.98] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-55 dark:bg-white/[0.04] dark:hover:border-white/15 dark:hover:bg-white/[0.08]"
-                    />
-                  }
-                >
-                  <option.Icon
-                    aria-hidden="true"
-                    className={cn("size-3.5 shrink-0", getOpenInIconClass(option.kind))}
-                  />
-                  <span className="min-w-0 truncate">{option.label}</span>
-                </TooltipTrigger>
-                <TooltipPopup side="top">
-                  Open in {option.label}
-                  {isFavorite && openFavoriteEditorShortcutLabel
-                    ? ` (${openFavoriteEditorShortcutLabel})`
-                    : ""}
-                </TooltipPopup>
-              </Tooltip>
-            );
-          })}
-        </div>
-        {hasMoreEditors ? (
-          <Menu open={menuOpen} onOpenChange={setMenuOpen}>
+        {fileManagerOption ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  aria-label={`Open in ${fileManagerOption.label}`}
+                  data-toolbar-control=""
+                  disabled={!openInCwd || !canOpenEditor}
+                  {...(enableShortcut && !backgroundThread && !activeCodeEditorOption
+                    ? { [OPEN_FAVORITE_EDITOR_ATTRIBUTE]: "" }
+                    : {})}
+                  onClick={() => {
+                    void openInEditor(fileManagerOption.value).then((opened) => {
+                      if (opened) announce(`Opened in ${fileManagerOption.label}`);
+                    });
+                  }}
+                  className="inline-flex h-7.5 min-w-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border/75 bg-background/85 px-2 text-xs font-medium text-foreground/85 outline-none transition-[background-color,border-color,scale] hover:border-foreground/15 hover:bg-black/[0.04] active:scale-[0.98] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-55 dark:bg-white/[0.04] dark:hover:border-white/15 dark:hover:bg-white/[0.08]"
+                />
+              }
+            >
+              <fileManagerOption.Icon
+                aria-hidden="true"
+                className={cn("size-3.5 shrink-0", getOpenInIconClass(fileManagerOption.kind))}
+              />
+              <span className="min-w-0 truncate">{fileManagerOption.label}</span>
+            </TooltipTrigger>
+            <TooltipPopup side="top">Open in {fileManagerOption.label}</TooltipPopup>
+          </Tooltip>
+        ) : null}
+
+        {activeCodeEditorOption ? (
+          <div className="flex h-7.5 min-w-0 items-stretch overflow-hidden rounded-lg border border-border/75 bg-background/85 transition-[border-color] hover:border-foreground/15 dark:bg-white/[0.04] dark:hover:border-white/15">
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <MenuTrigger
-                    disabled={isHostEditorDenied}
-                    render={
-                      <button
-                        type="button"
-                        aria-label="Choose editor"
-                        data-toolbar-control=""
-                        className="grid size-7.5 shrink-0 cursor-pointer place-items-center rounded-lg border border-border/75 bg-background/85 text-muted-foreground outline-none transition-[background-color,border-color,color,scale] hover:border-foreground/15 hover:bg-black/[0.04] hover:text-foreground active:scale-[0.98] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-55 dark:bg-white/[0.04] dark:hover:border-white/15 dark:hover:bg-white/[0.08]"
-                      />
-                    }
+                  <button
+                    type="button"
+                    aria-label={`Open in ${activeCodeEditorOption.label}`}
+                    data-toolbar-control=""
+                    disabled={!openInCwd || !canOpenEditor}
+                    {...(enableShortcut && !backgroundThread
+                      ? { [OPEN_FAVORITE_EDITOR_ATTRIBUTE]: "" }
+                      : {})}
+                    onClick={() => {
+                      void openInEditor(activeCodeEditorOption.value).then((opened) => {
+                        if (opened) announce(`Opened in ${activeCodeEditorOption.label}`);
+                      });
+                    }}
+                    className="inline-flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 px-2 text-xs font-medium text-foreground/85 outline-none transition-colors hover:bg-black/[0.04] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-55 dark:hover:bg-white/[0.08]"
                   />
                 }
               >
-                <MoreHorizontalIcon aria-hidden="true" className="size-3.5" />
+                <activeCodeEditorOption.Icon
+                  aria-hidden="true"
+                  className={cn(
+                    "size-3.5 shrink-0",
+                    getOpenInIconClass(activeCodeEditorOption.kind),
+                  )}
+                />
+                <span className="min-w-0 truncate">{activeCodeEditorOption.label}</span>
               </TooltipTrigger>
-              <TooltipPopup side="top">Choose editor</TooltipPopup>
+              <TooltipPopup side="top">
+                Open in {activeCodeEditorOption.label}
+                {openFavoriteEditorShortcutLabel ? ` (${openFavoriteEditorShortcutLabel})` : ""}
+              </TooltipPopup>
             </Tooltip>
-            <MenuPopup align="end" anchor={panelAnchorRef} className="w-(--anchor-width)">
-              {editorItems}
-            </MenuPopup>
-          </Menu>
+
+            {hasEditorDropdown ? (
+              <>
+                <span aria-hidden="true" className="w-px shrink-0 self-stretch bg-border/65" />
+                <Menu open={menuOpen} onOpenChange={setMenuOpen}>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <MenuTrigger
+                          disabled={isHostEditorDenied}
+                          render={
+                            <button
+                              type="button"
+                              aria-label="Choose editor"
+                              data-toolbar-control=""
+                              className="grid w-7 shrink-0 cursor-pointer place-items-center text-muted-foreground outline-none transition-colors hover:bg-black/[0.04] hover:text-foreground focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-55 dark:hover:bg-white/[0.08]"
+                            />
+                          }
+                        />
+                      }
+                    >
+                      <ChevronDownIcon aria-hidden="true" className="size-3.5" />
+                    </TooltipTrigger>
+                    <TooltipPopup side="top">Choose editor</TooltipPopup>
+                  </Tooltip>
+                  <MenuPopup align="end" anchor={panelAnchorRef} className="w-(--anchor-width)">
+                    {codeEditorOptions.map(({ label, Icon, value, kind }) => {
+                      const isCurrentDefault = value === activeCodeEditorOption.value;
+                      return (
+                        <MenuItem
+                          disabled={!openInCwd || !canOpenEditor}
+                          key={value}
+                          onClick={() => {
+                            void openInEditor(value).then((opened) => {
+                              if (opened) announce(`Opened in ${label}`);
+                            });
+                          }}
+                        >
+                          <Icon aria-hidden="true" className={getOpenInIconClass(kind)} />
+                          <MenuItemLabel>{label}</MenuItemLabel>
+                          {isCurrentDefault ? (
+                            <CheckIcon aria-hidden="true" className="ml-auto size-3.5 shrink-0" />
+                          ) : null}
+                        </MenuItem>
+                      );
+                    })}
+                    {remote.mode === "remote-links" && !remoteHintSeen && (
+                      <MenuItem disabled>
+                        Opens over SSH. Needs your key on {environmentLabel}
+                      </MenuItem>
+                    )}
+                  </MenuPopup>
+                </Menu>
+              </>
+            ) : null}
+          </div>
         ) : null}
       </div>
     );

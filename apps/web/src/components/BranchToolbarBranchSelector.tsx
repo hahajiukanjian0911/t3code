@@ -897,7 +897,7 @@ export function BranchToolbarBranchSelector({
             {displayMode === "summary" ? (
               <>
                 <span className="min-w-0 truncate text-xs font-semibold text-foreground">
-                  <MiddleTruncate value={triggerLabel} className="w-full" aria-hidden />
+                  {triggerLabel}
                 </span>
                 {summaryTrailing}
               </>

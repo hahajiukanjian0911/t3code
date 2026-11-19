@@ -5,7 +5,11 @@ import { page, userEvent } from "vite-plus/test/browser";
 import { act, render, stubGlobal } from "../../../test/render";
 import { BrowserSurfaceSlot } from "../../browser/BrowserSurfaceSlot";
 import { useBrowserSurfaceStore } from "../../browser/browserSurfaceStore";
-import { __setClientSettingsForTests, getClientSettings } from "../../hooks/useSettings";
+import {
+  __setClientSettingsForTests,
+  getClientSettings,
+  persistClientSettingsPatch,
+} from "../../hooks/useSettings";
 import { syncDocumentElectronPlatformClasses } from "../../lib/windowControlsOverlay";
 import { EnvironmentId, ThreadId } from "@t3tools/contracts";
 import { ThreadDetailsCard } from "../chat/ThreadDetailsCard";
@@ -899,7 +903,7 @@ it("automatically half-splits right content tabs while keeping the left sidebar 
   await vi.waitFor(() => expect(fileInput.checkVisibility()).toBe(false));
 });
 
-it("keeps text at a fixed width during a right-tab resize and can reverse it mid-flight", async () => {
+it("keeps the conversation inside the moving divider and the native guest at its layout width when reversing a tab resize", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   const settings = getClientSettings();
@@ -930,12 +934,14 @@ it("keeps text at a fixed width during a right-tab resize and can reverse it mid
   const file = screen.getByText("File body").element() as HTMLElement;
   const chat = screen.getByText("Conversation body").element() as HTMLElement;
   const fileWidth = file.offsetWidth;
-  const chatWidth = chat.offsetWidth;
   expect(fileWidth).toBeGreaterThan(inspectorWidth);
-  const animation = surface.getAnimations()[0]!;
+  const grid = panel.parentElement!;
+  const animation = grid.getAnimations()[0]!;
+  expect(animation).toBeDefined();
   animation.pause();
   animation.currentTime = 75;
-  const firstClip = getComputedStyle(surface).clipPath;
+  const firstRight = chat.getBoundingClientRect().right;
+  expect(firstRight).toBeLessThan(surface.getBoundingClientRect().left);
   await vi.waitFor(() => {
     const guest = useBrowserSurfaceStore.getState().byTabId["right-tab-resize"];
     expect(guest?.visible).toBe(true);
@@ -943,24 +949,27 @@ it("keeps text at a fixed width during a right-tab resize and can reverse it mid
     expect(guest?.rect?.clipPath).toMatch(/^inset\(0px [1-9]/);
   });
   animation.currentTime = 200;
-  expect(getComputedStyle(surface).clipPath).not.toBe(firstClip);
-  expect([file.offsetWidth, chat.offsetWidth]).toEqual([fileWidth, chatWidth]);
+  expect(chat.getBoundingClientRect().right).toBeLessThan(firstRight);
+  const main = chat.closest<HTMLElement>("[data-workspace-panel]")!;
+  expect(surface.getBoundingClientRect().left - main.getBoundingClientRect().right).toBe(6);
+  expect(chat.getBoundingClientRect().right).toBeLessThanOrEqual(
+    main.getBoundingClientRect().right,
+  );
+  expect(file.offsetWidth).toBe(fileWidth);
   const lastLeft = surface.getBoundingClientRect().left;
   await act(() => inspector.click());
-  const reverse = surface.getAnimations()[0]!;
+  const reverse = grid.getAnimations()[0]!;
   reverse.pause();
   reverse.currentTime = 0;
   expect(Math.abs(surface.getBoundingClientRect().left - lastLeft)).toBeLessThan(1);
-  for (const moving of screen.container.querySelectorAll(
-    '[data-workspace-moving] > :is([data-workspace-panel-surface], [role="separator"])',
-  )) {
-    for (const effect of moving.getAnimations()) effect.finish();
-  }
-  await vi.waitFor(() => expect(surface.style.width).toBe(""));
+  const details = screen.getByText("Inspector body").element();
+  expect(details.getBoundingClientRect().right).toBeCloseTo(panel.getBoundingClientRect().right, 0);
+  reverse.finish();
+  await vi.waitFor(() => expect(panel.hasAttribute("data-workspace-moving")).toBe(false));
   expect(panel.offsetWidth).toBe(inspectorWidth);
 });
 
-it("opens a cold and a warm half panel from the same edge and can reverse a close without reflowing its contents", async () => {
+it("moves one divider for cold and warm half panels, including when a close reverses", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   localStorage.setItem(
@@ -1018,26 +1027,32 @@ it("opens a cold and a warm half panel from the same edge and can reverse a clos
   const open = screen.getByRole("button", { name: "Open terminal" }).element() as HTMLButtonElement;
   const outerEdge = main.getBoundingClientRect().right;
   const fullWidth = chat.offsetWidth;
+  const grid = right.parentElement!;
   const sample = (time: number) => {
-    for (const animation of [chat, surface].flatMap((el) => el.getAnimations())) {
+    for (const animation of grid.getAnimations()) {
       animation.pause();
       animation.currentTime = time;
     }
     return surface.getBoundingClientRect().left;
   };
   const settle = async () => {
-    for (const panel of [main, right]) {
-      for (const animation of panel.getAnimations({ subtree: true })) animation.finish();
-    }
-    await vi.waitFor(() => expect(surface.style.width).toBe(""));
+    for (const animation of grid.getAnimations()) animation.finish();
+    await vi.waitFor(() => expect(right.hasAttribute("data-workspace-moving")).toBe(false));
   };
   await act(() => open.click());
-  expect(surface.getAnimations()).toHaveLength(1);
+  expect(grid.getAnimations()).toHaveLength(1);
   expect(sample(0)).toBeCloseTo(outerEdge, 0);
   const firstMid = sample(150);
-  const firstClip = getComputedStyle(surface).clipPath;
-  expect(chat.offsetWidth).toBe(fullWidth);
-  const terminalWidth = surface.offsetWidth;
+  expect(chat.getBoundingClientRect().right).toBeCloseTo(firstMid - 6, 0);
+  expect(document.elementFromPoint(firstMid - 12, 100)?.closest("[data-workspace-panel]")).toBe(
+    main,
+  );
+  expect(document.elementFromPoint(firstMid + 12, 100)?.closest("[data-workspace-panel]")).toBe(
+    right,
+  );
+  expect(chat.offsetWidth).toBeLessThan(fullWidth);
+  const terminal = right.querySelector<HTMLElement>('[data-workspace-window="surface:terminal"]')!;
+  const terminalWidth = terminal.offsetWidth;
   expect(terminalWidth).toBeGreaterThan(fullWidth * 0.48);
   await settle();
   const end = right.getBoundingClientRect();
@@ -1049,13 +1064,14 @@ it("opens a cold and a warm half panel from the same edge and can reverse a clos
   await act(() => toggle.click());
   expect(right.inert).toBe(true);
   const closingLeft = sample(100);
-  const closingClip = getComputedStyle(surface).clipPath;
+  const closingChatRight = chat.getBoundingClientRect().right;
   expect(closingLeft).toBeGreaterThan(end.left);
-  expect(surface.offsetWidth).toBe(terminalWidth);
+  expect(closingLeft - closingChatRight).toBeCloseTo(6, 0);
+  expect(terminal.offsetWidth).toBe(terminalWidth);
   await act(() => toggle.click());
   expect(sample(0)).toBeCloseTo(closingLeft, 0);
-  expect(getComputedStyle(surface).clipPath).toBe(closingClip);
-  expect(surface.offsetWidth).toBe(terminalWidth);
+  expect(chat.getBoundingClientRect().right).toBeCloseTo(closingChatRight, 0);
+  expect(terminal.offsetWidth).toBe(terminalWidth);
   await settle();
   await act(() => toggle.click());
   await settle();
@@ -1064,10 +1080,14 @@ it("opens a cold and a warm half panel from the same edge and can reverse a clos
   await act(() => toggle.click());
   expect(sample(0)).toBeCloseTo(outerEdge, 0);
   expect(sample(150)).toBeCloseTo(firstMid, 0);
-  expect(getComputedStyle(surface).clipPath).toBe(firstClip);
-  expect(chat.offsetWidth).toBe(fullWidth);
+  expect(chat.getBoundingClientRect().right).toBeCloseTo(firstMid - 6, 0);
   await settle();
   expect(right.getBoundingClientRect().left).toBe(end.left);
+  await act(() => persistClientSettingsPatch({ panelAnimationDurationMs: 0 }, async () => {}));
+  await act(() => toggle.click());
+  expect(grid.getAnimations()).toHaveLength(0);
+  expect(surface.checkVisibility()).toBe(false);
+  expect(chat.offsetWidth).toBe(fullWidth);
 });
 
 it("renders a 6px board seam between intra-panel split groups, resizes weights, and toggles monocle zoom in panel", async () => {

@@ -352,6 +352,56 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
       expect(latestTelemetry?.column).toBe(4);
       expect(dom.getAttribute("contenteditable")).toBe("false");
     });
+
+    // After Chinese input, an auto-spaced ` jk` or delayed `j k` -> `jk` commit must exit on the very first attempt.
+    await userEvent.keyboard("A");
+    await vi.waitFor(() => {
+      expect(latestTelemetry?.mode).toBe("insert");
+    });
+    await act(() => {
+      dom.dispatchEvent(new CompositionEvent("compositionstart", { data: "", bubbles: true }));
+      const textNode = dom.querySelector(".cm-line")?.firstChild;
+      if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+        textNode.textContent = `${textNode.textContent ?? ""} jk`;
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.setStart(textNode, textNode.textContent.length);
+        range.collapse(true);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+      dom.dispatchEvent(new CompositionEvent("compositionend", { data: " jk", bubbles: true }));
+    });
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe("你好接口");
+      expect(latestTelemetry?.mode).toBe("normal");
+      expect(dom.getAttribute("contenteditable")).toBe("false");
+    });
+
+    // Committing Chinese followed directly by `jk` in one composition keeps Chinese and exits to Normal mode.
+    await userEvent.keyboard("A");
+    await vi.waitFor(() => {
+      expect(latestTelemetry?.mode).toBe("insert");
+    });
+    await act(() => {
+      dom.dispatchEvent(new CompositionEvent("compositionstart", { data: "", bubbles: true }));
+      const textNode = dom.querySelector(".cm-line")?.firstChild;
+      if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+        textNode.textContent = `${textNode.textContent ?? ""}测试jk`;
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.setStart(textNode, textNode.textContent.length);
+        range.collapse(true);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+      dom.dispatchEvent(new CompositionEvent("compositionend", { data: "测试jk", bubbles: true }));
+    });
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe("你好接口测试");
+      expect(latestTelemetry?.mode).toBe("normal");
+      expect(dom.getAttribute("contenteditable")).toBe("false");
+    });
   });
 
   it("inserts a newline on plain Enter in Insert mode while forwarding Normal-mode Enter to submit", async () => {
