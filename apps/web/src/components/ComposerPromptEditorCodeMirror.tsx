@@ -3,7 +3,7 @@ import { insertNewlineContinueMarkup, markdown } from "@codemirror/lang-markdown
 import { languages } from "@codemirror/language-data";
 import { Compartment, EditorState, Prec, Transaction } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { getCM } from "@replit/codemirror-vim";
+import { getCM, Vim } from "@replit/codemirror-vim";
 import {
   COMPOSER_CONTEXT_CLIPBOARD_MIME,
   encodeComposerContextClipboardHtml,
@@ -57,6 +57,35 @@ const composerTheme = EditorView.theme({
     overflowX: "hidden",
     scrollbarWidth: "thin",
   },
+  ".cm-panels": {
+    backgroundColor: "transparent",
+    color: "var(--foreground)",
+    borderTop: "1px solid color-mix(in srgb, var(--border) 60%, transparent)",
+    marginTop: "6px",
+    paddingTop: "4px",
+  },
+  // Non-interactive Vim status notices (e.g. `recording @q`) render in ComposerVimStatusCluster instead of expanding the editor.
+  ".cm-panels:has(.cm-vim-message):not(:has(input))": {
+    display: "none",
+  },
+  ".cm-vim-panel": {
+    padding: "0",
+    fontFamily: "var(--font-mono)",
+    fontSize: "12px",
+    lineHeight: "1.5",
+    minHeight: "auto",
+    alignItems: "center",
+    gap: "4px",
+    color: "var(--muted-foreground)",
+  },
+  ".cm-vim-panel input": {
+    flex: "1",
+    minWidth: "0",
+    fontFamily: "inherit",
+    fontSize: "inherit",
+    color: "var(--foreground)",
+    backgroundColor: "transparent",
+  },
 });
 
 type Props = ComposerPromptEditorProps & {
@@ -74,6 +103,7 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
   const chips = useComposerVimChips(props, viewRef);
   const [attachments] = useState(composerVimAttachments);
   const [attributes] = useState(() => new Compartment());
+  const [isInsertMode, setIsInsertMode] = useState(false);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- keep global CodeMirror-Vim keymap synchronized with user custom rules.
   useLayoutEffect(() => {
@@ -82,31 +112,34 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
 
   const emitTelemetry = useStableCallback((view: EditorView | null) => {
     const cb = current().onVimTelemetryChange;
-    if (!cb) return;
     if (!view) {
       lastTelemetryRef.current = null;
-      cb(null);
+      setIsInsertMode(false);
+      cb?.(null);
       return;
     }
     const next = readVimTelemetry(view);
+    setIsInsertMode(next.mode === "insert");
     const prev = lastTelemetryRef.current;
     if (
       prev &&
       prev.mode === next.mode &&
       prev.line === next.line &&
       prev.column === next.column &&
-      prev.pendingKeys === next.pendingKeys
+      prev.pendingKeys === next.pendingKeys &&
+      prev.recordingRegister === next.recordingRegister &&
+      prev.notice === next.notice
     ) {
       return;
     }
     lastTelemetryRef.current = next;
-    cb(next);
+    cb?.(next);
   });
 
   const editorAttributes = (() => {
     const { disabled, ariaLabel, activeSuggestionId, suggestionListId } = props;
     return [
-      EditorView.editable.of(!disabled),
+      ...(disabled ? [Prec.highest(EditorView.editable.of(false))] : []),
       EditorState.readOnly.of(disabled),
       EditorView.contentAttributes.of({
         role: "textbox",
@@ -180,7 +213,7 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
     }
     if (disabled) return false;
     if (event.key === "Escape" && (insert || vimState?.visualMode)) {
-      onCommandKeyDown?.("Escape", event);
+      onCommandKeyDown?.("Escape", event, false, insert ? "insert" : "normal");
       event.stopPropagation();
       return false;
     }
@@ -215,7 +248,8 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
     ) {
       // Pass false for isTaskItem so composerCommandKey runs listContinuationForEnter
       // for `1.`, `-`, and `- [ ]` lists (including automatic ordered-list renumbering).
-      if (onCommandKeyDown?.(event.key, event, false)) {
+      // In Insert mode, plain Enter inserts a newline instead of submitting.
+      if (onCommandKeyDown?.(event.key, event, false, insert ? "insert" : "normal")) {
         event.preventDefault();
         event.stopPropagation();
         return true;
@@ -339,6 +373,7 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
     cm?.on("vim-mode-change", onVimEvent);
     cm?.on("vim-keypress", onVimEvent);
     cm?.on("vim-command-done", onVimEvent);
+    cm?.on("dialog", onVimEvent);
     emitTelemetry(view);
 
     if (restoreFocusRef.current) {
@@ -349,6 +384,7 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
       cm?.off("vim-mode-change", onVimEvent);
       cm?.off("vim-keypress", onVimEvent);
       cm?.off("vim-command-done", onVimEvent);
+      cm?.off("dialog", onVimEvent);
       restoreFocusRef.current = view.hasFocus;
       viewRef.current = null;
       view.destroy();
@@ -422,6 +458,14 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
       const boundary = view.moveToLineBoundary(selection, end, true);
       return boundary.head === (end ? view.state.doc.length : 0);
     },
+    stopVimMacroRecording: () => {
+      const view = viewRef.current;
+      const cm = view ? getCM(view) : null;
+      if (!view || !cm) return;
+      Vim.handleKey(cm, "q", "user");
+      emitTelemetry(view);
+      view.focus();
+    },
   }));
   const copy = (event: ClipboardEvent, cut: boolean) => {
     const view = viewRef.current;
@@ -456,6 +500,7 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
         {value.length === 0 && contextRecords.size === 0 && props.placeholder ? (
           <div
             data-composer-placeholder=""
+            style={isInsertMode ? undefined : { paddingInlineStart: "calc(0.55em + 4px)" }}
             className={cn(
               textClass,
               "pointer-events-none absolute inset-0 truncate text-placeholder",

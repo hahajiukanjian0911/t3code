@@ -165,6 +165,7 @@ export interface ComposerPromptEditorHandle {
     contextIds: string[];
   };
   isCaretOnVisualEdge: (edge: "start" | "end") => boolean;
+  stopVimMacroRecording?: () => void;
 }
 
 export interface ComposerPromptEditorProps {
@@ -202,7 +203,12 @@ export interface ComposerPromptEditorProps {
   ) => void;
   onVisibleSelectionChange?: () => void;
   onVimTelemetryChange?: (telemetry: VimTelemetrySnapshot | null) => void;
-  onCommandKeyDown?: (key: string, event: KeyboardEvent, isTaskItem?: boolean) => boolean;
+  onCommandKeyDown?: (
+    key: string,
+    event: KeyboardEvent,
+    isTaskItem?: boolean,
+    vimMode?: "normal" | "insert",
+  ) => boolean;
   onPageScrollKeyDown?: (key: "PageUp" | "PageDown") => void;
   onPageScrollKeyUp?: (key: string) => void;
   onPageScrollRelease?: () => void;
@@ -794,6 +800,7 @@ export function ComposerPromptEditorTiptap(props: ComposerPromptEditorProps) {
     captureAttachmentInsertion: () => innerEditorRef.current?.captureAttachmentInsertion(),
     requestCitationComment: (citation) => innerEditorRef.current?.requestCitationComment(citation),
     isCaretOnVisualEdge: (edge) => innerEditorRef.current?.isCaretOnVisualEdge(edge) ?? true,
+    stopVimMacroRecording: () => innerEditorRef.current?.stopVimMacroRecording?.(),
   }));
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- clear Vim status pill when Vim mode is turned off.
   useLayoutEffect(() => {

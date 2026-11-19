@@ -19,6 +19,11 @@ export const vimEditing = [
   vim({ status: false }),
   drawSelection({ cursorBlinkRate: 0 }),
   vimNormalModeImeShield,
+  EditorView.editorAttributes.of((view) => {
+    const head = view.state.selection.main.head;
+    const line = view.state.doc.lineAt(head);
+    return head === line.to ? { "data-vim-cursor-eol": "true" } : null;
+  }),
   Prec.highest(
     EditorView.domEventHandlers({
       keydown(event, view) {
@@ -75,6 +80,7 @@ export const codeEditing = [
     "&.cm-focused": { outline: "none" },
     ".cm-scroller": { fontFamily: "inherit", lineHeight: "inherit" },
     ".cm-content": { caretColor: "var(--foreground)" },
+    ".cm-content:focus, .cm-content:focus-visible": { outline: "none" },
     ".cm-line": { padding: "0" },
     ".cm-gutters": {
       backgroundColor: "var(--code-background)",
@@ -92,18 +98,25 @@ export const codeEditing = [
     ".cm-fat-cursor": {
       background: "var(--foreground) !important",
       color: "var(--popover, var(--background)) !important",
-      borderRadius: "0",
-      minWidth: "1ch",
+      borderRadius: "2px",
+    },
+    "&[data-vim-cursor-eol='true'] .cm-fat-cursor": {
+      minWidth: "0.55em",
     },
     "&:not(.cm-focused) .cm-fat-cursor": {
       background: "none !important",
       color: "transparent !important",
-      outline: "1px solid var(--muted-foreground) !important",
+      outline: "1px solid color-mix(in srgb, var(--foreground) 34%, transparent) !important",
+      outlineOffset: "-1px",
     },
     "&.cm-focused .cm-selectionBackground, .cm-selectionBackground": {
       backgroundColor: "color-mix(in srgb, var(--primary) 22%, transparent) !important",
       borderRadius: "0 !important",
     },
-    ".cm-panels": { backgroundColor: "var(--card)", color: "var(--foreground)" },
+    ".cm-panels": {
+      backgroundColor: "var(--card)",
+      color: "var(--foreground)",
+      borderColor: "color-mix(in srgb, var(--border) 70%, transparent)",
+    },
   }),
 ];

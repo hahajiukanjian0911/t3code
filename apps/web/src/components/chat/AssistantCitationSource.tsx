@@ -208,7 +208,7 @@ function observeAssistantCitationSource({
       const active = root.ownerDocument.activeElement;
       if (
         !(active instanceof HTMLElement) ||
-        !(active.isContentEditable || active.matches("input, textarea, select"))
+        !(active.isContentEditable || active.matches('input, textarea, select, [role="textbox"]'))
       ) {
         root.focus({ preventScroll: true });
       }

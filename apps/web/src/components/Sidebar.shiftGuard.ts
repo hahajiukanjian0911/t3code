@@ -15,6 +15,7 @@ function editsText(event: KeyboardEvent) {
   const editable =
     target instanceof HTMLElement &&
     (target.isContentEditable ||
+      target.getAttribute("role") === "textbox" ||
       target instanceof HTMLInputElement ||
       target instanceof HTMLTextAreaElement);
   return editable && event.key !== "Enter" && !event.ctrlKey && !event.metaKey && !event.altKey;

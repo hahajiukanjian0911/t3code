@@ -8,12 +8,20 @@ import {
   ComposerPromptEditorTiptap as ComposerPromptEditor,
   type ComposerPromptEditorHandle,
 } from "./ComposerPromptEditorTiptap";
+import type { VimTelemetrySnapshot } from "./editor/vimKeymapsAndIme";
 
 function VimHarness(props: {
   initialValue?: string;
   editorRef?: React.RefObject<ComposerPromptEditorHandle | null>;
   onEscapeBubble?: () => void;
   onShiftEscapeBubble?: () => void;
+  onVimTelemetryChange?: (telemetry: VimTelemetrySnapshot | null) => void;
+  onCommandKeyDown?: (
+    key: string,
+    event: KeyboardEvent,
+    isTaskItem?: boolean,
+    vimMode?: "normal" | "insert",
+  ) => boolean;
 }) {
   const [value, setValue] = useState(props.initialValue ?? "hello world");
   const [cursor, setCursor] = useState(0);
@@ -35,6 +43,10 @@ function VimHarness(props: {
         disabled={false}
         placeholder="Ask anything"
         editorRef={props.editorRef ?? fallback}
+        {...(props.onVimTelemetryChange
+          ? { onVimTelemetryChange: props.onVimTelemetryChange }
+          : {})}
+        {...(props.onCommandKeyDown ? { onCommandKeyDown: props.onCommandKeyDown } : {})}
         onPaste={() => {}}
         onChange={(nextValue, nextCursor) => {
           setValue(nextValue);
@@ -195,6 +207,107 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
       expect(screen.getByTestId("prompt-output").element().textContent).toBe(
         "first line\necond line",
       );
+    });
+
+    // Normal mode keeps contenteditable="false" + tabindex="0" (Zed-style: prevents OS CJK IME popup)
+    // while switching to contenteditable="true" in Insert mode and recovering if compositionend was dropped.
+    expect(dom.getAttribute("contenteditable")).toBe("false");
+    expect(dom.getAttribute("tabindex")).toBe("0");
+    await userEvent.keyboard("i");
+    expect(dom.getAttribute("contenteditable")).toBe("true");
+    await act(() => {
+      dom.dispatchEvent(new CompositionEvent("compositionstart", { data: "i", bubbles: true }));
+    });
+    await userEvent.keyboard("{Escape}");
+    expect(dom.getAttribute("contenteditable")).toBe("false");
+    // Must cleanly re-enter Insert mode after an unclosed composition in the prior Insert session
+    await userEvent.keyboard("is");
+    await vi.waitFor(() => {
+      expect(dom.getAttribute("contenteditable")).toBe("true");
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe(
+        "first line\nsecond line",
+      );
+    });
+  });
+
+  it("inserts a newline on plain Enter in Insert mode while forwarding Normal-mode Enter to submit", async () => {
+    const submitted: Array<string> = [];
+    await using screen = await render(
+      <VimHarness
+        initialValue="hello"
+        onCommandKeyDown={(key, event, _isTaskItem, vimMode) => {
+          if (key === "Enter" && (vimMode === "normal" || event.metaKey || event.ctrlKey)) {
+            submitted.push(`${vimMode}:${event.metaKey || event.ctrlKey ? "mod" : "plain"}`);
+            return true;
+          }
+          return false;
+        }}
+      />,
+    );
+    const editor = screen.getByTestId("composer-editor");
+    await expect.element(editor).toBeVisible();
+    await userEvent.click(editor);
+    await userEvent.keyboard("{Escape}A{Enter}world");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe("hello\nworld");
+    });
+    expect(submitted).toEqual([]);
+
+    await userEvent.keyboard("{Escape}{Enter}");
+    expect(submitted).toEqual(["normal:plain"]);
+  });
+
+  it("offsets empty placeholder past the Normal-mode block cursor and marks EOL cursor width cleanly", async () => {
+    await using screen = await render(<VimHarness initialValue="" />);
+    const editor = screen.getByTestId("composer-editor");
+    await expect.element(editor).toBeVisible();
+    const cmEditor = screen.container.querySelector<HTMLElement>(".cm-editor")!;
+    const placeholder = screen.container.querySelector<HTMLElement>("[data-composer-placeholder]")!;
+
+    expect(cmEditor.getAttribute("data-vim-cursor-eol")).toBe("true");
+    expect(Number.parseFloat(getComputedStyle(placeholder).paddingLeft)).toBeGreaterThan(0);
+
+    await userEvent.click(editor);
+    await userEvent.keyboard("i");
+    await vi.waitFor(() => {
+      expect(Number.parseFloat(getComputedStyle(placeholder).paddingLeft)).toBe(0);
+    });
+
+    await userEvent.keyboard("ab{Escape}0");
+    await vi.waitFor(() => {
+      expect(cmEditor.getAttribute("data-vim-cursor-eol")).toBeNull();
+    });
+  });
+
+  it("surfaces macro recording in Vim telemetry instead of showing an inline .cm-panels banner", async () => {
+    const editorRef = createRef<ComposerPromptEditorHandle>();
+    let latestTelemetry: VimTelemetrySnapshot | null = null;
+    await using screen = await render(
+      <VimHarness
+        initialValue="hello"
+        editorRef={editorRef}
+        onVimTelemetryChange={(next) => {
+          latestTelemetry = next;
+        }}
+      />,
+    );
+    const editor = screen.getByTestId("composer-editor");
+    await expect.element(editor).toBeVisible();
+    await userEvent.click(editor);
+    await userEvent.keyboard("{Escape}qq");
+    await vi.waitFor(() => {
+      expect(latestTelemetry?.recordingRegister).toBe("q");
+    });
+    const panels = screen.container.querySelector<HTMLElement>(".cm-panels");
+    if (panels) {
+      expect(getComputedStyle(panels).display).toBe("none");
+    }
+
+    await act(() => {
+      editorRef.current?.stopVimMacroRecording?.();
+    });
+    await vi.waitFor(() => {
+      expect(latestTelemetry?.recordingRegister).toBeNull();
     });
   });
 

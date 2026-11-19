@@ -260,11 +260,31 @@ describe("composerSubmissionIntentForKey", () => {
 
   it.each([
     { isSoftwareKeyboardOpen: true },
+    { vimInsertMode: true },
     { event: { ...enter, isComposing: true } },
     { event: { ...enter, keyCode: 229 } },
     { event: { ...enter, repeat: true } },
   ])("does not submit with %j", (override) => {
     expect(composerSubmissionIntentForKey({ ...input, event: enter, ...override })).toBeNull();
+  });
+
+  it("keeps Mod+Enter submission available in Vim Insert mode", () => {
+    expect(
+      composerSubmissionIntentForKey({
+        ...input,
+        platform: "MacIntel",
+        vimInsertMode: true,
+        event: { ...enter, metaKey: true },
+      }),
+    ).toBe("foreground");
+    expect(
+      composerSubmissionIntentForKey({
+        ...input,
+        platform: "Linux",
+        vimInsertMode: true,
+        event: { ...enter, ctrlKey: true },
+      }),
+    ).toBe("foreground");
   });
 });
 

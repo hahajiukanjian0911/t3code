@@ -42,9 +42,10 @@ it. Very large code blocks are shown without syntax highlighting.
 On web and desktop, **Settings → Chat → Vim mode** is enabled by default (toggle it there or with
 **Enable/Disable Vim Mode** in the command palette). The composer, editable source files and custom
 theme CSS share this setting. Press `i` to insert text and `Esc` (or `jk`) to return to Normal
-mode; in Normal and Visual modes, physical keys run Vim commands directly without CJK input method
-pre-edit interference. Customize Vim key mappings as JSON under **Settings → Chat → Custom Vim
-keybindings**. The composer keeps its file and skill suggestions, Markdown list continuation,
+mode; in Normal and Visual modes, the editor disables OS text input so CJK input method popups do
+not appear and physical keys run Vim commands directly. In Insert mode, `Enter` inserts a new line
+while `Enter` in Normal mode or **Cmd/Ctrl+Enter** sends the message. Customize Vim key mappings as
+JSON under **Settings → Chat → Custom Vim keybindings**. The composer keeps its file and skill suggestions, Markdown list continuation,
 attachments and citation comments. Source files show line numbers and save edits automatically.
 
 ## Attach files

@@ -619,7 +619,9 @@ export function showContextMenuFallback<T extends string>(
     // Text fields always match :focus-visible, so they say nothing about how the menu opened.
     const firstAction =
       previouslyFocusedElement?.matches(":focus-visible") &&
-      !previouslyFocusedElement.matches('input, textarea, select, [contenteditable="true"]')
+      !previouslyFocusedElement.matches(
+        'input, textarea, select, [contenteditable="true"], [role="textbox"]',
+      )
         ? menuStack[0]?.querySelector<HTMLButtonElement>("button:not(:disabled)")
         : null;
     (firstAction ?? menuStack[0])?.focus({ preventScroll: true });

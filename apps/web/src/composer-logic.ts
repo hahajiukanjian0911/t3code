@@ -71,6 +71,7 @@ export function composerSubmissionIntentForKey(input: {
   context: Partial<ShortcutMatchContext>;
   platform?: string;
   isSoftwareKeyboardOpen: boolean;
+  vimInsertMode?: boolean;
   isDraftThread: boolean;
   isRunning?: boolean;
   sendShortcut?: ClientSettings["sendShortcut"];
@@ -78,7 +79,12 @@ export function composerSubmissionIntentForKey(input: {
 }): ComposerSubmissionIntent | null {
   const { event } = input;
   if (event.isComposing || event.keyCode === 229 || event.repeat) return null;
-  if (input.isSoftwareKeyboardOpen && event.key === "Enter" && !event.metaKey && !event.ctrlKey)
+  if (
+    (input.isSoftwareKeyboardOpen || input.vimInsertMode) &&
+    event.key === "Enter" &&
+    !event.metaKey &&
+    !event.ctrlKey
+  )
     return null;
   const command = resolveShortcutCommand(event, input.keybindings, {
     ...(input.platform === undefined ? {} : { platform: input.platform }),

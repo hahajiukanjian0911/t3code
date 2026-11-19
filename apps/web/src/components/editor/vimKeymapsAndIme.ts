@@ -1,6 +1,6 @@
 import type { ClientSettings } from "@t3tools/contracts/settings";
-import { Prec } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
+import { EditorState, Prec, StateEffect, StateField } from "@codemirror/state";
+import { EditorView, ViewPlugin } from "@codemirror/view";
 import { CodeMirror, Vim, getCM } from "@replit/codemirror-vim";
 import { listContinuationForEnter } from "~/composer-list-continuation";
 
@@ -40,7 +40,7 @@ const CODE_PUNCTUATION: Readonly<Record<string, readonly [plain: string, shifted
   Slash: ["/", "?"],
 };
 
-const CJK_FULLWIDTH_PUNCTUATION = /^[；：。「」【】、，？！（）《》“”‘’·—…￥]$/;
+const CJK_FULLWIDTH_PUNCTUATION = /^[；：。「」【】、，？！（）《》“”‘’·—…￥～]+$/;
 
 /**
  * Translates a physical `KeyboardEvent.code` into the ASCII key string Vim expects
@@ -163,25 +163,109 @@ export function ensureVimMarkdownListContinuation(): void {
   };
 }
 
-function abortActiveImeComposition(view: EditorView): void {
-  const content = view.contentDOM;
-  if (document.activeElement !== content) return;
-  const selection = view.state.selection;
-  content.blur();
-  content.focus({ preventScroll: true });
-  // Restore CodeMirror's exact selection if the native blur/focus shifted DOM ranges.
-  if (!view.state.selection.eq(selection)) {
-    view.dispatch({ selection });
+const setVimImeEditable = StateEffect.define<boolean>();
+
+/** Keep `contenteditable="false"` + `tabindex="0"` in Normal/Visual mode so OS CJK IME popups never activate. */
+const vimImeEditableField = StateField.define<boolean>({
+  create: () => false,
+  update(value, tr) {
+    if (tr.state.readOnly) return false;
+    for (const effect of tr.effects) {
+      if (effect.is(setVimImeEditable)) return effect.value;
+    }
+    return value;
+  },
+  provide: (field) => [
+    Prec.high(EditorView.editable.from(field)),
+    EditorView.contentAttributes.compute([EditorState.readOnly], (state) =>
+      state.readOnly ? {} : { tabindex: "0" },
+    ),
+  ],
+});
+
+function shouldEnableImeEditing(view: EditorView): boolean {
+  if (view.state.readOnly) return false;
+  const vim = getCM(view)?.state.vim;
+  return Boolean(vim && (vim.insertMode || vim.expectLiteralNext));
+}
+
+function applyVimImeEditable(view: EditorView): void {
+  if (!view.dom.isConnected) return;
+  const next = shouldEnableImeEditing(view);
+  const current = view.state.field(vimImeEditableField, false);
+  if (current === undefined || current === next) return;
+  const wasFocused = view.hasFocus || document.activeElement === view.contentDOM;
+  view.dispatch({ effects: setVimImeEditable.of(next) });
+  if (wasFocused && document.activeElement !== view.contentDOM) {
+    view.contentDOM.focus({ preventScroll: true });
+  }
+  // Defensive recovery: if a browser dropped `compositionend` while leaving Insert mode,
+  // clear CodeMirror's composing state so subsequent keydowns are never ignored.
+  if (!next && view.composing) {
+    view.contentDOM.dispatchEvent(new CompositionEvent("compositionend"));
   }
 }
 
+function syncVimImeEditable(view: EditorView, defer = false): void {
+  const next = shouldEnableImeEditing(view);
+  const current = view.state.field(vimImeEditableField, false);
+  if (current === undefined || current === next) return;
+  if (defer) {
+    queueMicrotask(() => applyVimImeEditable(view));
+    return;
+  }
+  try {
+    applyVimImeEditable(view);
+  } catch {
+    queueMicrotask(() => applyVimImeEditable(view));
+  }
+}
+
+const vimImeEditableSyncPlugin = ViewPlugin.fromClass(
+  class {
+    private cm: ReturnType<typeof getCM> = null;
+    private readonly onVimEvent: () => void;
+
+    constructor(private readonly view: EditorView) {
+      this.onVimEvent = () => syncVimImeEditable(this.view, false);
+      this.attach(true);
+    }
+
+    private attach(defer: boolean): void {
+      const cm = getCM(this.view);
+      if (!cm || cm === this.cm) return;
+      this.detach();
+      this.cm = cm;
+      cm.on("vim-mode-change", this.onVimEvent);
+      cm.on("vim-keypress", this.onVimEvent);
+      cm.on("vim-command-done", this.onVimEvent);
+      syncVimImeEditable(this.view, defer);
+    }
+
+    private detach(): void {
+      if (!this.cm) return;
+      this.cm.off("vim-mode-change", this.onVimEvent);
+      this.cm.off("vim-keypress", this.onVimEvent);
+      this.cm.off("vim-command-done", this.onVimEvent);
+      this.cm = null;
+    }
+
+    update(): void {
+      if (!this.cm) this.attach(true);
+      syncVimImeEditable(this.view, true);
+    }
+
+    destroy(): void {
+      this.detach();
+    }
+  },
+);
+
 /**
- * Normal/Visual mode CJK IME shield: intercepts `keyCode === 229` / composition / full-width
- * punctuation and forwards physical `KeyboardEvent.code` to Vim while leaving Insert mode native.
+ * Zed-style Normal/Visual IME shield: disables `contenteditable` outside Insert/literal-target
+ * modes, maps CJK full-width punctuation to physical keys, and preserves plain-text paste.
  */
 export const vimNormalModeImeShield = (() => {
-  const composingBeforeBypass = new WeakMap<EditorView, { docText: string; head: number }>();
-
   const shouldBypassIme = (view: EditorView): boolean => {
     const cm = getCM(view);
     const vim = cm?.state.vim;
@@ -193,6 +277,8 @@ export const vimNormalModeImeShield = (() => {
   };
 
   return [
+    vimImeEditableField,
+    vimImeEditableSyncPlugin,
     Prec.highest(
       EditorView.domEventHandlers({
         keydown(event, view) {
@@ -208,17 +294,17 @@ export const vimNormalModeImeShield = (() => {
           const cm = getCM(view);
           if (!cm) return false;
 
-          composingBeforeBypass.set(view, {
-            docText: view.state.doc.toString(),
-            head: view.state.selection.main.head,
-          });
-
           event.preventDefault();
           event.stopPropagation();
 
-          Vim.handleKey(cm, vimKey, "user");
-
-          abortActiveImeComposition(view);
+          const handled = Vim.multiSelectHandleKey(cm, vimKey, "user");
+          if (handled) {
+            CodeMirror.signal(cm, "vim-keypress", vimKey);
+            (
+              cm.state as { vimPlugin?: { blockCursor?: { scheduleRedraw: () => void } } }
+            ).vimPlugin?.blockCursor?.scheduleRedraw();
+          }
+          syncVimImeEditable(view);
           return true;
         },
         beforeinput(event, view) {
@@ -231,24 +317,31 @@ export const vimNormalModeImeShield = (() => {
               CJK_FULLWIDTH_PUNCTUATION.test(event.data))
           ) {
             event.preventDefault();
-            abortActiveImeComposition(view);
             return true;
           }
           return false;
         },
-        compositionstart(_event, view) {
-          if (!shouldBypassIme(view)) return false;
-          abortActiveImeComposition(view);
-          return true;
-        },
-        compositionend(_event, view) {
-          const snapshot = composingBeforeBypass.get(view);
-          if (!snapshot) return false;
-          composingBeforeBypass.delete(view);
-          return false;
-        },
       }),
     ),
+    EditorView.domEventHandlers({
+      paste(event, view) {
+        if (
+          event.defaultPrevented ||
+          view.state.readOnly ||
+          view.state.facet(EditorView.editable)
+        ) {
+          return false;
+        }
+        const text = event.clipboardData?.getData("text/plain");
+        if (!text) return false;
+        event.preventDefault();
+        view.dispatch(view.state.replaceSelection(text), {
+          userEvent: "input.paste",
+          scrollIntoView: true,
+        });
+        return true;
+      },
+    }),
     Prec.highest(
       EditorView.inputHandler.of((view, _from, _to, text) => {
         if (!shouldBypassIme(view)) return false;
@@ -267,6 +360,8 @@ export interface VimTelemetrySnapshot {
   readonly line: number;
   readonly column: number;
   readonly pendingKeys: string;
+  readonly recordingRegister: string | null;
+  readonly notice: string | null;
 }
 
 export function readVimTelemetry(view: EditorView): VimTelemetrySnapshot {
@@ -291,5 +386,12 @@ export function readVimTelemetry(view: EditorView): VimTelemetrySnapshot {
   const keyBuf = inputState?.keyBuffer?.join("") ?? "";
   const pendingKeys = `${prefix}${op}${motionRepeat}${keyBuf}`.slice(0, 8);
 
-  return { mode, line, column, pendingKeys };
+  const dialog = (cm?.state as { dialog?: HTMLElement | null } | undefined)?.dialog;
+  const isMessageOnlyDialog = Boolean(dialog && !dialog.querySelector("input"));
+  const messageText = isMessageOnlyDialog ? (dialog?.textContent?.trim() ?? "") : "";
+  const recordingMatch = /^recording @(.+)$/.exec(messageText);
+  const recordingRegister = recordingMatch?.[1] ?? null;
+  const notice = recordingRegister ? null : messageText || null;
+
+  return { mode, line, column, pendingKeys, recordingRegister, notice };
 }

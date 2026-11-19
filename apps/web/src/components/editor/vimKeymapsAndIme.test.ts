@@ -70,6 +70,9 @@ describe("vimKeymapsAndIme", () => {
     expect(isCjkImeHijackedEvent({ isComposing: true, keyCode: 74, key: "j" })).toBe(true);
     expect(isCjkImeHijackedEvent({ isComposing: false, keyCode: 229, key: "Process" })).toBe(true);
     expect(isCjkImeHijackedEvent({ isComposing: false, keyCode: 186, key: "；" })).toBe(true);
+    expect(isCjkImeHijackedEvent({ isComposing: false, keyCode: 54, key: "……" })).toBe(true);
+    expect(isCjkImeHijackedEvent({ isComposing: false, keyCode: 189, key: "——" })).toBe(true);
+    expect(isCjkImeHijackedEvent({ isComposing: false, keyCode: 192, key: "～" })).toBe(true);
     expect(isCjkImeHijackedEvent({ isComposing: false, keyCode: 74, key: "j" })).toBe(false);
   });
 });

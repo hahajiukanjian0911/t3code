@@ -2377,7 +2377,12 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       ? promptSuggestion
       : null;
 
-  const onComposerCommandKey = (key: string, event: KeyboardEvent, isTaskItem?: boolean) =>
+  const onComposerCommandKey = (
+    key: string,
+    event: KeyboardEvent,
+    isTaskItem?: boolean,
+    vimMode?: "normal" | "insert",
+  ) =>
     composerCommandKeyHandler({
       keybindings,
       getShortcutContext,
@@ -2417,7 +2422,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       submitComposer,
       promptSuggestion: offeredPromptSuggestion,
       dismissPromptSuggestion,
-    })(key, event, isTaskItem);
+    })(key, event, isTaskItem, vimMode);
 
   const {
     stashQueue,
@@ -3599,7 +3604,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
               ref={attachComposerBodyRef}
               data-chat-composer-body="true"
               className={cn(
-                "relative min-w-0 px-4 pb-2 pt-3.5 sm:pt-3",
+                "relative min-w-0 px-4 pb-2.5 pt-3.5",
                 isComposerCollapsedMobile && "hidden",
               )}
             >
@@ -3790,7 +3795,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
               <div
                 data-chat-composer-footer="true"
                 className={cn(
-                  "flex min-w-0 flex-nowrap items-center overflow-visible px-2 pb-2",
+                  "flex min-w-0 flex-nowrap items-center overflow-visible px-2.5 pb-2.5 pt-0.5",
                   pendingUserInputs.length > 0 && "pt-2",
                   showMobilePendingAnswerActions &&
                     speechInput.state.phase === "idle" &&
@@ -3798,10 +3803,18 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                 )}
               >
                 {(composerAttachButton || settings.vimMode) && !dictationTakesFooter ? (
-                  <div className="me-2 flex shrink-0 items-center gap-1.5">
+                  <div className="me-2 flex min-w-0 shrink-0 items-center gap-1.5">
                     {composerAttachButton}
+                    {composerAttachButton && settings.vimMode && vimTelemetry ? (
+                      <span className="h-3.5 w-px shrink-0 bg-border/65" aria-hidden="true" />
+                    ) : null}
                     {settings.vimMode ? (
-                      <ComposerVimStatusCluster telemetry={vimTelemetry} />
+                      <ComposerVimStatusCluster
+                        telemetry={vimTelemetry}
+                        onStopMacroRecording={() =>
+                          composerEditorRef.current?.stopVimMacroRecording?.()
+                        }
+                      />
                     ) : null}
                   </div>
                 ) : null}

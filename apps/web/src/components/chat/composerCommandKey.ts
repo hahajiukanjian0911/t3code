@@ -221,12 +221,18 @@ export function composerCommandKeyHandler(input: {
     );
   };
 
-  const onComposerCommandKey = (key: string, event: KeyboardEvent, isTaskItem = false) => {
+  const onComposerCommandKey = (
+    key: string,
+    event: KeyboardEvent,
+    isTaskItem = false,
+    vimMode?: "normal" | "insert",
+  ) => {
     const submissionIntent = composerSubmissionIntentForKey({
       event,
       keybindings,
       context: getShortcutContext(event.target),
       isSoftwareKeyboardOpen,
+      vimInsertMode: vimMode === "insert",
       isDraftThread: routeKind === "draft",
       isRunning: phase === "running" || phase === "connecting",
       sendShortcut,
@@ -296,7 +302,7 @@ export function composerCommandKeyHandler(input: {
       );
       return true;
     }
-    if (key === "Enter" && isTaskItem) return false;
+    if (key === "Enter" && (isTaskItem || vimMode === "normal")) return false;
     if (key === "Enter" || (key === "Tab" && !event.shiftKey)) {
       return applyListEdit(event, key === "Enter" ? listContinuationForEnter : listIndentForTab);
     }
