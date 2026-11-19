@@ -246,7 +246,7 @@ export const PersistentThreadTerminalDrawer = memo(function PersistentThreadTerm
       id={`drawer:${scopedThreadKey(threadRef)}`}
       title="Terminal"
       icon={<SquareTerminalIcon className="size-3.5" />}
-      panel="bottom"
+      panel="right"
       available={visible}
       selected={terminalUiState.terminalOpen}
       activation={terminalUiState.terminalOpen}

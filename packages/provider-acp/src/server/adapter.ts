@@ -661,7 +661,7 @@ export interface AcpAdapterV2Flavor {
     ) => Effect.Effect<ReadonlyMap<string, ReadonlyArray<string>>, Error>;
     readonly buildContinuationPrompt: (
       openTools: ReadonlyArray<AcpToolCallState>,
-      context: { readonly hasT3Mcp: boolean },
+      context: { readonly hasT3Mcp: boolean; readonly settled?: boolean },
     ) => ReadonlyArray<EffectAcpSchema.ContentBlock>;
     readonly waitSlice?: Duration.Input;
     readonly maxContinuations?: number;
@@ -1537,6 +1537,9 @@ interface ActiveAcpTurn {
   >;
   readonly persistentBackgroundTaskIds: Set<string>;
   readonly releasedForegroundTaskIds: Set<string>;
+  readonly awaitedForegroundToolIds: Set<string>;
+  readonly unobservedSettledForegroundToolIds: Set<string>;
+  settledForegroundAssistantMessageId: string | null;
   readonly foregroundTaskIds: Map<string, ReadonlyArray<string>>;
   readonly foregroundToolWaiters: Set<Deferred.Deferred<void, never>>;
   /** Monitor end notices lack output; wait for hydration or the safety timeout. */
@@ -4215,6 +4218,7 @@ export const makeAcpAdapterV2 = Effect.fn("makeAcpAdapterV2")(function* (
           incoming: AcpToolCallState,
           projectedStatus?: ProjectedToolStatus,
         ) {
+          const previousAssistantMessageId = context.assistant.current?.sourceMessageId ?? null;
           if (context.assistant.current?.sourceMessageId == null)
             yield* closeTextStream(context, "assistant");
           if (context.reasoning.current?.sourceMessageId == null)
@@ -4254,6 +4258,33 @@ export const makeAcpAdapterV2 = Effect.fn("makeAcpAdapterV2")(function* (
               ? toolCall
               : { ...toolCall, backgroundCommandTaskId },
           );
+          if (flavor.foregroundCommandWait !== undefined) {
+            const wasOpen =
+              previous !== undefined &&
+              flavor.foregroundCommandWait.isOpenForegroundCommand(previous);
+            const isNowOpen = flavor.foregroundCommandWait.isOpenForegroundCommand(toolCall);
+            const isWaitCall =
+              toolCall.title?.includes("t3_background_wait") === true ||
+              toolCall.command?.includes("t3_background_wait") === true;
+            if (
+              wasOpen &&
+              !isNowOpen &&
+              context.awaitedForegroundToolIds.has(toolCall.toolCallId)
+            ) {
+              context.unobservedSettledForegroundToolIds.add(toolCall.toolCallId);
+              context.settledForegroundAssistantMessageId = previousAssistantMessageId;
+            } else if (
+              previous === undefined &&
+              !isWaitCall &&
+              context.unobservedSettledForegroundToolIds.size > 0
+            ) {
+              for (const id of context.unobservedSettledForegroundToolIds) {
+                context.awaitedForegroundToolIds.delete(id);
+              }
+              context.unobservedSettledForegroundToolIds.clear();
+              context.settledForegroundAssistantMessageId = null;
+            }
+          }
           yield* notifyForegroundToolWaiters(context);
           if (
             followsAgentWorkState &&
@@ -5844,6 +5875,19 @@ export const makeAcpAdapterV2 = Effect.fn("makeAcpAdapterV2")(function* (
               const text = acpContentBlockDisplayText(update.content);
               if (text !== undefined) {
                 const startsNewAssistantSegment = context.assistant.current === null;
+                if (
+                  startsNewAssistantSegment &&
+                  text.trim().length > 0 &&
+                  context.unobservedSettledForegroundToolIds.size > 0 &&
+                  (update.messageId == null ||
+                    update.messageId !== context.settledForegroundAssistantMessageId)
+                ) {
+                  for (const id of context.unobservedSettledForegroundToolIds) {
+                    context.awaitedForegroundToolIds.delete(id);
+                  }
+                  context.unobservedSettledForegroundToolIds.clear();
+                  context.settledForegroundAssistantMessageId = null;
+                }
                 if (context.pendingInjectedReport.size > 0) {
                   const reportedTaskIds = [...context.pendingInjectedReport];
                   context.pendingInjectedReport.clear();
@@ -8804,6 +8848,9 @@ export const makeAcpAdapterV2 = Effect.fn("makeAcpAdapterV2")(function* (
               backgroundCommands: new Map(),
               persistentBackgroundTaskIds: new Set(),
               releasedForegroundTaskIds: new Set(),
+              awaitedForegroundToolIds: new Set(),
+              unobservedSettledForegroundToolIds: new Set(),
+              settledForegroundAssistantMessageId: null,
               foregroundTaskIds: new Map(),
               foregroundToolWaiters: new Set(),
               awaitingBackgroundHydration: new Set(),
@@ -9051,7 +9098,38 @@ export const makeAcpAdapterV2 = Effect.fn("makeAcpAdapterV2")(function* (
                   ),
                 );
                 if (openTools.length === 0) {
-                  return { result, hiddenFailure };
+                  const settledTools = yield* runtimeCallbackPermit.withPermit(
+                    Effect.gen(function* () {
+                      const items = [...context.unobservedSettledForegroundToolIds]
+                        .map((id) => context.tools.get(id))
+                        .filter(
+                          (tool): tool is NonNullable<typeof tool> =>
+                            tool !== undefined &&
+                            !context.releasedForegroundTaskIds.has(tool.toolCallId) &&
+                            !(context.foregroundTaskIds.get(tool.toolCallId) ?? []).some((id) =>
+                              context.releasedForegroundTaskIds.has(id),
+                            ),
+                        );
+                      for (const tool of items) {
+                        context.awaitedForegroundToolIds.delete(tool.toolCallId);
+                      }
+                      context.unobservedSettledForegroundToolIds.clear();
+                      context.settledForegroundAssistantMessageId = null;
+                      if (items.length > 0) {
+                        yield* closeTextStreams(context);
+                      }
+                      return items;
+                    }),
+                  );
+                  if (settledTools.length === 0) {
+                    return { result, hiddenFailure };
+                  }
+                  currentPrompt = flavor.foregroundCommandWait.buildContinuationPrompt(
+                    settledTools,
+                    { hasT3Mcp: promptParts?.hasT3Mcp === true, settled: true },
+                  );
+                  continuations += 1;
+                  continue;
                 }
 
                 if (continuations >= 1) {
@@ -9064,13 +9142,45 @@ export const makeAcpAdapterV2 = Effect.fn("makeAcpAdapterV2")(function* (
                 const toolsForPrompt = yield* runtimeCallbackPermit.withPermit(
                   Effect.gen(function* () {
                     yield* closeTextStreams(context);
-                    return unreleasedOpenForegroundTools(context).filter(
+                    const open = unreleasedOpenForegroundTools(context).filter(
                       (tool) =>
                         promptParts?.hasT3Mcp === true || extractSubagentUpdate(tool) === undefined,
                     );
+                    for (const tool of open) {
+                      context.awaitedForegroundToolIds.add(tool.toolCallId);
+                    }
+                    return open;
                   }),
                 );
-                if (toolsForPrompt.length === 0) return { result, hiddenFailure };
+                if (toolsForPrompt.length === 0) {
+                  const settledTools = yield* runtimeCallbackPermit.withPermit(
+                    Effect.sync(() => {
+                      const items = [...context.unobservedSettledForegroundToolIds]
+                        .map((id) => context.tools.get(id))
+                        .filter(
+                          (tool): tool is NonNullable<typeof tool> =>
+                            tool !== undefined &&
+                            !context.releasedForegroundTaskIds.has(tool.toolCallId) &&
+                            !(context.foregroundTaskIds.get(tool.toolCallId) ?? []).some((id) =>
+                              context.releasedForegroundTaskIds.has(id),
+                            ),
+                        );
+                      for (const tool of items) {
+                        context.awaitedForegroundToolIds.delete(tool.toolCallId);
+                      }
+                      context.unobservedSettledForegroundToolIds.clear();
+                      context.settledForegroundAssistantMessageId = null;
+                      return items;
+                    }),
+                  );
+                  if (settledTools.length === 0) return { result, hiddenFailure };
+                  currentPrompt = flavor.foregroundCommandWait.buildContinuationPrompt(
+                    settledTools,
+                    { hasT3Mcp: promptParts?.hasT3Mcp === true, settled: true },
+                  );
+                  continuations += 1;
+                  continue;
+                }
                 currentPrompt = flavor.foregroundCommandWait.buildContinuationPrompt(
                   toolsForPrompt,
                   { hasT3Mcp: promptParts?.hasT3Mcp === true },
@@ -9959,12 +10069,26 @@ export const makeAcpAdapterV2 = Effect.fn("makeAcpAdapterV2")(function* (
                     for (const id of matched) {
                       context.releasedForegroundTaskIds.add(id);
                     }
+                    for (const tool of tools) {
+                      if (
+                        matched.includes(tool.toolCallId) ||
+                        context.foregroundTaskIds
+                          .get(tool.toolCallId)
+                          ?.some((id) => matched.includes(id))
+                      ) {
+                        context.awaitedForegroundToolIds.delete(tool.toolCallId);
+                        context.unobservedSettledForegroundToolIds.delete(tool.toolCallId);
+                      }
+                    }
                     yield* notifyForegroundToolWaiters(context);
                     return { matched };
                   }
                   const requested = new Set(matched);
                   const openTools = unreleasedOpenForegroundTools(context, requested);
                   if (openTools.length === 0) return { matched };
+                  for (const tool of openTools) {
+                    context.awaitedForegroundToolIds.add(tool.toolCallId);
+                  }
                   yield* waitUntilForegroundToolsSettle(
                     context,
                     // Native launch ACKs never report worker completion; let the parent read queued results.

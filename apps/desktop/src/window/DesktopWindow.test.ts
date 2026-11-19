@@ -129,6 +129,7 @@ function makeFakeBrowserWindow() {
     setOpacity: vi.fn(),
     setTitle: vi.fn(),
     setTitleBarOverlay: vi.fn(),
+    setVibrancy: vi.fn(),
     setWindowButtonPosition: vi.fn(),
     show: vi.fn(),
     webContents,
@@ -1377,6 +1378,18 @@ describe("DesktopWindow", () => {
         assert.equal(createdWindowOptions[0]?.backgroundColor, "#00000000");
         assert.lengthOf(vi.mocked(main.window.setBackgroundColor).mock.calls, 0);
         assert.deepEqual(vi.mocked(popup.window.setBackgroundColor).mock.calls, [["#ffffff"]]);
+
+        main.windowListeners.get("leave-full-screen")?.();
+        assert.deepEqual(vi.mocked(main.window.setBackgroundColor).mock.calls, [["#00000000"]]);
+        assert.deepEqual(vi.mocked(main.window.setVibrancy).mock.calls, [[null], ["popover"]]);
+
+        main.windowListeners.get("unmaximize")?.();
+        assert.deepEqual(vi.mocked(main.window.setVibrancy).mock.calls, [
+          [null],
+          ["popover"],
+          [null],
+          ["popover"],
+        ]);
       }),
   );
 

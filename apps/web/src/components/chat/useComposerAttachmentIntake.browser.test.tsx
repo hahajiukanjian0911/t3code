@@ -75,6 +75,7 @@ it("prepares a repeated paste without a tile, and still keeps a different image"
       useComposerDraftStore.getState().getComposerDraft(target)?.images ?? [];
     return ids;
   };
+  const insertedReferenceIds: string[][] = [];
   const input = {
     activeThreadId: ThreadId.make("thread"),
     activePendingProgress: null,
@@ -98,7 +99,10 @@ it("prepares a repeated paste without a tile, and still keeps a different image"
     addComposerImagesToDraft: addImages,
     addComposerFilesToDraft: () => [],
     removeComposerImageFromDraft: () => {},
-    insertAttachmentReferences: () => false,
+    insertAttachmentReferences: (references) => {
+      insertedReferenceIds.push(references.map((ref) => ref.contextId));
+      return true;
+    },
   } satisfies IntakeInput;
   let intake!: Intake;
   await using _screen = await render(
@@ -128,6 +132,8 @@ it("prepares a repeated paste without a tile, and still keeps a different image"
   expect(visiblePreparing(target)).toHaveLength(0);
   await act(() => different);
   expect(composerImagesRef.current).toHaveLength(2);
+  // Even when the composer prompt is empty, each stored image gets an inline reference chip.
+  expect(insertedReferenceIds).toHaveLength(2);
 });
 
 // The thread row's discard runs after the composer left that thread; a draft session's discard

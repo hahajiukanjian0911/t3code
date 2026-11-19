@@ -49,13 +49,19 @@ export function composerVimAttachments() {
             { start: from, end: to },
             references,
           );
+          const insertedEnd = edit.start + edit.text.length;
+          const mainSelection = view.state.selection.main;
+          const moveCaretAfterInsert = mainSelection.from === from && mainSelection.to === to;
           view.dispatch({
             changes: { from: edit.start, to: edit.end, insert: edit.text },
+            ...(moveCaretAfterInsert
+              ? { selection: { anchor: insertedEnd }, scrollIntoView: true }
+              : {}),
             userEvent: "input.paste",
             annotations: insertedAttachment.of({
               order,
               start: edit.start,
-              end: edit.start + edit.text.length,
+              end: insertedEnd,
             }),
           });
           return true;

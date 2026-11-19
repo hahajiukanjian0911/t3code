@@ -806,4 +806,33 @@ it.layer(NodeServices.layer)("keybindings", (it) => {
         );
       }).pipe(Effect.scoped, Effect.provide(layerKeybindings())),
   );
+
+  it.effect("migrates legacy default rightPanel.toggle to mod+r on macOS", () =>
+    Effect.gen(function* () {
+      const { keybindingsConfigPath } = yield* ServerConfig.ServerConfig;
+      yield* writeKeybindingsConfig(keybindingsConfigPath, [
+        { key: "mod+alt+b", command: "rightPanel.toggle" },
+        { key: "mod+r", command: "preview.refresh", when: "previewFocus" },
+      ]);
+
+      const keybindings = yield* Keybindings.Keybindings;
+      yield* keybindings.syncDefaultKeybindingsOnStartup;
+
+      const persisted = yield* readKeybindingsConfig(keybindingsConfigPath);
+      assert.isTrue(
+        persisted.some(
+          (rule) =>
+            rule.command === "rightPanel.toggle" && rule.key === "mod+r" && rule.when === "isMac",
+        ),
+      );
+      assert.isTrue(
+        persisted.some(
+          (rule) =>
+            rule.command === "preview.refresh" &&
+            rule.key === "mod+r" &&
+            rule.when === "!isMac && previewFocus",
+        ),
+      );
+    }).pipe(Effect.provide(layerKeybindings())),
+  );
 });

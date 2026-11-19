@@ -84,7 +84,6 @@ export const ChatHeader = memo(function ChatHeader({
   onNewThreadInProject,
   onOpenProjectSettings,
   onFindInThread,
-  isWorking = false,
 }: ChatHeaderProps) {
   const workspaceDock = useWorkspaceDockEnabled();
   const activeProjectName = activeProject?.isScratch ? "No project" : activeProject?.title;
@@ -392,15 +391,6 @@ export const ChatHeader = memo(function ChatHeader({
         </WorkspaceBreadcrumb>
 
         <div className="flex min-w-0 items-center justify-self-end gap-1">
-          {isWorking ? (
-            <span
-              data-chat-header-running=""
-              aria-hidden
-              className="hidden items-center gap-1.5 rounded-full bg-info/10 px-2 py-0.5 text-xs font-medium text-info @lg/chat-header:inline-flex"
-            >
-              <span className="size-1.5 rounded-full bg-info motion-safe:animate-pulse" />
-            </span>
-          ) : null}
           {isServerThread ? <GuestShareIndicator threadRef={activeThreadRef} /> : null}
           {isServerThread && onFindInThread ? (
             <Tooltip>

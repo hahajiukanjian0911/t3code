@@ -229,11 +229,26 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
   const toggleRightPanel = () => {
     if (!activeThreadRef) return;
     if (workspacePanel && !embedded) {
-      workspacePanel.toggle();
+      const outcome = workspacePanel.focusOrToggle();
+      if (outcome !== "closed" && activeRightPanelSurface?.kind === "terminal") {
+        focusActivePanelTerminal(activeThreadRef);
+      }
       return;
     }
     if (rightPanelOpen) {
+      const activeEl = typeof document !== "undefined" ? document.activeElement : null;
+      const inPanel =
+        activeEl instanceof Element && activeEl.closest('[data-workspace-area="panel"]') !== null;
+      if (!inPanel) {
+        if (activeRightPanelSurface?.kind === "terminal") {
+          focusActivePanelTerminal(activeThreadRef);
+        } else {
+          requestWorkspaceFocus({ area: "panel" });
+        }
+        return;
+      }
       closePreviewPanel();
+      requestWorkspaceContentFocus();
       return;
     }
     useRightPanelStore.getState().toggleVisibility(activeThreadRef);

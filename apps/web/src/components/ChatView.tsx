@@ -2858,8 +2858,14 @@ export default function ChatView(props: ChatViewProps) {
     return window.desktopBridge?.onMenuAction((action) => {
       if (action === "rightPanel.toggle") toggleRightPanelStable();
       else if (action === "rightPanel.toggleMaximized") toggleRightPanelMaximizedStable();
+      else if (action === "terminal.toggle") toggleTerminalVisibilityStable();
     });
-  }, [embedded, toggleRightPanelStable, toggleRightPanelMaximizedStable]);
+  }, [
+    embedded,
+    toggleRightPanelStable,
+    toggleRightPanelMaximizedStable,
+    toggleTerminalVisibilityStable,
+  ]);
 
   usePasteToFocusComposer(embedded ? null : activeThreadId, composerRef);
   // A delegated task is a remote thread's subagent.
@@ -3383,8 +3389,9 @@ export default function ChatView(props: ChatViewProps) {
       data-chat-header={workspaceDock ? undefined : ""}
       data-workspace-chat-heading={workspaceDock ? "" : undefined}
       className={cn(
-        "relative [[data-panel-animations=true]_&]:motion-safe:transition-[padding-left] [[data-panel-animations=true]_&]:motion-safe:duration-(--panel-animation-duration) [[data-panel-animations=true]_&]:motion-safe:ease-out",
-        !workspaceDock && "bg-background",
+        "relative",
+        !workspaceDock &&
+          "bg-background [[data-panel-animations=true]_&]:motion-safe:transition-[padding-left] [[data-panel-animations=true]_&]:motion-safe:duration-(--panel-animation-duration) [[data-panel-animations=true]_&]:motion-safe:ease-out",
         workspaceDock
           ? "drag-region flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center border-b border-transparent bg-background/85 backdrop-blur-md transition-[border-color] duration-180"
           : isElectron
@@ -4148,7 +4155,7 @@ export default function ChatView(props: ChatViewProps) {
             </ThreadFindCanvas>
           </div>
 
-          {embedded ? null : (
+          {embedded || workspaceDock ? null : (
             <ChatTerminalDrawers
               activeThreadKey={activeThreadKey}
               activeTerminalOpen={Boolean(terminalUiState.terminalOpen)}
@@ -4171,7 +4178,6 @@ export default function ChatView(props: ChatViewProps) {
           <WorkspacePanelActions>{rightPanelShell}</WorkspacePanelActions>
           <WorkspaceActions
             windowId={`chat:${activeThreadKey}`}
-            onOpenBottom={toggleTerminalVisibilityStable}
             onOpenRight={toggleThreadPanelStable}
           />
           {rightPanelState.surfaces.map((surface) => (

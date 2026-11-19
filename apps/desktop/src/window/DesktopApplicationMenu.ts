@@ -283,8 +283,13 @@ export const make = Effect.gen(function* () {
       {
         label: "View",
         submenu: [
-          /* Native reload/DevTools/zoom roles target focused guests; these commands must target the app. */
-          { label: "Reload", accelerator: "CmdOrCtrl+R", click: mainContentsClick("reload") },
+          /* Native reload/DevTools/zoom roles target focused guests; these commands must target the app.
+             On macOS, leave Cmd+R unbound in the menu so the renderer's rightPanel.toggle shortcut receives it. */
+          {
+            label: "Reload",
+            accelerator: environment.platform === "darwin" ? "Alt+Cmd+R" : "CmdOrCtrl+R",
+            click: mainContentsClick("reload"),
+          },
           {
             label: "Force Reload",
             accelerator: "Shift+CmdOrCtrl+R",

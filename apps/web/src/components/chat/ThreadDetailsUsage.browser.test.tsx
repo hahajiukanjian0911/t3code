@@ -80,6 +80,41 @@ it("lists available windows and opens the selected model's quota in place", asyn
   await expect
     .element(screen.getByRole("img", { name: "Gemini · 5-hour quota trajectory chart" }))
     .toBeVisible();
+  const chartSvg = screen
+    .getByRole("img", { name: "Gemini · 5-hour quota trajectory chart" })
+    .element() as SVGSVGElement;
+  const hostBox = screen.container.querySelector<HTMLElement>(".w-72")!;
+  hostBox.style.width = "280px";
+  await vi.waitFor(() => expect(chartSvg.getBoundingClientRect().width).toBeLessThanOrEqual(280));
+  const initialRect = chartSvg.getBoundingClientRect();
+  // Widening the container expands the X axis without scaling the Y axis height.
+  hostBox.style.width = "540px";
+  await vi.waitFor(() =>
+    expect(chartSvg.getBoundingClientRect().width).toBeGreaterThan(initialRect.width + 150),
+  );
+  expect(
+    Math.abs(chartSvg.getBoundingClientRect().height - initialRect.height),
+  ).toBeLessThanOrEqual(1);
+  // Hovering the trajectory displays the coordinate readout (time + remaining %).
+  const widenedRect = chartSvg.getBoundingClientRect();
+  chartSvg.dispatchEvent(
+    new PointerEvent("pointermove", {
+      bubbles: true,
+      clientX: widenedRect.left + widenedRect.width * 0.6,
+      clientY: widenedRect.top + widenedRect.height * 0.5,
+    }),
+  );
+  await vi.waitFor(() => {
+    const readout = screen.container.querySelector("[data-trajectory-hover-readout]");
+    expect(readout?.textContent).toMatch(/%/);
+  });
+  chartSvg.dispatchEvent(
+    new PointerEvent("pointerout", { bubbles: true, relatedTarget: document.body }),
+  );
+  await vi.waitFor(() => {
+    expect(screen.container.querySelector("[data-trajectory-hover-readout]")).toBeNull();
+  });
+  hostBox.style.width = "";
   const shared = screen.getByRole("button", { name: /Others · 5-hour/ });
   await expect.element(shared.getByText("5-hour", { exact: true })).toBeVisible();
   await userEvent.click(shared);
@@ -101,9 +136,9 @@ it("discloses the thread's context usage and shows only reported limits", async 
     autoCompactThreshold: 240_000,
   })!;
   await using screen = await render(<ThreadDetailsContext usage={usage} />);
-  const toggle = screen.getByRole("button", { name: /Context usage/ });
+  const toggle = screen.getByRole("button", { name: /Context/ });
   await expect.element(toggle).toHaveAttribute("aria-expanded", "false");
-  await expect.element(toggle.getByText("83%", { exact: true })).toBeVisible();
+  await expect.element(toggle.getByText("215k / 258k", { exact: true })).toBeVisible();
   await userEvent.click(toggle);
   await expect.element(screen.getByText("215,000", { exact: true })).toBeVisible();
   await expect.element(screen.getByText("43,000", { exact: true })).toBeVisible();
@@ -114,7 +149,7 @@ it("discloses the thread's context usage and shows only reported limits", async 
   await screen.rerender(
     <ThreadDetailsContext usage={deriveLatestContextWindowSnapshot([], report)!} />,
   );
-  await expect.element(toggle.getByText("215k tokens", { exact: true })).toBeVisible();
+  await expect.element(toggle.getByText("215k", { exact: true })).toBeVisible();
   await userEvent.keyboard(" ");
   await expect.element(toggle).toHaveAttribute("aria-expanded", "true");
   await expect.element(screen.getByText("215,000", { exact: true })).toBeVisible();

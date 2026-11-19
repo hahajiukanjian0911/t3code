@@ -1,12 +1,20 @@
 import type { EnvironmentId, UsageLimitHistorySample } from "@t3tools/contracts";
 import { formatDuration, type LimitPoolWindow } from "@t3tools/shared/usageLimits";
-import { useId, useState } from "react";
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 
 import { usePrimarySettings } from "../../hooks/useSettings";
+import { observeResize } from "../../lib/observeResize";
 import { cn } from "../../lib/utils";
 import { formatUpcomingTimestamp } from "../../timestampFormat";
 import {
   buildUsageLimitTrajectory,
+  sampleUsageLimitTrajectoryAt,
   usageLimitCycleEnd,
   usageLimitDurationMs,
   type BurnRateMode,
@@ -32,6 +40,18 @@ function formatAxisTick(atMs: number, spanMs: number): string {
     return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   }
   return date.toLocaleDateString(undefined, { weekday: "short", day: "numeric" });
+}
+
+function formatHoverTimestamp(atMs: number, spanMs: number): string {
+  const date = new Date(atMs);
+  if (spanMs <= 36 * 3600_000) {
+    return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  }
+  return date.toLocaleString(undefined, {
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function buildSvgPolyline(
@@ -86,9 +106,28 @@ function UsageLimitTrajectoryPanel({
   samples,
   compact = false,
 }: PanelProps & { readonly samples: readonly UsageLimitHistorySample[] }) {
-  const viewWidth = compact ? 270 : 760;
-  const viewHeight = compact ? 108 : 186;
-  const plotWidth = viewWidth - PAD_LEFT - PAD_RIGHT;
+  const defaultWidth = compact ? 270 : 760;
+  const viewHeight = compact ? 108 : 176;
+  const chartBoxRef = useRef<HTMLDivElement>(null);
+  const [measuredWidth, setMeasuredWidth] = useState(defaultWidth);
+  const [hoverMs, setHoverMs] = useState<number | null>(null);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- tracks plot width so widening expands the X axis while keeping the Y axis fixed
+  useLayoutEffect(() => {
+    const node = chartBoxRef.current;
+    if (!node) return;
+    const sync = (width: number) => {
+      const next = Math.max(compact ? 180 : 280, Math.round(width));
+      setMeasuredWidth((prev) => (Math.abs(prev - next) >= 1 ? next : prev));
+    };
+    const initial = node.clientWidth;
+    if (initial > 0) sync(initial);
+    return observeResize(node, (entries) => {
+      const next = entries[0]?.contentRect.width;
+      if (next !== undefined && next > 0) sync(next);
+    });
+  }, [compact]);
+  const viewWidth = measuredWidth;
+  const plotWidth = Math.max(40, viewWidth - PAD_LEFT - PAD_RIGHT);
   const plotHeight = viewHeight - PAD_TOP - PAD_BOTTOM;
   const gradientId = useId();
   const timestampFormat = usePrimarySettings((settings) => settings.timestampFormat);
@@ -122,9 +161,27 @@ function UsageLimitTrajectoryPanel({
   );
   const projectedPath = buildSvgPolyline(cycleProjection, xOf, yOf);
 
-  const axisTicks = (compact ? [0, 1] : [0, 0.25, 0.5, 0.75, 1]).map(
-    (ratio) => trajectory.startMs + Math.round(totalSpanMs * ratio),
-  );
+  const tickRatios = compact
+    ? viewWidth >= 560
+      ? [0, 0.25, 0.5, 0.75, 1]
+      : viewWidth >= 380
+        ? [0, 0.5, 1]
+        : [0, 1]
+    : [0, 0.25, 0.5, 0.75, 1];
+  const axisTicks = tickRatios.map((ratio) => trajectory.startMs + Math.round(totalSpanMs * ratio));
+
+  const hoverSample = hoverMs !== null ? sampleUsageLimitTrajectoryAt(trajectory, hoverMs) : null;
+  const hoverX = hoverSample ? xOf(hoverSample.atMs) : null;
+  const hoverY = hoverSample ? yOf(hoverSample.remainingPercent) : null;
+
+  const handleSvgPointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const localX = ((event.clientX - rect.left) / rect.width) * viewWidth;
+    const clampedX = Math.max(PAD_LEFT, Math.min(viewWidth - PAD_RIGHT, localX));
+    const ratio = (clampedX - PAD_LEFT) / plotWidth;
+    setHoverMs(Math.round(trajectory.startMs + ratio * totalSpanMs));
+  };
 
   const emptyIso =
     trajectory.emptyAtMs !== null ? new Date(trajectory.emptyAtMs).toISOString() : null;
@@ -212,140 +269,212 @@ function UsageLimitTrajectoryPanel({
 
       {/* SVG Recorded + Projected Trajectory Chart */}
       <div className="relative overflow-hidden rounded-lg border border-border/50 bg-muted/20 px-2 pt-2 pb-1">
-        <svg
-          viewBox={`0 0 ${viewWidth} ${viewHeight}`}
-          className={cn("w-full overflow-visible select-none", compact ? "h-auto" : "h-44")}
-          role="img"
-          aria-label={`${pool.label} quota trajectory chart`}
-        >
-          <defs>
-            <linearGradient id={`${gradientId}-rec`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.28" />
-              <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-            </linearGradient>
-          </defs>
-
-          {/* Horizontal Y gridlines (100%, 50%, 0%) */}
-          {[100, 50, 0].map((pct) => {
-            const y = yOf(pct);
-            return (
-              <g key={pct}>
-                <line
-                  x1={PAD_LEFT}
-                  y1={y}
-                  x2={viewWidth - PAD_RIGHT}
-                  y2={y}
-                  stroke="currentColor"
-                  className="text-border/60"
-                  strokeWidth="1"
-                  strokeDasharray={pct === 50 ? "3 3" : undefined}
-                />
-                <text
-                  x={PAD_LEFT - 6}
-                  y={y + 3}
-                  textAnchor="end"
-                  className="fill-muted-foreground text-3xs tabular-nums"
-                >
-                  {pct}%
-                </text>
-              </g>
-            );
-          })}
-
-          {/* X time ticks */}
-          {axisTicks.map((tickMs, idx) => {
-            const x = xOf(tickMs);
-            return (
-              <text
-                key={tickMs}
-                x={x}
-                y={viewHeight - 6}
-                textAnchor={idx === 0 ? "start" : idx === axisTicks.length - 1 ? "end" : "middle"}
-                className="fill-muted-foreground text-3xs tabular-nums"
-              >
-                {formatAxisTick(tickMs, totalSpanMs)}
-              </text>
-            );
-          })}
-
-          {/* Recorded historical shaded area + solid line */}
-          {recordedArea ? <path d={recordedArea} fill={`url(#${gradientId}-rec)`} /> : null}
-          {recordedPath ? (
-            <path
-              d={recordedPath}
-              fill="none"
-              stroke={color}
-              strokeWidth="2"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
+        <div ref={chartBoxRef} className="relative w-full">
+          {hoverSample !== null && hoverX !== null ? (
+            <div
+              data-trajectory-hover-readout=""
+              className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded border border-border/70 bg-popover/95 px-1.5 py-0.5 text-3xs font-medium whitespace-nowrap text-foreground shadow-2xs tabular-nums"
+              style={{
+                left: `${Math.max(46, Math.min(viewWidth - 46, hoverX))}px`,
+              }}
+            >
+              <span>{formatHoverTimestamp(hoverSample.atMs, totalSpanMs)}</span>
+              <span className="mx-1 text-muted-foreground">·</span>
+              <span>{Math.round(hoverSample.remainingPercent)}%</span>
+            </div>
           ) : null}
+          <svg
+            viewBox={`0 0 ${viewWidth} ${viewHeight}`}
+            width={viewWidth}
+            height={viewHeight}
+            style={{ width: "100%", height: `${viewHeight}px` }}
+            className="block w-full cursor-crosshair overflow-visible select-none"
+            role="img"
+            aria-label={`${pool.label} quota trajectory chart`}
+            onPointerMove={handleSvgPointerMove}
+            onPointerLeave={() => setHoverMs(null)}
+          >
+            <defs>
+              <linearGradient id={`${gradientId}-rec`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+                <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
 
-          {/* Projected future dashed slope + vertical reset step-ups */}
-          {projectedPath ? (
-            <path
-              d={projectedPath}
-              fill="none"
-              stroke={color}
-              strokeWidth="1.75"
-              strokeDasharray="4 3.5"
-              strokeLinejoin="round"
-              opacity="0.88"
-            />
-          ) : null}
-
-          {/* Vertical Now divider & live anchor dot */}
-          <line
-            x1={nowX}
-            y1={PAD_TOP - 4}
-            x2={nowX}
-            y2={bottomY}
-            stroke="currentColor"
-            className="text-foreground/35"
-            strokeWidth="1"
-          />
-          <circle
-            cx={nowX}
-            cy={nowY}
-            r="3.5"
-            fill={color}
-            stroke="var(--background)"
-            strokeWidth="1.5"
-          />
-
-          {/* Step-up refill annotations (+XX%) */}
-          {trajectory.refills
-            .filter((refill) => refill.atMs < trajectory.endMs)
-            .slice(0, 5)
-            .map((refill) => {
-              const rx = xOf(refill.atMs);
-              const ry = yOf(refill.toPercent);
+            {/* Overnight quiet hours shading (00:00–08:50 local time) */}
+            {trajectory.quietSpans.map((span) => {
+              const x1 = xOf(span.startMs);
+              const x2 = xOf(span.endMs);
+              if (x2 - x1 < 0.5) return null;
               return (
-                <g key={`${refill.atMs}-${refill.accountLabel}`}>
-                  <circle cx={rx} cy={ry} r="2.5" fill={color} />
+                <rect
+                  key={`${span.startMs}-${span.endMs}`}
+                  x={x1}
+                  y={PAD_TOP}
+                  width={x2 - x1}
+                  height={plotHeight}
+                  fill="currentColor"
+                  className="text-foreground/[0.045]"
+                />
+              );
+            })}
+
+            {/* Horizontal Y gridlines (100%, 50%, 0%) */}
+            {[100, 50, 0].map((pct) => {
+              const y = yOf(pct);
+              return (
+                <g key={pct}>
+                  <line
+                    x1={PAD_LEFT}
+                    y1={y}
+                    x2={viewWidth - PAD_RIGHT}
+                    y2={y}
+                    stroke="currentColor"
+                    className="text-border/60"
+                    strokeWidth="1"
+                    strokeDasharray={pct === 50 ? "3 3" : undefined}
+                  />
                   <text
-                    x={Math.min(viewWidth - PAD_RIGHT - 16, Math.max(PAD_LEFT + 16, rx))}
-                    y={Math.max(PAD_TOP + 9, ry - 6)}
-                    textAnchor="middle"
-                    className="fill-foreground/85 text-3xs font-medium tabular-nums"
+                    x={PAD_LEFT - 6}
+                    y={y + 3}
+                    textAnchor="end"
+                    className="fill-muted-foreground text-3xs tabular-nums"
                   >
-                    +{refill.restoresPercent}%
+                    {pct}%
                   </text>
                 </g>
               );
             })}
 
-          {/* Empty touch-down marker */}
-          {trajectory.emptyAtMs !== null && trajectory.emptyAtMs > now ? (
-            <circle
-              cx={xOf(trajectory.emptyAtMs)}
-              cy={yOf(0)}
-              r="4"
-              className="fill-background stroke-destructive"
-              strokeWidth="2"
+            {/* X time ticks */}
+            {axisTicks.map((tickMs, idx) => {
+              const x = xOf(tickMs);
+              return (
+                <text
+                  key={tickMs}
+                  x={x}
+                  y={viewHeight - 6}
+                  textAnchor={idx === 0 ? "start" : idx === axisTicks.length - 1 ? "end" : "middle"}
+                  className="fill-muted-foreground text-3xs tabular-nums"
+                >
+                  {formatAxisTick(tickMs, totalSpanMs)}
+                </text>
+              );
+            })}
+
+            {/* Recorded historical shaded area + solid line */}
+            {recordedArea ? <path d={recordedArea} fill={`url(#${gradientId}-rec)`} /> : null}
+            {recordedPath ? (
+              <path
+                d={recordedPath}
+                fill="none"
+                stroke={color}
+                strokeWidth="2"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            ) : null}
+
+            {/* Projected future dashed slope + vertical reset step-ups */}
+            {projectedPath ? (
+              <path
+                d={projectedPath}
+                fill="none"
+                stroke={color}
+                strokeWidth="1.75"
+                strokeDasharray="4 3.5"
+                strokeLinejoin="round"
+                opacity="0.88"
+              />
+            ) : null}
+
+            {/* Vertical Now divider & live anchor dot */}
+            <line
+              x1={nowX}
+              y1={PAD_TOP - 4}
+              x2={nowX}
+              y2={bottomY}
+              stroke="currentColor"
+              className="text-foreground/35"
+              strokeWidth="1"
             />
-          ) : null}
-        </svg>
+            <circle
+              cx={nowX}
+              cy={nowY}
+              r="3.5"
+              fill={color}
+              stroke="var(--background)"
+              strokeWidth="1.5"
+            />
+
+            {/* Step-up refill annotations (+XX%) */}
+            {trajectory.refills
+              .filter((refill) => refill.atMs < trajectory.endMs)
+              .slice(0, 5)
+              .map((refill) => {
+                const rx = xOf(refill.atMs);
+                const ry = yOf(refill.toPercent);
+                return (
+                  <g key={`${refill.atMs}-${refill.accountLabel}`}>
+                    <circle cx={rx} cy={ry} r="2.5" fill={color} />
+                    <text
+                      x={Math.min(viewWidth - PAD_RIGHT - 16, Math.max(PAD_LEFT + 16, rx))}
+                      y={Math.max(PAD_TOP + 9, ry - 6)}
+                      textAnchor="middle"
+                      className="fill-foreground/85 text-3xs font-medium tabular-nums"
+                    >
+                      +{refill.restoresPercent}%
+                    </text>
+                  </g>
+                );
+              })}
+
+            {/* Empty touch-down marker */}
+            {trajectory.emptyAtMs !== null && trajectory.emptyAtMs > now ? (
+              <circle
+                cx={xOf(trajectory.emptyAtMs)}
+                cy={yOf(0)}
+                r="4"
+                className="fill-background stroke-destructive"
+                strokeWidth="2"
+              />
+            ) : null}
+
+            {/* Interactive hover crosshair & coordinate highlight */}
+            {hoverSample !== null && hoverX !== null && hoverY !== null ? (
+              <g pointerEvents="none">
+                <line
+                  x1={hoverX}
+                  y1={PAD_TOP}
+                  x2={hoverX}
+                  y2={bottomY}
+                  stroke="currentColor"
+                  className="text-foreground/35"
+                  strokeWidth="1"
+                  strokeDasharray="2 2"
+                />
+                <line
+                  x1={PAD_LEFT}
+                  y1={hoverY}
+                  x2={viewWidth - PAD_RIGHT}
+                  y2={hoverY}
+                  stroke="currentColor"
+                  className="text-foreground/20"
+                  strokeWidth="1"
+                  strokeDasharray="2 2"
+                />
+                <circle
+                  cx={hoverX}
+                  cy={hoverY}
+                  r="4"
+                  fill={color}
+                  stroke="var(--background)"
+                  strokeWidth="1.75"
+                />
+              </g>
+            ) : null}
+          </svg>
+        </div>
 
         <div className="flex items-center justify-between px-2 pb-0.5 text-2xs text-muted-foreground">
           <div className="flex items-center gap-4">

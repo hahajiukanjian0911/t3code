@@ -5,6 +5,7 @@ import { page, userEvent } from "vite-plus/test/browser";
 import { act, render, stubGlobal } from "../../../test/render";
 import { BrowserSurfaceSlot } from "../../browser/BrowserSurfaceSlot";
 import { useBrowserSurfaceStore } from "../../browser/browserSurfaceStore";
+import { __setClientSettingsForTests, getClientSettings } from "../../hooks/useSettings";
 import { syncDocumentElectronPlatformClasses } from "../../lib/windowControlsOverlay";
 import { EnvironmentId, ThreadId } from "@t3tools/contracts";
 import { ThreadDetailsCard } from "../chat/ThreadDetailsCard";
@@ -15,6 +16,7 @@ import {
   WorkspacePanelActions,
   WorkspaceRoot,
   WorkspaceWindow,
+  useWorkspacePanel,
   useWorkspaceWindowToggle,
 } from "./WorkspaceDock";
 
@@ -54,7 +56,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
         <WorkspaceWindow id="chat:test" title="Conversation" panel="main" selected>
           <Content mount={mount} />
         </WorkspaceWindow>
-        <WorkspaceActions windowId="chat:test" onOpenBottom={() => {}} onOpenRight={() => {}}>
+        <WorkspaceActions windowId="chat:test" onOpenRight={() => {}}>
           <button>Conversation details</button>
         </WorkspaceActions>
         <WorkspaceWindow id="file" title="README" panel="right">
@@ -106,7 +108,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
   expect(frame.contentDocument).toBe(frameDocument);
   await userEvent.click(
     page
-      .elementLocator(input.closest("[data-workspace-window]")!)
+      .elementLocator(input.closest("[data-workspace-panel]")!)
       .getByRole("button", { name: "Window actions" }),
   );
   await userEvent.click(page.getByRole("menuitem", { name: "Split vertically" }));
@@ -127,7 +129,7 @@ it("keeps live window content when moving, splitting, hiding and restoring it, w
     .toHaveAttribute("aria-pressed", "true");
   expect(
     screen.container.querySelectorAll("[data-workspace-controls] button[aria-pressed]"),
-  ).toHaveLength(3);
+  ).toHaveLength(2);
   await userEvent.click(
     page
       .elementLocator(input.closest("[data-workspace-window]")!)
@@ -231,18 +233,14 @@ it("restores a hidden panel without an initially selected resource reopening it"
       placements: {
         file: { panel: "right", group: "right" },
         threads: { panel: "floating", group: "floating" },
-        terminal: { panel: "bottom", group: "bottom" },
       },
-      hidden: { right: true, bottom: true },
+      hidden: { right: true },
       active: { right: "file" },
     }),
   );
   await using screen = await render(
     <div className="h-screen w-screen">
       <WorkspaceRoot>
-        <WorkspaceWindow id="terminal" title="Terminal" panel="bottom">
-          <p>Terminal content</p>
-        </WorkspaceWindow>
         <WorkspaceWindow id="threads" title="Threads" panel="left" fixed>
           <p>Pinned threads</p>
         </WorkspaceWindow>
@@ -263,15 +261,7 @@ it("restores a hidden panel without an initially selected resource reopening it"
       .element()
       .closest("[data-workspace-controls-leading]"),
   ).not.toBeNull();
-  const bottomToggle = screen.getByRole("button", { name: "Toggle Bottom panel" });
-  await expect.element(bottomToggle).toHaveAttribute("aria-pressed", "false");
-  await userEvent.click(bottomToggle);
-  await expect.element(screen.getByText("Terminal content", { exact: true })).toBeVisible();
-  await expect.element(bottomToggle).toHaveAttribute("aria-pressed", "true");
-  await expect.element(screen.getByRole("tab", { name: "Terminal", exact: true })).toBeVisible();
-  await userEvent.click(bottomToggle);
-  await expect.element(bottomToggle).toHaveAttribute("aria-pressed", "false");
-  expect(screen.getByRole("tab", { name: "Terminal", exact: true }).all()).toHaveLength(0);
+  expect(screen.getByRole("button", { name: "Toggle Bottom panel" }).all()).toHaveLength(0);
   const sidebar = screen.getByText("Pinned threads").element().closest("[data-workspace-window]")!;
   expect(sidebar.closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel")).toBe(
     "left",
@@ -286,21 +276,27 @@ it("restores a hidden panel without an initially selected resource reopening it"
     .toHaveAttribute("aria-pressed", "false");
   await userEvent.click(screen.getByRole("button", { name: "Toggle Right panel" }));
   await expect.element(screen.getByText("Saved file", { exact: true })).toBeVisible();
+  const addButton = screen.getByRole("button", { name: "Add resource" }).element();
+  expect(addButton.closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel")).toBe(
+    "right",
+  );
+  // Window actions menu button (`...`) sits right after `+` in the right panel header toolbar.
+  const rightActions = screen.container.querySelector('[data-workspace-panel-actions="right"]')!;
+  const windowActionsButton = rightActions.querySelector('button[aria-label="Window actions"]')!;
+  expect(windowActionsButton).not.toBeNull();
   expect(
-    screen
-      .getByRole("button", { name: "Add resource" })
-      .element()
-      .closest("[data-workspace-panel]")
-      ?.getAttribute("data-workspace-panel"),
-  ).toBe("right");
+    Boolean(
+      addButton.compareDocumentPosition(windowActionsButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ),
+  ).toBe(true);
 });
 
-function TerminalToggle({ bottom = false, onOpen }: { bottom?: boolean; onOpen?: () => void }) {
+function TerminalToggle({ right = false, onOpen }: { right?: boolean; onOpen?: () => void }) {
   const toggle = useWorkspaceWindowToggle();
   return (
     <button
       onClick={() => {
-        if (!toggle("drawer:test", bottom ? "bottom" : undefined)) onOpen?.();
+        if (!toggle("drawer:test", right ? "right" : undefined)) onOpen?.();
       }}
     >
       Toggle terminal window
@@ -321,7 +317,7 @@ it.each(["panel", "window"])(
           <WorkspaceWindow
             id="drawer:test"
             title="Terminal"
-            panel="bottom"
+            panel="right"
             available={active}
             selected
             activation={true}
@@ -336,10 +332,10 @@ it.each(["panel", "window"])(
     const input = screen.getByRole("textbox", { name: "terminal draft" }).element();
     const control = () =>
       mode === "panel"
-        ? screen.getByRole("button", { name: "Toggle Bottom panel" })
+        ? screen.getByRole("button", { name: "Toggle Right panel" })
         : screen.getByRole("button", { name: "Toggle terminal window" });
     await userEvent.click(control());
-    expect(input.closest('[data-workspace-panel="bottom"]')?.hasAttribute("inert")).toBe(true);
+    expect(input.closest('[data-workspace-panel="right"]')?.hasAttribute("inert")).toBe(true);
     await screen.rerender(ui(false));
     await screen.rerender(ui(true));
     expect(input.checkVisibility()).toBe(false);
@@ -356,37 +352,33 @@ function ActiveTerminal({ initiallyOpen = false }: { initiallyOpen?: boolean }) 
   return (
     <>
       <WorkspaceWindow id="chat:current" title="Conversation" panel="main">
-        <TerminalToggle bottom onOpen={() => setOpen(true)} />
+        <TerminalToggle right onOpen={() => setOpen(true)} />
       </WorkspaceWindow>
-      <WorkspaceActions
-        windowId="chat:current"
-        onOpenBottom={() => setOpen(true)}
-        onOpenRight={() => {}}
-      >
+      <WorkspaceActions windowId="chat:current" onOpenRight={() => setOpen(true)}>
         <span />
       </WorkspaceActions>
       {open && (
-        <WorkspaceWindow id="drawer:test" title="Terminal" panel="bottom" selected>
+        <WorkspaceWindow id="drawer:test" title="Terminal" panel="right" selected>
           <input aria-label="active terminal" defaultValue="preserved" />
         </WorkspaceWindow>
       )}
     </>
   );
 }
-it("opens the active thread's bottom panel instead of an unavailable thread's terminal", async () => {
+it("opens the active thread's right panel instead of an unavailable thread's terminal", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   await using screen = await render(
     <div className="h-screen w-screen">
       <WorkspaceRoot>
-        <WorkspaceWindow id="drawer:other" title="Other terminal" panel="bottom" available={false}>
+        <WorkspaceWindow id="drawer:other" title="Other terminal" panel="right" available={false}>
           <p>Other shell</p>
         </WorkspaceWindow>
         <ActiveTerminal />
       </WorkspaceRoot>
     </div>,
   );
-  await userEvent.click(screen.getByRole("button", { name: "Toggle Bottom panel" }));
+  await userEvent.click(screen.getByRole("button", { name: "Toggle Right panel" }));
   await expect.element(screen.getByRole("textbox", { name: "active terminal" })).toBeVisible();
 });
 
@@ -402,7 +394,7 @@ it("preserves desktop docking across the narrow breakpoint", async () => {
         <WorkspaceWindow id="chat:zoom" title="Conversation" panel="main">
           <Content mount={mount} />
         </WorkspaceWindow>
-        <WorkspaceWindow id="terminal:zoom" title="Terminal" panel="bottom">
+        <WorkspaceWindow id="terminal:zoom" title="Terminal" panel="right">
           <p>Zoom terminal</p>
         </WorkspaceWindow>
       </WorkspaceRoot>
@@ -412,7 +404,7 @@ it("preserves desktop docking across the narrow breakpoint", async () => {
   const input = screen.getByRole("textbox", { name: "draft" }).element();
   await userEvent.fill(screen.getByRole("textbox", { name: "draft" }), "unsent zoom draft");
   await page.viewport(700, 600);
-  await expect.element(screen.getByRole("button", { name: "Toggle Bottom panel" })).toBeVisible();
+  await expect.element(screen.getByRole("button", { name: "Toggle Right panel" })).toBeVisible();
   expect(mount).toHaveBeenCalledTimes(1);
   expect(dispose).not.toHaveBeenCalled();
   expect(screen.getByRole("textbox", { name: "draft" }).element()).toBe(input);
@@ -424,15 +416,15 @@ it("preserves desktop docking across the narrow breakpoint", async () => {
 });
 
 it.each([true, false])(
-  "returns a moved terminal to the bottom when explicitly toggling the drawer (mounted: %s)",
+  "returns a floated terminal to the right panel when explicitly toggling it (mounted: %s)",
   async (initiallyOpen) => {
     await page.viewport(1280, 800);
     using _layout = isolatedLayout();
     localStorage.setItem(
       "t3code:workspace-layout:v1",
       JSON.stringify({
-        placements: { "drawer:test": { panel: "right", group: "right" } },
-        hidden: { right: true, bottom: true },
+        placements: { "drawer:test": { panel: "floating", group: "floating" } },
+        hidden: { right: true, floating: true },
       }),
     );
     await using screen = await render(
@@ -450,7 +442,7 @@ it.each([true, false])(
         .element()
         .closest("[data-workspace-panel]")
         ?.getAttribute("data-workspace-panel"),
-    ).toBe("bottom");
+    ).toBe("right");
   },
 );
 
@@ -570,11 +562,17 @@ it("keeps side panels on the shared background and docks Details beside the rais
   expect(getComputedStyle(mainGroup).borderRadius).toBe("10px");
   expect(getComputedStyle(leftGroup).boxShadow).toBe("none");
   expect(getComputedStyle(leftGroup).borderTopWidth).toBe("0px");
-  // Content tabs raise onto a card surface; switching to Details keeps the inspector on the shared frosted board.
-  expect(alphaOf(rightGroup)).toBe(255);
-  expect(getComputedStyle(rightGroup).borderRadius).toBe("10px");
+  // Content tabs raise the whole right panel (tabs + body) onto a single aligned card surface;
+  // switching to Details keeps the inspector on the shared frosted board.
+  const rightCard = screen.container.querySelector<HTMLElement>("[data-workspace-right-card]")!;
+  expect(alphaOf(rightCard)).toBe(255);
+  expect(getComputedStyle(rightCard).borderRadius).toBe("10px");
+  expect(
+    Math.abs(rightCard.getBoundingClientRect().top - mainGroup.getBoundingClientRect().top),
+  ).toBeLessThanOrEqual(1);
   await userEvent.click(screen.getByRole("tab", { name: "Details", exact: true }));
   await expect.element(inspector).toBeVisible();
+  expect(screen.container.querySelector("[data-workspace-right-card]")).toBeNull();
   expect(alphaOf(rightGroup)).toBe(0);
   expect(getComputedStyle(rightGroup).boxShadow).toBe("none");
   await userEvent.click(screen.getByRole("tab", { name: "Files", exact: true }));
@@ -594,7 +592,9 @@ it("keeps side panels on the shared background and docks Details beside the rais
     .querySelector("span")!;
   const leftBounds = leftGroup.getBoundingClientRect();
   const mainBounds = mainGroup.getBoundingClientRect();
-  const rightBounds = rightGroup.getBoundingClientRect();
+  const rightBounds = screen.container
+    .querySelector<HTMLElement>("[data-workspace-right-card]")!
+    .getBoundingClientRect();
   const leftBarBounds = leftResizeBar.getBoundingClientRect();
   const rightBarBounds = rightResizeBar.getBoundingClientRect();
   expect(getComputedStyle(leftResizeBar).transform).toBe("none");
@@ -685,6 +685,9 @@ it("dismisses the floating modal overlay on backdrop click or Escape, restores f
   await vi.waitFor(() => expect(overlay.hasAttribute("hidden")).toBe(false));
 
   const floatingFile = screen.getByText("Floating file content");
+  const floatingHost = floatingFile
+    .element()
+    .closest("[data-workspace-window-container]")!.parentElement;
   await floatingFile.click();
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
   await vi.waitFor(() =>
@@ -695,7 +698,10 @@ it("dismisses the floating modal overlay on backdrop click or Escape, restores f
         ?.getAttribute("data-workspace-maximized-stage"),
     ).toBe("full"),
   );
-  expect(overlay.hasAttribute("hidden")).toBe(true);
+  expect(backdrop.hasAttribute("hidden")).toBe(true);
+  expect(floatingFile.element().closest("[data-workspace-window-container]")!.parentElement).toBe(
+    floatingHost,
+  );
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
   await vi.waitFor(() => expect(overlay.contains(floatingFile.element())).toBe(true));
   expect(overlay.hasAttribute("hidden")).toBe(false);
@@ -747,9 +753,6 @@ it("automatically half-splits right content tabs while keeping the left sidebar 
         <WorkspaceWindow id="surface:notes" title="Notes.md" panel="right">
           <p>Project notes</p>
         </WorkspaceWindow>
-        <WorkspaceWindow id="drawer:terminal" title="Terminal" panel="bottom">
-          <input aria-label="terminal input" />
-        </WorkspaceWindow>
       </WorkspaceRoot>
     </div>,
   );
@@ -797,6 +800,8 @@ it("automatically half-splits right content tabs while keeping the left sidebar 
 
   const history = screen.getByRole("region", { name: "Conversation history" }).element();
   history.scrollTop = 420;
+  const fileHost = fileInput.closest("[data-workspace-window-container]")!.parentElement;
+  const chatHost = chatInput.closest("[data-workspace-window-container]")!.parentElement;
 
   // 1st Shift+Esc on content tab jumps straight to full stage (no Stage 1, no redundant maximize pill).
   fileInput.focus();
@@ -809,12 +814,17 @@ it("automatically half-splits right content tabs while keeping the left sidebar 
     ).toBe("full"),
   );
   expect(screen.container.querySelector("[data-workspace-maximize-pill]")).toBeNull();
-  expect(chatInput.checkVisibility()).toBe(false);
+  await vi.waitFor(() => expect(chatInput.checkVisibility()).toBe(false));
   expect(fileInput.checkVisibility()).toBe(true);
+  expect(fileInput.closest("[data-workspace-window-container]")!.parentElement).toBe(fileHost);
+  expect(chatInput.closest("[data-workspace-window-container]")!.parentElement).toBe(chatHost);
   expect(screen.container.querySelector('[data-workspace-edge-peek="left"]')).not.toBeNull();
   const fullStage = screen.container.querySelector<HTMLElement>(
     '[data-workspace-maximized-stage="full"]',
   )!;
+  await expect
+    .element(page.elementLocator(fullStage).getByRole("button", { name: "Window actions" }))
+    .toBeVisible();
   const dockBounds = screen.container
     .querySelector<HTMLElement>("[data-workspace-dock]")!
     .getBoundingClientRect();
@@ -862,14 +872,15 @@ it("automatically half-splits right content tabs while keeping the left sidebar 
   const mac = /mac/i.test(navigator.platform);
   await userEvent.keyboard(
     mac
-      ? "{Control>}{Meta>}{Shift>}j{/Shift}{/Meta}{/Control}"
-      : "{Control>}{Alt>}{Shift>}j{/Shift}{/Alt}{/Control}",
+      ? "{Control>}{Meta>}{Shift>} {/Shift}{/Meta}{/Control}"
+      : "{Control>}{Alt>}{Shift>} {/Shift}{/Alt}{/Control}",
   );
   await vi.waitFor(() =>
     expect(fileInput.closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel")).toBe(
-      "bottom",
+      "floating",
     ),
   );
+  await userEvent.keyboard("{Escape}");
   await userEvent.keyboard(mac ? "{Control>}2{/Control}" : "{Alt>}2{/Alt}");
   await vi.waitFor(() => expect(document.activeElement).toBe(chatInput));
 
@@ -885,7 +896,67 @@ it("automatically half-splits right content tabs while keeping the left sidebar 
   );
   expect(screen.container.querySelector("[data-workspace-maximize-pill]")).toBeNull();
   expect(chatInput.checkVisibility()).toBe(true);
-  expect(fileInput.checkVisibility()).toBe(false);
+  await vi.waitFor(() => expect(fileInput.checkVisibility()).toBe(false));
+});
+
+it("keeps text at a fixed width during a right-tab resize and can reverse it mid-flight", async () => {
+  await page.viewport(1280, 800);
+  using _layout = isolatedLayout();
+  const settings = getClientSettings();
+  using _settings = { [Symbol.dispose]: () => __setClientSettingsForTests(settings) };
+  __setClientSettingsForTests({ ...settings, panelAnimationDurationMs: 375 });
+  await using screen = await render(
+    <div className="h-screen">
+      <WorkspaceRoot>
+        <WorkspaceWindow id="chat:main" title="Conversation" panel="main">
+          <p>Conversation body</p>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="details:main" title="Details" panel="right" selected>
+          <p>Inspector body</p>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="file" title="File" panel="right">
+          <p>File body</p>
+          <BrowserSurfaceSlot tabId="right-tab-resize" visible className="h-20 w-full" />
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    </div>,
+  );
+  const inspector = screen.getByRole("tab", { name: "Details" }).element() as HTMLButtonElement;
+  const fileTab = screen.getByRole("tab", { name: "File" }).element() as HTMLButtonElement;
+  const panel = inspector.closest<HTMLElement>("[data-workspace-panel]")!;
+  const surface = panel.querySelector<HTMLElement>("[data-workspace-panel-surface]")!;
+  const inspectorWidth = panel.offsetWidth;
+  await act(() => fileTab.click());
+  const file = screen.getByText("File body").element() as HTMLElement;
+  const chat = screen.getByText("Conversation body").element() as HTMLElement;
+  const fileWidth = file.offsetWidth;
+  const chatWidth = chat.offsetWidth;
+  expect(fileWidth).toBeGreaterThan(inspectorWidth);
+  const animation = surface.getAnimations()[0]!;
+  animation.pause();
+  animation.currentTime = 75;
+  const firstClip = getComputedStyle(surface).clipPath;
+  await vi.waitFor(() => {
+    const guest = useBrowserSurfaceStore.getState().byTabId["right-tab-resize"]?.rect;
+    expect(guest?.width).toBe(fileWidth);
+    expect(guest?.clipPath).toMatch(/^inset\(0px [1-9]/);
+  });
+  animation.currentTime = 200;
+  expect(getComputedStyle(surface).clipPath).not.toBe(firstClip);
+  expect([file.offsetWidth, chat.offsetWidth]).toEqual([fileWidth, chatWidth]);
+  const lastLeft = surface.getBoundingClientRect().left;
+  await act(() => inspector.click());
+  const reverse = surface.getAnimations()[0]!;
+  reverse.pause();
+  reverse.currentTime = 0;
+  expect(Math.abs(surface.getBoundingClientRect().left - lastLeft)).toBeLessThan(1);
+  for (const moving of screen.container.querySelectorAll(
+    '[data-workspace-moving] > :is([data-workspace-panel-surface], [role="separator"])',
+  )) {
+    for (const effect of moving.getAnimations()) effect.finish();
+  }
+  await vi.waitFor(() => expect(surface.style.width).toBe(""));
+  expect(panel.offsetWidth).toBe(inspectorWidth);
 });
 
 it("renders a 6px board seam between intra-panel split groups, resizes weights, and toggles monocle zoom in panel", async () => {
@@ -917,7 +988,7 @@ it("renders a 6px board seam between intra-panel split groups, resizes weights, 
   // Split focused window down (vertical split inside Right panel) via Window actions menu.
   await userEvent.click(
     page
-      .elementLocator(termBtn.closest("[data-workspace-window]")!)
+      .elementLocator(termBtn.closest("[data-workspace-panel]")!)
       .getByRole("button", { name: "Window actions" }),
   );
   await userEvent.click(page.getByRole("menuitem", { name: "Split vertically" }));
@@ -982,4 +1053,87 @@ it("renders a 6px board seam between intra-panel split groups, resizes weights, 
   await vi.waitFor(() => expect(groups[0]!.hasAttribute("hidden")).toBe(true));
   expect(groups[1]!.hasAttribute("hidden")).toBe(false);
   expect(screen.getByText("Main chat").element().checkVisibility()).toBe(true);
+});
+
+it("toggles main focus between composer and conversation on focusPanel.main and focuses before closing right panel", async () => {
+  localStorage.clear();
+  const handlers: { right?: () => void } = {};
+
+  function ShortcutHarness({ onReady }: { onReady: (next: { right: () => void }) => void }) {
+    const rightPanel = useWorkspacePanel("right");
+    useEffect(() => {
+      onReady({
+        right: () => {
+          rightPanel?.focusOrToggle();
+        },
+      });
+    }, [onReady, rightPanel]);
+    return null;
+  }
+
+  await using screen = await render(
+    <div className="h-[640px] w-[1100px]">
+      <WorkspaceRoot>
+        <ShortcutHarness
+          onReady={(next) => {
+            Object.assign(handlers, next);
+          }}
+        />
+        <WorkspaceWindow id="chat:main" title="Conversation" panel="main" fixed>
+          <div data-workspace-area="conversation" tabIndex={-1}>
+            <div data-workspace-focus-default="" tabIndex={-1} data-testid="conv-scroller">
+              History
+            </div>
+          </div>
+          <div data-workspace-area="composer" tabIndex={-1}>
+            <div
+              contentEditable
+              suppressContentEditableWarning
+              data-testid="composer-editor"
+              tabIndex={0}
+            >
+              Draft
+            </div>
+          </div>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="surface:files" title="Files" panel="right">
+          <input aria-label="right panel input" />
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    </div>,
+    { router: false },
+  );
+
+  const composer = screen.container.querySelector<HTMLElement>('[data-testid="composer-editor"]')!;
+  const conversation = screen.container.querySelector<HTMLElement>(
+    '[data-testid="conv-scroller"]',
+  )!;
+  const rightInput = screen
+    .getByRole("textbox", { name: "right panel input" })
+    .element() as HTMLElement;
+
+  // Start in right panel -> focusPanel.main focuses composer; pressing again toggles to conversation and back.
+  rightInput.focus();
+  expect(document.activeElement).toBe(rightInput);
+  const mac = navigator.platform.toUpperCase().includes("MAC");
+  await userEvent.keyboard(mac ? "{Control>}2{/Control}" : "{Alt>}2{/Alt}");
+  await vi.waitFor(() => expect(document.activeElement).toBe(composer));
+  await userEvent.keyboard(mac ? "{Control>}2{/Control}" : "{Alt>}2{/Alt}");
+  await vi.waitFor(() => expect(document.activeElement).toBe(conversation));
+  await userEvent.keyboard(mac ? "{Control>}2{/Control}" : "{Alt>}2{/Alt}");
+  await vi.waitFor(() => expect(document.activeElement).toBe(composer));
+
+  // Right panel is open but unfocused -> focusOrToggle focuses it first, second call closes it and returns focus to composer.
+  await act(async () => handlers.right?.());
+  await vi.waitFor(() => expect(document.activeElement).toBe(rightInput));
+  await act(async () => handlers.right?.());
+  await vi.waitFor(() =>
+    expect(
+      screen.container.querySelector('[data-workspace-panel="right"]')?.hasAttribute("inert"),
+    ).toBe(true),
+  );
+  await vi.waitFor(() => expect(document.activeElement).toBe(composer));
+  // Third call reopens right panel and focuses it.
+  await act(async () => handlers.right?.());
+  await vi.waitFor(() => expect(document.activeElement).toBe(rightInput));
 });

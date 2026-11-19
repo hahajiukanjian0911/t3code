@@ -84,6 +84,14 @@ function syncMacosWindowButtons(window: Electron.BrowserWindow): void {
 
 const TITLEBAR_COLOR = "#01000000"; // #00000000 does not work correctly on Linux
 const TRANSPARENT_WINDOW_BACKGROUND_COLOR = "#00000000";
+const MACOS_WINDOW_VIBRANCY = "popover" as const;
+
+function refreshMacosWindowVibrancy(window: Electron.BrowserWindow): void {
+  if (window.isDestroyed() || window.isFullScreen()) return;
+  window.setBackgroundColor(TRANSPARENT_WINDOW_BACKGROUND_COLOR);
+  window.setVibrancy(null);
+  window.setVibrancy(MACOS_WINDOW_VIBRANCY);
+}
 const TITLEBAR_LIGHT_SYMBOL_COLOR = "#1f2937";
 const TITLEBAR_DARK_SYMBOL_COLOR = "#f8fafc";
 const MAIN_WINDOW_BOUNDS_PERSIST_DEBOUNCE_MS = 500;
@@ -489,7 +497,7 @@ export const make = Effect.gen(function* () {
             transparent: true,
             roundedCorners: true,
             hasShadow: true,
-            vibrancy: "popover" as const,
+            vibrancy: MACOS_WINDOW_VIBRANCY,
             visualEffectState: "followWindow" as const,
             backgroundColor: TRANSPARENT_WINDOW_BACKGROUND_COLOR,
           }
@@ -840,11 +848,43 @@ export const make = Effect.gen(function* () {
       event.preventDefault();
       window.setTitle(environment.displayName);
     });
+    let vibrancyRefreshFiber: Fiber.Fiber<void, never> | undefined;
+    const clearVibrancyRefreshTimer = () => {
+      if (vibrancyRefreshFiber !== undefined) {
+        const fiber = vibrancyRefreshFiber;
+        vibrancyRefreshFiber = undefined;
+        runFork(Fiber.interrupt(fiber));
+      }
+    };
+    const restoreMacosVibrancy = () => {
+      if (environment.platform !== "darwin" || !vibrancyWindows.has(window)) return;
+      refreshMacosWindowVibrancy(window);
+      clearVibrancyRefreshTimer();
+      // macOS fullscreen/zoom transitions can reset NSVisualEffectView on their final frame.
+      vibrancyRefreshFiber = runFork(
+        Effect.sleep(150).pipe(
+          Effect.andThen(
+            Effect.sync(() => {
+              vibrancyRefreshFiber = undefined;
+              refreshMacosWindowVibrancy(window);
+            }),
+          ),
+        ),
+      );
+    };
+
     window.on("resize", scheduleBoundsPersist);
     window.on("move", scheduleBoundsPersist);
     window.on("maximize", scheduleBoundsPersist);
-    window.on("unmaximize", scheduleBoundsPersist);
+    window.on("unmaximize", () => {
+      scheduleBoundsPersist();
+      restoreMacosVibrancy();
+    });
+    window.on("restore", () => {
+      restoreMacosVibrancy();
+    });
     window.on("close", () => {
+      clearVibrancyRefreshTimer();
       runFork(flushBoundsPersist);
     });
 
@@ -856,10 +896,12 @@ export const make = Effect.gen(function* () {
         else if (direction === "right" && history.canGoForward()) history.goForward();
       });
       window.on("enter-full-screen", () => {
+        clearVibrancyRefreshTimer();
         window.webContents.send(WINDOW_FULLSCREEN_STATE_CHANNEL, true);
       });
       window.on("leave-full-screen", () => {
         syncMacosWindowButtons(window);
+        restoreMacosVibrancy();
         window.webContents.send(WINDOW_FULLSCREEN_STATE_CHANNEL, false);
       });
     }

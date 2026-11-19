@@ -148,6 +148,7 @@ export function PullRequestChip(props: {
 
 export function ImageChipButton({
   name,
+  displayLabel,
   previewUrl,
   size,
   suffix,
@@ -156,8 +157,9 @@ export function ImageChipButton({
   ...props
 }: Omit<ComponentProps<typeof ContextChip>, "kind" | "render"> & {
   name: string;
+  displayLabel?: string | undefined;
   previewUrl: string | undefined;
-  size: string;
+  size?: string | undefined;
   suffix?: string | null | undefined;
   disabled?: boolean | undefined;
   onPreviewError?: (() => void) | undefined;
@@ -166,7 +168,7 @@ export function ImageChipButton({
     <ContextChip
       kind="image"
       render={<button type="button" disabled={disabled} />}
-      aria-label={`Image attachment, ${name}, ${size}`}
+      aria-label={`Image attachment, ${displayLabel ?? name}${size ? `, ${size}` : ""}`}
       {...props}
     >
       {previewUrl ? (
@@ -182,9 +184,9 @@ export function ImageChipButton({
       )}
       <ContextChipLabel className="flex items-baseline gap-[0.33em]">
         <span className="min-w-0 max-w-72 overflow-x-clip text-ellipsis whitespace-nowrap">
-          {middleTruncateAttachmentName(name)}
+          {displayLabel ?? middleTruncateAttachmentName(name)}
         </span>
-        <span className="shrink-0 text-3xs text-current">{size}</span>
+        {size ? <span className="shrink-0 text-3xs text-current">{size}</span> : null}
         {suffix ? <span className="text-3xs text-current">{suffix}</span> : null}
       </ContextChipLabel>
     </ContextChip>

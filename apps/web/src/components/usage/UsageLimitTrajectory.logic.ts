@@ -12,9 +12,37 @@ const DAY_MS = 24 * HOUR_MS;
 
 export type BurnRateMode = "1h" | "3h" | "6h" | "even";
 
+export interface QuietHoursWindow {
+  /** Minutes from local midnight in [0, 1440). */
+  readonly startMinute: number;
+  /** Minutes from local midnight in (0, 1440]. When <= startMinute, wraps past midnight. */
+  readonly endMinute: number;
+}
+
+/** Default overnight idle window (00:00–08:50 local time) excluded from quota burn projection. */
+export const DEFAULT_NIGHT_QUIET_HOURS: QuietHoursWindow = {
+  startMinute: 0,
+  endMinute: 8 * 60 + 50,
+};
+
+export interface QuietTimeSpan {
+  readonly startMs: number;
+  readonly endMs: number;
+}
+
+export interface TrajectorySegmentSpan extends QuietTimeSpan {
+  readonly isQuiet: boolean;
+}
+
 export interface TrajectoryPoint {
   readonly atMs: number;
   readonly remainingPercent: number;
+}
+
+export interface TrajectoryHoverSample {
+  readonly atMs: number;
+  readonly remainingPercent: number;
+  readonly segment: "recorded" | "projected";
 }
 
 export interface TrajectoryRefillEvent {
@@ -34,6 +62,7 @@ export interface UsageLimitTrajectory {
   readonly burnSource: "observed" | "elapsed" | "even";
   readonly recorded: readonly TrajectoryPoint[];
   readonly projected: readonly TrajectoryPoint[];
+  readonly quietSpans: readonly QuietTimeSpan[];
   readonly refills: readonly TrajectoryRefillEvent[];
   readonly emptyAtMs: number | null;
   readonly firstMemberEmpty: {
@@ -44,6 +73,166 @@ export interface UsageLimitTrajectory {
     readonly atMs: number;
     readonly restoresPercent: number;
   } | null;
+}
+
+function localDayStartMs(atMs: number): number {
+  const date = new Date(atMs);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).getTime();
+}
+
+function localDayTimeMs(dayAnchorMs: number, minuteOfDay: number): number {
+  const date = new Date(dayAnchorMs);
+  const hours = Math.floor(minuteOfDay / 60);
+  const minutes = minuteOfDay % 60;
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    hours,
+    minutes,
+    0,
+    0,
+  ).getTime();
+}
+
+function nextLocalDayStartMs(dayAnchorMs: number): number {
+  const date = new Date(dayAnchorMs);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 0, 0, 0, 0).getTime();
+}
+
+/** Splits `[startMs, endMs]` into alternating active and overnight quiet segments in local time. */
+function splitActiveAndQuietSegments(
+  startMs: number,
+  endMs: number,
+  quietHours: QuietHoursWindow | null | undefined,
+): TrajectorySegmentSpan[] {
+  if (endMs <= startMs) return [];
+  if (!quietHours || quietHours.startMinute === quietHours.endMinute) {
+    return [{ startMs, endMs, isQuiet: false }];
+  }
+
+  const quietIntervals: QuietTimeSpan[] = [];
+  const wrapsMidnight = quietHours.startMinute > quietHours.endMinute;
+  // Start one day earlier when quiet hours wrap across midnight.
+  let dayMs = localDayStartMs(startMs);
+  if (wrapsMidnight) {
+    const d = new Date(dayMs);
+    dayMs = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1, 0, 0, 0, 0).getTime();
+  }
+
+  while (dayMs < endMs) {
+    const nextDayMs = nextLocalDayStartMs(dayMs);
+    const qStart = localDayTimeMs(dayMs, quietHours.startMinute);
+    const qEnd = wrapsMidnight
+      ? localDayTimeMs(nextDayMs, quietHours.endMinute)
+      : localDayTimeMs(dayMs, quietHours.endMinute);
+    const clippedStart = Math.max(startMs, qStart);
+    const clippedEnd = Math.min(endMs, qEnd);
+    if (clippedEnd > clippedStart) {
+      quietIntervals.push({ startMs: clippedStart, endMs: clippedEnd });
+    }
+    dayMs = nextDayMs;
+  }
+
+  if (quietIntervals.length === 0) {
+    return [{ startMs, endMs, isQuiet: false }];
+  }
+
+  const segments: TrajectorySegmentSpan[] = [];
+  let cursor = startMs;
+  for (const quiet of quietIntervals) {
+    if (quiet.startMs > cursor) {
+      segments.push({ startMs: cursor, endMs: quiet.startMs, isQuiet: false });
+    }
+    if (quiet.endMs > quiet.startMs) {
+      segments.push({ startMs: quiet.startMs, endMs: quiet.endMs, isQuiet: true });
+    }
+    cursor = Math.max(cursor, quiet.endMs);
+  }
+  if (cursor < endMs) {
+    segments.push({ startMs: cursor, endMs, isQuiet: false });
+  }
+  return segments;
+}
+
+function activeDurationMsBetween(
+  startMs: number,
+  endMs: number,
+  quietHours: QuietHoursWindow | null | undefined,
+): number {
+  let total = 0;
+  for (const segment of splitActiveAndQuietSegments(startMs, endMs, quietHours)) {
+    if (!segment.isQuiet) total += segment.endMs - segment.startMs;
+  }
+  return total;
+}
+
+function advanceActiveMs(
+  startMs: number,
+  activeMsNeeded: number,
+  limitMs: number,
+  quietHours: QuietHoursWindow | null | undefined,
+): number | null {
+  if (activeMsNeeded <= 0) return startMs;
+  let remaining = activeMsNeeded;
+  for (const segment of splitActiveAndQuietSegments(startMs, limitMs, quietHours)) {
+    if (segment.isQuiet) continue;
+    const dur = segment.endMs - segment.startMs;
+    if (remaining <= dur) {
+      return Math.round(segment.startMs + remaining);
+    }
+    remaining -= dur;
+  }
+  return null;
+}
+
+function interpolateSeriesAt(points: readonly TrajectoryPoint[], targetMs: number): number | null {
+  if (points.length === 0) return null;
+  const first = points[0]!;
+  const last = points[points.length - 1]!;
+  if (targetMs <= first.atMs) return first.remainingPercent;
+  if (targetMs >= last.atMs) return last.remainingPercent;
+  for (let i = 1; i < points.length; i += 1) {
+    const prev = points[i - 1]!;
+    const curr = points[i]!;
+    if (targetMs > curr.atMs) continue;
+    if (curr.atMs === prev.atMs) {
+      // At a vertical reset step-up, keep iterating so later points at the same timestamp win.
+      if (i + 1 < points.length && points[i + 1]!.atMs === targetMs) continue;
+      return curr.remainingPercent;
+    }
+    const ratio = (targetMs - prev.atMs) / (curr.atMs - prev.atMs);
+    return prev.remainingPercent + (curr.remainingPercent - prev.remainingPercent) * ratio;
+  }
+  return last.remainingPercent;
+}
+
+/** Samples the interpolated remaining percentage at `targetMs` along recorded or projected curves. */
+export function sampleUsageLimitTrajectoryAt(
+  trajectory: Pick<UsageLimitTrajectory, "nowMs" | "endMs" | "recorded" | "projected">,
+  targetMs: number,
+): TrajectoryHoverSample | null {
+  const firstRecordedMs = trajectory.recorded[0]?.atMs ?? trajectory.nowMs;
+  const cycleProjection = trajectory.projected.filter(
+    (point, index, points) =>
+      point.atMs < trajectory.endMs || points[index - 1]?.atMs !== trajectory.endMs,
+  );
+  const lastProjectedMs = cycleProjection[cycleProjection.length - 1]?.atMs ?? trajectory.endMs;
+  if (targetMs < firstRecordedMs || targetMs > lastProjectedMs) {
+    const clamped = Math.max(firstRecordedMs, Math.min(lastProjectedMs, targetMs));
+    const segment = clamped <= trajectory.nowMs ? "recorded" : "projected";
+    const pct = interpolateSeriesAt(
+      segment === "recorded" ? trajectory.recorded : cycleProjection,
+      clamped,
+    );
+    return pct === null ? null : { atMs: clamped, remainingPercent: pct, segment };
+  }
+  if (targetMs <= trajectory.nowMs && trajectory.recorded.length > 0) {
+    const pct = interpolateSeriesAt(trajectory.recorded, targetMs);
+    return pct === null ? null : { atMs: targetMs, remainingPercent: pct, segment: "recorded" };
+  }
+  const pct = interpolateSeriesAt(cycleProjection, targetMs);
+  return pct === null ? null : { atMs: targetMs, remainingPercent: pct, segment: "projected" };
 }
 
 export function usageLimitDurationMs(pool: LimitPoolWindow): number {
@@ -126,13 +315,18 @@ export function buildUsageLimitTrajectory(input: {
   readonly samples: readonly UsageLimitHistorySample[];
   readonly nowMs: number;
   readonly mode: BurnRateMode;
+  readonly quietHours?: QuietHoursWindow | null;
 }): UsageLimitTrajectory {
   const { pool, samples, nowMs, mode } = input;
+  const quietHours = input.quietHours === undefined ? DEFAULT_NIGHT_QUIET_HOURS : input.quietHours;
   const windowDurationMs = usageLimitDurationMs(pool);
   const currentRemaining = Math.max(0, Math.min(100, pool.remainingPercent));
 
   const endMs = usageLimitCycleEnd(pool, nowMs) ?? nowMs;
   const startMs = endMs - windowDurationMs;
+  const quietSpans: QuietTimeSpan[] = splitActiveAndQuietSegments(startMs, endMs, quietHours)
+    .filter((segment) => segment.isQuiet)
+    .map(({ startMs: qStart, endMs: qEnd }) => ({ startMs: qStart, endMs: qEnd }));
 
   // Map every historyKey to its member index & weight share.
   const memberWeights = limitPoolWeights(pool.members);
@@ -191,8 +385,10 @@ export function buildUsageLimitTrajectory(input: {
     recorded.push({ atMs: nowMs, remainingPercent: currentRemaining });
   }
 
-  // Determine burn rate (% of pool per hour).
-  const evenBurnPerHour = 100 / Math.max(0.25, windowDurationMs / HOUR_MS);
+  // Determine burn rate (% of pool per active hour).
+  const cycleActiveMs = activeDurationMsBetween(startMs, endMs, quietHours);
+  const evenBurnPerHour =
+    100 / Math.max(0.25, (cycleActiveMs > 0 ? cycleActiveMs : windowDurationMs) / HOUR_MS);
   let burnPercentPerHour = evenBurnPerHour;
   let burnSource: UsageLimitTrajectory["burnSource"] = "even";
 
@@ -202,29 +398,38 @@ export function buildUsageLimitTrajectory(input: {
     const windowPoints = recorded.filter((p) => p.atMs >= cutoffMs);
     // Sum positive consumption segments (ignoring upward jumps from past resets)
     let consumed = 0;
-    let spanMs = 0;
+    let activeSpanMs = 0;
+    let wallSpanMs = 0;
     if (windowPoints.length >= 2) {
       for (let i = 1; i < windowPoints.length; i += 1) {
         const prev = windowPoints[i - 1]!;
         const curr = windowPoints[i]!;
         const dt = curr.atMs - prev.atMs;
         if (dt <= 0) continue;
-        spanMs += dt;
+        wallSpanMs += dt;
+        activeSpanMs += activeDurationMsBetween(prev.atMs, curr.atMs, quietHours);
         const drop = prev.remainingPercent - curr.remainingPercent;
         if (drop > 0) consumed += drop;
       }
     }
-    if (spanMs >= 10 * MINUTE_MS && matchingSamples.length >= 2) {
-      burnPercentPerHour = (consumed / spanMs) * HOUR_MS;
+    const effectiveSpanMs = activeSpanMs >= 10 * MINUTE_MS ? activeSpanMs : wallSpanMs;
+    if (effectiveSpanMs >= 10 * MINUTE_MS && matchingSamples.length >= 2) {
+      burnPercentPerHour = (consumed / effectiveSpanMs) * HOUR_MS;
       burnSource = "observed";
     } else {
-      // Estimate from current elapsed window consumption
+      // Estimate from current elapsed window consumption (excluding overnight quiet hours)
       const activeRates: number[] = [];
       for (const member of pool.members) {
         const resetAt = member.window.resetsAt ? Date.parse(member.window.resetsAt) : Number.NaN;
         const durMs = (member.window.windowDurationMins ?? 0) * MINUTE_MS || windowDurationMs;
         if (Number.isFinite(resetAt) && durMs > 0) {
-          const elapsedMs = Math.max(5 * MINUTE_MS, durMs - Math.max(0, resetAt - nowMs));
+          const memberStartMs = resetAt - durMs;
+          const elapsedActiveMs = activeDurationMsBetween(memberStartMs, nowMs, quietHours);
+          const elapsedWallMs = Math.max(5 * MINUTE_MS, durMs - Math.max(0, resetAt - nowMs));
+          const elapsedMs = Math.max(
+            5 * MINUTE_MS,
+            elapsedActiveMs >= 5 * MINUTE_MS ? elapsedActiveMs : elapsedWallMs,
+          );
           activeRates.push((member.window.usedPercent / elapsedMs) * HOUR_MS);
         }
       }
@@ -284,28 +489,37 @@ export function buildUsageLimitTrajectory(input: {
   let emptyAtMs: number | null = currentRemaining <= 0 ? nowMs : null;
 
   const advanceTo = (targetMs: number) => {
-    const dtHours = Math.max(0, targetMs - cursorMs) / HOUR_MS;
-    if (dtHours <= 0) return;
+    if (targetMs <= cursorMs) return;
     if (burnPercentPerHour <= 0 || cursorRem <= 0) {
       cursorMs = targetMs;
       projected.push({ atMs: cursorMs, remainingPercent: cursorRem });
       return;
     }
-    const drop = burnPercentPerHour * dtHours;
-    if (cursorRem - drop <= 0) {
-      const hoursToZero = cursorRem / burnPercentPerHour;
-      const touchZeroMs = Math.round(cursorMs + hoursToZero * HOUR_MS);
-      if (emptyAtMs === null) emptyAtMs = touchZeroMs;
-      projected.push({ atMs: touchZeroMs, remainingPercent: 0 });
-      if (touchZeroMs < targetMs) {
-        projected.push({ atMs: targetMs, remainingPercent: 0 });
+    const segments = splitActiveAndQuietSegments(cursorMs, targetMs, quietHours);
+    for (const segment of segments) {
+      if (segment.endMs <= segment.startMs) continue;
+      if (segment.isQuiet || cursorRem <= 0) {
+        cursorMs = segment.endMs;
+        projected.push({ atMs: cursorMs, remainingPercent: cursorRem });
+        continue;
       }
-      cursorRem = 0;
-      cursorMs = targetMs;
-    } else {
-      cursorRem = Math.max(0, cursorRem - drop);
-      cursorMs = targetMs;
-      projected.push({ atMs: cursorMs, remainingPercent: cursorRem });
+      const dtHours = (segment.endMs - segment.startMs) / HOUR_MS;
+      const drop = burnPercentPerHour * dtHours;
+      if (cursorRem - drop <= 0) {
+        const hoursToZero = cursorRem / burnPercentPerHour;
+        const touchZeroMs = Math.round(segment.startMs + hoursToZero * HOUR_MS);
+        if (emptyAtMs === null) emptyAtMs = touchZeroMs;
+        projected.push({ atMs: touchZeroMs, remainingPercent: 0 });
+        if (touchZeroMs < segment.endMs) {
+          projected.push({ atMs: segment.endMs, remainingPercent: 0 });
+        }
+        cursorRem = 0;
+        cursorMs = segment.endMs;
+      } else {
+        cursorRem = Math.max(0, cursorRem - drop);
+        cursorMs = segment.endMs;
+        projected.push({ atMs: cursorMs, remainingPercent: cursorRem });
+      }
     }
   };
 
@@ -341,12 +555,13 @@ export function buildUsageLimitTrajectory(input: {
         firstMemberEmpty = { accountLabel: memberLabel(member), emptyAtMs: nowMs };
         break;
       }
-      const hoursLeft = rem / perMemberBurn;
-      const memberEmptyMs = Math.round(nowMs + hoursLeft * HOUR_MS);
       const memberResetMs = member.window.resetsAt
         ? Date.parse(member.window.resetsAt)
         : Number.POSITIVE_INFINITY;
-      if (memberEmptyMs < memberResetMs && memberEmptyMs <= endMs) {
+      const searchLimitMs = Math.min(memberResetMs, endMs);
+      const activeMsLeft = (rem / perMemberBurn) * HOUR_MS;
+      const memberEmptyMs = advanceActiveMs(nowMs, activeMsLeft, searchLimitMs, quietHours);
+      if (memberEmptyMs !== null && memberEmptyMs < memberResetMs && memberEmptyMs <= endMs) {
         if (!firstMemberEmpty || memberEmptyMs < firstMemberEmpty.emptyAtMs) {
           firstMemberEmpty = {
             accountLabel: memberLabel(member),
@@ -368,6 +583,7 @@ export function buildUsageLimitTrajectory(input: {
     burnSource,
     recorded,
     projected,
+    quietSpans,
     refills,
     emptyAtMs,
     firstMemberEmpty,

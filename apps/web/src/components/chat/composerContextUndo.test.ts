@@ -2,7 +2,11 @@ import type { PreviewAnnotationPayload } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { ComposerImageAttachment } from "../../composerDraftStore";
-import { buildMessageContext, previewAnnotationContextId } from "../../lib/composerContextRecords";
+import {
+  buildMessageContext,
+  imageContextReference,
+  previewAnnotationContextId,
+} from "../../lib/composerContextRecords";
 import {
   reconcileAttachmentContextReferences,
   type RetainedAttachmentContextPayloads,
@@ -37,7 +41,7 @@ const annotation = {
 } satisfies PreviewAnnotationPayload;
 
 function retention(): RetainedAttachmentContextPayloads {
-  return { files: new Map(), previewAnnotations: new Map() };
+  return { files: new Map(), images: new Map(), previewAnnotations: new Map() };
 }
 
 describe("reconcileAttachmentContextReferences", () => {
@@ -87,5 +91,31 @@ describe("reconcileAttachmentContextReferences", () => {
         attachmentId: "uploaded-screenshot",
       }),
     ]);
+  });
+
+  it("removes regular images when their inline token is deleted and restores them on undo", () => {
+    const retained = retention();
+    const regularImage = {
+      ...image,
+      id: "photo-1",
+      name: "CleanShot.png",
+    } satisfies ComposerImageAttachment;
+    const removed = reconcileAttachmentContextReferences({
+      referencedContextIds: new Set(),
+      files: [],
+      images: [regularImage],
+      previewAnnotations: [],
+      retained,
+    });
+    expect(removed.imagesToRemove).toEqual(["photo-1"]);
+
+    const restored = reconcileAttachmentContextReferences({
+      referencedContextIds: new Set([imageContextReference(regularImage).contextId]),
+      files: [],
+      images: [],
+      previewAnnotations: [],
+      retained,
+    });
+    expect(restored.imagesToRestore).toEqual([regularImage]);
   });
 });

@@ -1605,6 +1605,8 @@ const makeNativeOperations = Effect.fn("PreviewManager.makeOperations")(function
             forwarded.command === "workspace.focusNext" ||
             forwarded.command === "workspace.focusPrevious" ||
             forwarded.command === "workspace.focusPanel.main" ||
+            forwarded.command === "rightPanel.toggle" ||
+            forwarded.command === "terminal.toggle" ||
             forwarded.command === "commandPalette.toggle" ||
             forwarded.command === "preview.focusUrl"
           ) {

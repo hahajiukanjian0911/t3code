@@ -87,6 +87,17 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
     expect(snapshot.value.indexOf(" next")).toBeGreaterThan(snapshot.value.indexOf("draft.txt"));
     expect(snapshot.contextIds).toEqual(["file-1"]);
     await expect.element(screen.getByText("draft.txt", { exact: true })).toBeVisible();
+
+    // When the caret has not moved away from the paste point, inserting an attachment moves the caret after the chip.
+    await act(() => editor.current!.focusAtEnd());
+    const atEndInsertion = editor.current!.captureAttachmentInsertion()!;
+    await act(() => {
+      expect(
+        atEndInsertion.insert([{ kind: "image", label: "shot.png", contextId: "image_1" }]),
+      ).toBe(true);
+    });
+    const afterPaste = editor.current!.readSnapshot();
+    expect(afterPaste.expandedCursor).toBe(afterPaste.value.length);
   });
 
   it("renders without line numbers or top status bar, supports Vim Normal/Insert motions, traps Escape in Insert, and bubbles Shift+Escape", async () => {
@@ -305,6 +316,34 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
     await vi.waitFor(() => {
       expect(screen.getByTestId("prompt-output").element().textContent).toBe("你好接口");
       expect(latestTelemetry?.mode).toBe("normal");
+      expect(dom.getAttribute("contenteditable")).toBe("false");
+    });
+
+    // Re-enter Insert mode at start of line; committing `jkm` without a preceding Enter keydown
+    // (as macOS CJK IME sometimes emits) exits to Normal mode and executes `m` (mapped to `$`).
+    await userEvent.keyboard("0i");
+    await vi.waitFor(() => {
+      expect(latestTelemetry?.mode).toBe("insert");
+      expect(latestTelemetry?.column).toBe(1);
+    });
+    await act(() => {
+      dom.dispatchEvent(new CompositionEvent("compositionstart", { data: "", bubbles: true }));
+      const textNode = dom.querySelector(".cm-line")?.firstChild;
+      if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+        textNode.textContent = `jkm${textNode.textContent ?? ""}`;
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.setStart(textNode, 3);
+        range.collapse(true);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+      dom.dispatchEvent(new CompositionEvent("compositionend", { data: "jkm", bubbles: true }));
+    });
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe("你好接口");
+      expect(latestTelemetry?.mode).toBe("normal");
+      expect(latestTelemetry?.column).toBe(4);
       expect(dom.getAttribute("contenteditable")).toBe("false");
     });
   });

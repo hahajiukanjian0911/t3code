@@ -768,6 +768,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     images: composerImages,
     files: composerFiles,
     uploadsByImageId,
+    prompt,
   });
   const needsReattachFileCount = composerFiles.filter(composerFileNeedsReattach).length;
   const fileStagingLimit = fileAttachmentStagingLimit({
@@ -1733,6 +1734,19 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     }
     if (attachmentChanges.filesToRestore.length > 0) {
       addComposerDraftFiles(attachmentDraftTarget, attachmentChanges.filesToRestore);
+    }
+    for (const imageId of attachmentChanges.imagesToRemove) {
+      removeComposerImageFromDraft(imageId);
+    }
+    if (attachmentChanges.imagesToRestore.length > 0) {
+      addComposerDraftImages(
+        attachmentDraftTarget,
+        attachmentChanges.imagesToRestore.map((image) =>
+          image.file && image.previewUrl.startsWith("blob:")
+            ? { ...image, previewUrl: URL.createObjectURL(image.file) }
+            : image,
+        ),
+      );
     }
     setComposerCursor(nextCursor);
     setComposerTrigger(

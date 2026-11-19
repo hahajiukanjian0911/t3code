@@ -12,6 +12,7 @@ export interface HostedBrowserWebviewWrapperStyle {
   readonly height: number;
   readonly zIndex: number;
   readonly pointerEvents: "auto" | "none";
+  readonly clipPath?: string;
   readonly borderRadius?: number;
   readonly visibility?: "hidden" | "visible";
 }
@@ -44,6 +45,7 @@ export function resolveHostedBrowserWebviewWrapperStyle(input: {
       height: rect.height,
       zIndex,
       pointerEvents: "auto",
+      ...(rect.clipPath ? { clipPath: rect.clipPath } : {}),
       ...(cornerRadius > 0 ? { borderRadius: cornerRadius } : {}),
     };
   }

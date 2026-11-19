@@ -31,6 +31,7 @@ import {
   terminalContextReference,
   uploadedAttachmentContextRecord,
 } from "~/lib/composerContextRecords";
+import { collectInlineContextIds } from "~/lib/composerContextReferences";
 import type { TerminalContextDraft } from "~/lib/terminalContext";
 import type { ReviewCommentContext } from "~/reviewCommentContext";
 import { ComposerPendingTerminalContextChip } from "./chat/ComposerPendingTerminalContexts";
@@ -61,7 +62,12 @@ export type ComposerDraftContextRecord =
       record: PreviewAnnotationPayload;
       screenshot?: ComposerImageAttachment | undefined;
     }
-  | { kind: "image"; record: ComposerImageAttachment; upload?: AttachmentUploadState | undefined }
+  | {
+      kind: "image";
+      record: ComposerImageAttachment;
+      upload?: AttachmentUploadState | undefined;
+      displayIndex?: number | undefined;
+    }
   | { kind: "file"; record: ComposerFileAttachment; upload?: AttachmentUploadState | undefined }
   | { kind: "thread"; record: ThreadContextRecord }
   | { kind: "environment"; record: EnvironmentContextRecord };
@@ -93,13 +99,45 @@ export function composerContextRecordsFromDraft(input: {
   images?: ReadonlyArray<ComposerImageAttachment>;
   files?: ReadonlyArray<ComposerFileAttachment>;
   uploadsByImageId?: Readonly<Record<string, AttachmentUploadState>>;
+  prompt?: string | undefined;
 }): ComposerDraftContextRecords {
   const records = new Map<string, ComposerDraftContextRecord>();
+  const previewAnnotationIds = new Set(
+    (input.previewAnnotations ?? []).map((annotation) => annotation.id),
+  );
+  const regularImages = (input.images ?? []).filter((image) => !previewAnnotationIds.has(image.id));
+  const promptOrderByContextId = new Map<string, number>();
+  if (input.prompt) {
+    let seen = 0;
+    for (const contextId of collectInlineContextIds(input.prompt)) {
+      if (!promptOrderByContextId.has(contextId)) {
+        promptOrderByContextId.set(contextId, seen++);
+      }
+    }
+  }
+  const orderedRegularImages = regularImages
+    .map((image, fallbackIndex) => ({
+      image,
+      contextId: imageContextReference(image).contextId,
+      fallbackIndex,
+    }))
+    .toSorted((left, right) => {
+      const leftPos = promptOrderByContextId.get(left.contextId);
+      const rightPos = promptOrderByContextId.get(right.contextId);
+      if (leftPos !== undefined && rightPos !== undefined) return leftPos - rightPos;
+      if (leftPos !== undefined) return -1;
+      if (rightPos !== undefined) return 1;
+      return left.fallbackIndex - right.fallbackIndex;
+    });
+  const displayIndexByImageId = new Map<string, number>(
+    orderedRegularImages.map((entry, index) => [entry.image.id, index + 1]),
+  );
   for (const record of input.images ?? []) {
     records.set(imageContextReference(record).contextId, {
       kind: "image",
       record,
       upload: input.uploadsByImageId?.[record.id],
+      displayIndex: displayIndexByImageId.get(record.id),
     });
   }
   for (const record of input.files ?? []) {
@@ -186,17 +224,23 @@ function attachmentTooltip(
 function ImageContextChip(props: {
   record: ComposerImageAttachment;
   upload: AttachmentUploadState | undefined;
+  displayIndex?: number | undefined;
 }) {
   const actions = use(ComposerContextActionsContext);
   const suffix = useUploadStatusSuffix(props.record.id, props.upload);
+  const displayLabel =
+    props.displayIndex !== undefined ? `[image ${props.displayIndex}]` : undefined;
   return (
     <Tooltip>
       <TooltipTrigger
         render={
           <ImageChipButton
             name={props.record.name}
+            displayLabel={displayLabel}
             previewUrl={props.record.previewUrl}
-            size={formatAttachmentSize(props.record.sizeBytes)}
+            size={
+              displayLabel !== undefined ? undefined : formatAttachmentSize(props.record.sizeBytes)
+            }
             suffix={suffix}
             onClick={() => actions.expandImage(props.record.id)}
           />
@@ -394,7 +438,11 @@ const composerContextPresentationRegistry = createContextPresentationRegistry<
       canRender: (entry) => entry.kind === "image",
       render: (entry, context) =>
         entry.kind === "image" ? (
-          <ImageContextChip record={entry.record} upload={entry.upload} />
+          <ImageContextChip
+            record={entry.record}
+            upload={entry.upload}
+            displayIndex={entry.displayIndex}
+          />
         ) : (
           <UnresolvedContextChip label={context.label} />
         ),

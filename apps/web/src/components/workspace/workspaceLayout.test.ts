@@ -47,11 +47,15 @@ describe("workspace window ownership", () => {
         a: { panel: "main", group: "main" },
         b: { panel: "unknown", group: "x" },
         c: null,
+        legacyBottom: { panel: "bottom", group: "bottom" },
       },
     });
     layout.active.main = "removed";
     expect(workspaceGroups(layout, [{ id: "a", available: true }], "main")[0]?.active).toBe("a");
-    expect(Object.keys(layout.placements)).toEqual(["a"]);
+    expect(layout.placements).toEqual({
+      a: { panel: "main", group: "main" },
+      legacyBottom: { panel: "right", group: "right" },
+    });
     expect(workspaceGroups(layout, [{ id: "a", available: false }], "main")).toEqual([]);
     expect(restoreWorkspaceLayout(null)).toEqual(createWorkspaceLayout());
     const saved = {
@@ -63,12 +67,12 @@ describe("workspace window ownership", () => {
       groupWeights: { main: 1.4 },
       panelZoomedGroup: { right: "right" },
       maximized: { windowId: "surface:1:diff", stage: "full" as const },
-      sizes: { left: 280, right: 390, rightContentShare: 0.55, bottom: 260 },
+      sizes: { left: 280, right: 390, rightContentShare: 0.55 },
       floating: { x: 80, y: 40, width: 420, height: 300 },
     };
-    expect(restoreWorkspaceLayout({ ...saved, sizes: { ...saved.sizes, companion: 310 } })).toEqual(
-      saved,
-    );
+    expect(
+      restoreWorkspaceLayout({ ...saved, sizes: { ...saved.sizes, bottom: 260, companion: 310 } }),
+    ).toEqual(saved);
     expect(
       restoreWorkspaceLayout({ ...saved, dismissed: ["route", "chat:active", "file"] }).dismissed,
     ).toEqual(["file"]);
@@ -84,7 +88,7 @@ describe("workspace window ownership", () => {
         floating: { x: -500, height: null },
         maximized: { windowId: "threads", stage: "full" },
       }).sizes,
-    ).toEqual({ left: 246, right: 280, rightContentShare: 0.75, bottom: 152 });
+    ).toEqual({ left: 246, right: 280, rightContentShare: 0.75 });
     expect(
       restoreWorkspaceLayout({
         maximized: { windowId: "threads", stage: "full" },

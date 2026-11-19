@@ -1818,4 +1818,172 @@ describe("AntigravityAdapterV2 foreground command waits", () => {
         assert.equal(terminals[0]?.status, "completed");
       }).pipe(Effect.provide(layerSession), Effect.scoped),
   );
+
+  it.effect(
+    "continues once when an awaited foreground command settles right as a waiting turn ends",
+    () =>
+      Effect.gen(function* () {
+        const childProcessSpawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+        const fileSystem = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const crypto = yield* SecureRandom.SecureRandom;
+        const mockAgentPath = yield* path.fromFileUrl(
+          new URL("../../../scripts/acp-mock-agent.ts", import.meta.url),
+        );
+        const workspace = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3-ag-bg-race-" });
+        type RuntimeService = AcpSessionRuntime.AcpSessionRuntime["Service"];
+        type SessionUpdateHandler = Parameters<RuntimeService["handleSessionUpdate"]>[0];
+        let sessionUpdate: SessionUpdateHandler | undefined;
+        const receivedPrompts: Array<string> = [];
+        const instanceId = ProviderInstanceId.make("antigravity-bg-race-test");
+        const adapter = yield* makeAntigravityAdapterV2({
+          instanceId,
+          selfInvocation: yield* resolveSelfInvocation(),
+          makeRuntime: (input) =>
+            makeAntigravityAcpRuntime({
+              ...input,
+              childProcessSpawner,
+              spawn: {
+                command: process.execPath,
+                args: [mockAgentPath],
+                cwd: input.cwd,
+                env: { T3_ACP_ANTIGRAVITY: "1" },
+              },
+            }).pipe(
+              Effect.provideService(SecureRandom.SecureRandom, crypto),
+              Effect.map((runtime): RuntimeService => ({
+                ...runtime,
+                handleSessionUpdate: (handler) =>
+                  Effect.sync(() => {
+                    sessionUpdate = handler;
+                  }).pipe(Effect.andThen(runtime.handleSessionUpdate(handler))),
+                prompt: (payload, promptOptions) =>
+                  Effect.gen(function* () {
+                    receivedPrompts.push(JSON.stringify(payload.prompt));
+                    if (promptOptions?.dispatched !== undefined) {
+                      yield* Deferred.succeed(promptOptions.dispatched, undefined);
+                    }
+                    const send = sessionUpdate!;
+                    const emit = (update: EffectAcpSchema.SessionUpdate) =>
+                      send(
+                        normalizeAntigravitySessionUpdate({ sessionId: "mock-session-1", update }),
+                      );
+                    if (receivedPrompts.length === 1) {
+                      yield* emit({
+                        sessionUpdate: "tool_call",
+                        toolCallId: "call_check_changed",
+                        title: "Run check:changed",
+                        kind: "execute",
+                        status: "in_progress",
+                        rawInput: { CommandLine: "vp run check:changed", IsDaemon: false },
+                      });
+                      yield* emit({
+                        sessionUpdate: "agent_message_chunk",
+                        content: { type: "text", text: "Waiting for check:changed..." },
+                      });
+                      return { stopReason: "end_turn" as const };
+                    }
+                    if (receivedPrompts.length === 2) {
+                      // Agent emits an interim waiting update; command finishes right as end_turn arrives.
+                      yield* emit({
+                        sessionUpdate: "agent_message_chunk",
+                        content: {
+                          type: "text",
+                          text: "Still running tests, will commit once done.",
+                        },
+                      });
+                      yield* emit({
+                        sessionUpdate: "tool_call_update",
+                        toolCallId: "call_check_changed",
+                        status: "completed",
+                        rawOutput: "Command output:\nALL_PASSED\n",
+                      });
+                      return { stopReason: "end_turn" as const };
+                    }
+                    yield* emit({
+                      sessionUpdate: "agent_message_chunk",
+                      content: { type: "text", text: "Checks passed, committed and pushed." },
+                    });
+                    return { stopReason: "end_turn" as const };
+                  }),
+              })),
+            ),
+          withProcess: (_stop, task) => task,
+          defaultModel: Effect.undefined,
+        });
+
+        const threadId = ThreadId.make("thread-antigravity-bg-race");
+        const runtimePolicy = ProviderAdapter.ProviderAdapterV2RuntimePolicy.make({
+          runtimeMode: "full-access",
+          interactionMode: "default",
+          cwd: workspace,
+        });
+        const modelSelection = { instanceId, model: "gemini-test-low" } as const;
+        const session = yield* adapter.openSession({
+          threadId,
+          providerSessionId: ProviderSessionId.make("provider-session-antigravity-bg-race"),
+          modelSelection,
+          runtimePolicy,
+        });
+        const providerThread = yield* session.ensureThread({
+          threadId,
+          modelSelection,
+          runtimePolicy,
+        });
+        const eventsFiber = yield* session.events.pipe(
+          Stream.takeUntil((event) => event.type === "turn.terminal"),
+          Stream.runCollect,
+          Effect.forkScoped,
+        );
+        const now = yield* DateTime.now;
+        yield* session.startTurn({
+          appThread: {
+            createdBy: "user",
+            creationSource: "web",
+            id: threadId,
+            projectId: ProjectId.make("project-antigravity-bg-race"),
+            title: "Antigravity background settlement race",
+            providerInstanceId: instanceId,
+            modelSelection,
+            runtimeMode: "full-access",
+            interactionMode: "default",
+            branch: null,
+            worktreePath: workspace,
+            activeProviderThreadId: providerThread.id,
+            lineage: { parentThreadId: null, relationshipToParent: null, rootThreadId: threadId },
+            forkedFrom: null,
+            createdAt: now,
+            updatedAt: now,
+            archivedAt: null,
+            settledOverride: null,
+            settledAt: null,
+            lastVisitedAt: null,
+            deletedAt: null,
+          },
+          threadId,
+          runId: RunId.make("run-antigravity-bg-race"),
+          runOrdinal: 1,
+          providerTurnOrdinal: 1,
+          attemptId: RunAttemptId.make("attempt-antigravity-bg-race"),
+          rootNodeId: NodeId.make("node-antigravity-bg-race"),
+          providerThread,
+          message: {
+            createdBy: "user",
+            creationSource: "web",
+            messageId: MessageId.make("message-antigravity-bg-race"),
+            text: "check and commit",
+            attachments: [],
+          },
+          modelSelection,
+          runtimePolicy,
+        });
+
+        const events = Array.from(yield* Fiber.join(eventsFiber));
+        assert.equal(receivedPrompts.length, 3);
+        assert.include(receivedPrompts[2] ?? "", "finished right as your waiting turn ended");
+        const terminals = events.filter((event) => event.type === "turn.terminal");
+        assert.equal(terminals.length, 1);
+        assert.equal(terminals[0]?.status, "completed");
+      }).pipe(Effect.provide(layerSession), Effect.scoped),
+  );
 });

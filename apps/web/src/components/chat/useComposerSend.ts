@@ -85,6 +85,7 @@ import {
   collectInlineContextIds,
   ensureInlineContextReferences,
   formatInlineContextReference,
+  stripInlineContextReferences,
 } from "../../lib/composerContextReferences";
 import {
   buildMessageContext,
@@ -1463,7 +1464,7 @@ export function useComposerSend(input: ComposerSendInput) {
       ) {
         // A draft typed meanwhile keeps the composer, so the failed text stays reachable here.
         const failedText = sendSnapshot.draftText;
-        const hasText = failedText.trim().length > 0;
+        const hasText = stripInlineContextReferences(failedText).trim().length > 0;
         // An image-only message has nothing to copy, but its failure still needs a notice.
         toastManager.add(
           stackedThreadToast({

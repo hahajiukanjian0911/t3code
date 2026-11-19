@@ -526,7 +526,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   inset: var(--workspace-seam) auto var(--workspace-seam) var(--workspace-seam);
   z-index: 1;
 
-  &[inert] {
+  &[inert]:not([data-workspace-covered]) {
     transform: translateX(calc(-100% - 2 * var(--workspace-seam)));
     opacity: 0;
   }
@@ -538,21 +538,47 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   inherits: false;
   initial-value: 0px;
 }
-@property --workspace-bottom-track {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
 .workspace-docked-right {
   justify-self: start;
   margin-left: var(--workspace-seam);
 }
-.workspace-docked-bottom {
-  align-self: start;
-  margin-top: var(--workspace-seam);
-}
-:is(.workspace-docked-right, .workspace-docked-bottom)[inert]:not([data-dock-moving]) {
+.workspace-docked-right[inert]:not([data-dock-moving], [data-workspace-covered]) {
   display: none;
+}
+
+[data-workspace-panel][data-workspace-maximized-stage]:not([data-workspace-panel="floating"]) {
+  position: absolute;
+  inset: var(--workspace-seam);
+  place-self: stretch;
+  margin: 0;
+  z-index: 10;
+}
+
+[data-workspace-floating-full] {
+  padding: var(--workspace-seam);
+  z-index: 10;
+
+  & > [data-workspace-panel] {
+    max-width: none;
+    max-height: none;
+  }
+}
+
+[data-workspace-covered] {
+  content-visibility: hidden;
+}
+
+[data-workspace-dock][data-workspace-resizing] [data-workspace-covered] {
+  content-visibility: visible;
+}
+
+[data-workspace-panel][data-workspace-moving] {
+  z-index: 11;
+
+  & > [data-workspace-panel-surface] {
+    position: absolute;
+    inset: 0 auto auto 0;
+  }
 }
 
 [data-workspace-dock] {
@@ -560,18 +586,36 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --workspace-topbar-height: 36px;
   --workspace-board: color-mix(in oklab, var(--app-chrome-background), var(--foreground) 8%);
   --leading-controls: calc(var(--workspace-controls-left) + 28px);
-  --trailing-controls: calc(var(--workspace-controls-right) + 56px);
+  --trailing-controls: calc(var(--workspace-controls-right) + 28px);
 
   &[data-has-floating] {
-    --trailing-controls: calc(var(--workspace-controls-right) + 84px);
+    --trailing-controls: calc(var(--workspace-controls-right) + 56px);
   }
   &[data-left-open="false"] [data-workspace-panel="main"],
   & [data-workspace-maximized-stage="full"] {
-    --heading-start: var(--leading-controls);
+    &
+      :is(
+        [data-workspace-panel-heading],
+        [data-workspace-chat-heading],
+        [data-workspace-page-header],
+        [data-workspace-window-controls],
+        [data-workspace-grab]
+      ) {
+      --heading-start: var(--leading-controls);
+    }
   }
   &[data-right-open="false"] [data-workspace-panel="main"],
   & [data-workspace-maximized-stage="full"] {
-    --heading-end: var(--trailing-controls);
+    &
+      :is(
+        [data-workspace-panel-heading],
+        [data-workspace-chat-heading],
+        [data-workspace-page-header],
+        [data-workspace-window-controls],
+        [data-workspace-grab]
+      ) {
+      --heading-end: var(--trailing-controls);
+    }
   }
 }
 
@@ -613,6 +657,17 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     box-shadow:
       0 1px 2px rgb(0 0 0 / 32%),
       inset 0 0.5px 0 rgb(255 255 255 / 10%);
+  }
+}
+
+/* Inside a raised content card, tint the active tab softly against --background instead of stacking white on white. */
+:is([data-workspace-right-mode="content"], [data-workspace-maximized-stage="full"])
+  .workspace-panel-tab-selected {
+  background-color: color-mix(in oklab, var(--foreground) 7%, transparent);
+  box-shadow: none;
+
+  @variant dark {
+    background-color: color-mix(in oklab, var(--foreground) 12%, transparent);
   }
 }
 
@@ -700,17 +755,17 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   padding-inline-end: max(var(--workspace-gutter-end), var(--heading-end, 0px));
 }
 
-.workspace-docked-sidebar:not(:has(> [data-workspace-panel-heading])) [data-thread-tools] {
+.workspace-docked-sidebar:not(:has([data-workspace-panel-heading])) [data-thread-tools] {
   padding-top: 0;
   padding-inline: 0;
 }
 
-.workspace-docked-sidebar:not(:has(> [data-workspace-panel-heading])) [data-thread-tools-bar] {
+.workspace-docked-sidebar:not(:has([data-workspace-panel-heading])) [data-thread-tools-bar] {
   padding-inline-start: calc(var(--leading-controls) - var(--workspace-seam));
   padding-inline-end: 4px;
 }
 
-.workspace-docked-sidebar:not(:has(> [data-workspace-panel-heading])) [data-thread-search-tray] {
+.workspace-docked-sidebar:not(:has([data-workspace-panel-heading])) [data-thread-search-tray] {
   padding-inline: var(--sidebar-content-inset);
 }
 
@@ -2203,10 +2258,12 @@ code {
   mix-blend-mode: multiply;
   -webkit-mask-image: var(--chat-markdown-selection-mask);
   mask-image: var(--chat-markdown-selection-mask);
+  -webkit-mask-position: 0 0;
+  mask-position: 0 0;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
+  -webkit-mask-size: var(--chat-markdown-selection-mask-size, auto);
+  mask-size: var(--chat-markdown-selection-mask-size, auto);
 }
 
 .dark .chat-markdown[data-chat-markdown-selection-active]::after {

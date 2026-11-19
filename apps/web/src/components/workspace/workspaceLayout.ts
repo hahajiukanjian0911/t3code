@@ -1,4 +1,4 @@
-export const workspacePanels = ["left", "main", "right", "bottom", "floating"] as const;
+export const workspacePanels = ["left", "main", "right", "floating"] as const;
 export type WorkspacePanel = (typeof workspacePanels)[number];
 export type WorkspaceEdge = "left" | "right" | "top" | "bottom";
 export type WorkspaceMaximizeStage = "full";
@@ -17,7 +17,7 @@ export interface WorkspaceLayout {
   vertical: Partial<Record<WorkspacePanel, boolean>>;
   hidden: Partial<Record<WorkspacePanel, boolean>>;
   dismissed: string[];
-  sizes: { left: number; right: number; rightContentShare: number; bottom: number };
+  sizes: { left: number; right: number; rightContentShare: number };
   groupWeights: Record<string, number>;
   panelZoomedGroup: Partial<Record<WorkspacePanel, string>>;
   maximized: WorkspaceMaximizeState | null;
@@ -38,7 +38,6 @@ export function createWorkspaceLayout(): WorkspaceLayout {
       left: 256,
       right: 280,
       rightContentShare: workspaceRightContentDefaultShare,
-      bottom: 152,
     },
     groupWeights: {},
     panelZoomedGroup: {},
@@ -144,6 +143,10 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
     for (const [id, raw] of Object.entries(input.placements).slice(-512)) {
       if (typeof raw !== "object" || raw === null) continue;
       const placement = raw as Record<string, unknown>;
+      if (placement.panel === "bottom") {
+        placements[id] = { panel: "right", group: "right" };
+        continue;
+      }
       if (
         !workspacePanels.includes(placement.panel as WorkspacePanel) ||
         typeof placement.group !== "string"
@@ -219,7 +222,6 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
         0.25,
         0.75,
       ),
-      bottom: finite(sizes.bottom, fallback.sizes.bottom, 120, 600),
     },
     floating: {
       x: finite(floating.x, fallback.floating.x, 0, 10000),

@@ -1,7 +1,8 @@
 import { ThreadId } from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
-import { buildMessageContext } from "~/lib/composerContextRecords";
+import { buildMessageContext, imageContextReference } from "~/lib/composerContextRecords";
+import { formatInlineContextReference } from "~/lib/composerContextReferences";
 import { composerContextRecordsFromDraft } from "./composerContextPresentation";
 
 describe("composerContextRecordsFromDraft", () => {
@@ -52,5 +53,44 @@ describe("composerContextRecordsFromDraft", () => {
     for (const record of message.records) {
       expect(draftRecords.get(record.contextId)?.kind).toBe(record.kind);
     }
+  });
+
+  it("assigns sequential 1-based displayIndex to regular images and renumbers when an earlier image is removed", () => {
+    const first = {
+      type: "image" as const,
+      id: "img-a",
+      name: "first.png",
+      mimeType: "image/png",
+      sizeBytes: 10,
+      file: new File(["a"], "first.png"),
+      previewUrl: "blob:first",
+    };
+    const second = {
+      type: "image" as const,
+      id: "img-b",
+      name: "second.png",
+      mimeType: "image/png",
+      sizeBytes: 12,
+      file: new File(["b"], "second.png"),
+      previewUrl: "blob:second",
+    };
+    const promptWithBoth = `${formatInlineContextReference(imageContextReference(first))} ${formatInlineContextReference(imageContextReference(second))}`;
+    const bothRecords = composerContextRecordsFromDraft({
+      terminalContexts: [],
+      images: [first, second],
+      prompt: promptWithBoth,
+    });
+    const firstEntry = bothRecords.get(imageContextReference(first).contextId);
+    const secondEntry = bothRecords.get(imageContextReference(second).contextId);
+    expect(firstEntry?.kind === "image" ? firstEntry.displayIndex : null).toBe(1);
+    expect(secondEntry?.kind === "image" ? secondEntry.displayIndex : null).toBe(2);
+
+    const afterDelete = composerContextRecordsFromDraft({
+      terminalContexts: [],
+      images: [second],
+      prompt: formatInlineContextReference(imageContextReference(second)),
+    });
+    const remainingEntry = afterDelete.get(imageContextReference(second).contextId);
+    expect(remainingEntry?.kind === "image" ? remainingEntry.displayIndex : null).toBe(1);
   });
 });

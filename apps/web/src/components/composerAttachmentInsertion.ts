@@ -1,4 +1,5 @@
 import type { Editor, EditorEvents } from "@tiptap/core";
+import { TextSelection } from "@tiptap/pm/state";
 import {
   flatToMarkdown,
   flatToPm,
@@ -69,12 +70,18 @@ export function captureComposerAttachmentInsertion(editor: Editor) {
         : [editor.schema.text(edit.text)];
       if (acceptsReference && edit.text.startsWith(" ")) content.unshift(editor.schema.text(" "));
       const replaceEnd = flatToPm(map, markdownToFlat(map, edit.end));
+      const selectionAtPastePoint =
+        editor.state.selection.from === from && editor.state.selection.to === to;
       const tr = editor.state.tr.replaceWith(from, replaceEnd, content);
+      const insertedEnd = tr.mapping.map(replaceEnd, 1);
+      if (selectionAtPastePoint) {
+        tr.setSelection(TextSelection.near(tr.doc.resolve(insertedEnd))).scrollIntoView();
+      }
       editor.view.dispatch(
         markAsClipboardEdit(tr, "paste").setMeta(INSERTION_ORDER_META, {
           order,
           from,
-          end: tr.mapping.map(replaceEnd, 1),
+          end: insertedEnd,
         }),
       );
       return true;

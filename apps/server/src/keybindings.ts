@@ -101,6 +101,12 @@ const LEGACY_MAC_WORKSPACE_RULES: readonly KeybindingRule[] = [
   { key: "ctrl+2", command: "workspace.focusPanel.main", when: "isMac" },
 ];
 
+const MAC_RIGHT_PANEL_MIGRATION = "workspace.mac-command-r";
+const LEGACY_MAC_RIGHT_PANEL_RULES: readonly KeybindingRule[] = [
+  { key: "mod+alt+b", command: "rightPanel.toggle" },
+  { key: "mod+r", command: "preview.refresh", when: "previewFocus" },
+];
+
 function migrateMacWorkspaceRules(
   rules: readonly KeybindingRule[],
 ): readonly KeybindingRule[] | null {
@@ -122,6 +128,30 @@ function migrateMacWorkspaceRules(
       ),
   );
   // Leave the old bindings usable until the entire swap fits.
+  return kept.length + replacements.length <= MAX_KEYBINDINGS_COUNT
+    ? [...replacements, ...kept]
+    : null;
+}
+
+function migrateMacRightPanelRules(
+  rules: readonly KeybindingRule[],
+): readonly KeybindingRule[] | null {
+  const inherited = new Set<KeybindingRule["command"]>();
+  const kept = rules.filter((rule) => {
+    if (!LEGACY_MAC_RIGHT_PANEL_RULES.some((old) => isSameKeybindingRule(rule, old))) return true;
+    inherited.add(rule.command);
+    return false;
+  });
+  if (inherited.size === 0) return rules;
+  const replacements = DEFAULT_KEYBINDINGS.filter(
+    (rule) =>
+      inherited.has(rule.command) &&
+      !kept.some(
+        (entry) =>
+          hasSameShortcutContext(entry, rule) ||
+          isSameKeybindingRule(entry, { ...rule, when: "false" }),
+      ),
+  );
   return kept.length + replacements.length <= MAX_KEYBINDINGS_COUNT
     ? [...replacements, ...kept]
     : null;
@@ -505,16 +535,22 @@ const make = Effect.gen(function* () {
     Effect.gen(function* () {
       const appliedMigrationIds = yield* readAppliedMigrationIds;
       const needsMacWorkspaceMigration = !appliedMigrationIds.has(MAC_WORKSPACE_MIGRATION);
+      const needsMacRightPanelMigration = !appliedMigrationIds.has(MAC_RIGHT_PANEL_MIGRATION);
       const pendingLateDefaults = LATE_DEFAULT_KEYBINDINGS.filter(
         (late) => !appliedMigrationIds.has(late.id),
       );
       const configExists = yield* readConfigExists;
       if (!configExists) {
         yield* writeConfigAtomically(DEFAULT_KEYBINDINGS);
-        if (pendingLateDefaults.length > 0 || needsMacWorkspaceMigration) {
+        if (
+          pendingLateDefaults.length > 0 ||
+          needsMacWorkspaceMigration ||
+          needsMacRightPanelMigration
+        ) {
           yield* recordAppliedMigrations([
             ...appliedMigrationIds,
             MAC_WORKSPACE_MIGRATION,
+            MAC_RIGHT_PANEL_MIGRATION,
             ...LATE_DEFAULT_KEYBINDINGS.map((late) => late.id),
           ]);
         }
@@ -534,10 +570,13 @@ const make = Effect.gen(function* () {
         yield* Cache.invalidate(resolvedConfigCache, resolvedConfigCacheKey);
         return;
       }
-      const migratedRules = needsMacWorkspaceMigration
+      const afterMacWorkspace = needsMacWorkspaceMigration
         ? migrateMacWorkspaceRules(runtimeConfig.keybindings)
         : runtimeConfig.keybindings;
-      const customConfig = migratedRules ?? runtimeConfig.keybindings;
+      const afterMacRightPanel = needsMacRightPanelMigration
+        ? migrateMacRightPanelRules(afterMacWorkspace ?? runtimeConfig.keybindings)
+        : (afterMacWorkspace ?? runtimeConfig.keybindings);
+      const customConfig = afterMacRightPanel ?? afterMacWorkspace ?? runtimeConfig.keybindings;
       const existingCommands = new Set(customConfig.map((entry) => entry.command));
       const missingDefaults: KeybindingRule[] = [];
       const shortcutConflictWarnings: Array<{
@@ -617,11 +656,13 @@ const make = Effect.gen(function* () {
       const settledLateDefaults = pendingLateDefaults.filter(
         (late) => !skippedDefaults.includes(late.rule),
       );
-      const macWorkspaceMigrated = needsMacWorkspaceMigration && migratedRules !== null;
-      if (settledLateDefaults.length > 0 || macWorkspaceMigrated) {
+      const macWorkspaceMigrated = needsMacWorkspaceMigration && afterMacWorkspace !== null;
+      const macRightPanelMigrated = needsMacRightPanelMigration && afterMacRightPanel !== null;
+      if (settledLateDefaults.length > 0 || macWorkspaceMigrated || macRightPanelMigrated) {
         yield* recordAppliedMigrations([
           ...appliedMigrationIds,
           ...(macWorkspaceMigrated ? [MAC_WORKSPACE_MIGRATION] : []),
+          ...(macRightPanelMigrated ? [MAC_RIGHT_PANEL_MIGRATION] : []),
           ...settledLateDefaults.map((late) => late.id),
         ]);
       }

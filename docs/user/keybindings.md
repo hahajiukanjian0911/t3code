@@ -3,9 +3,11 @@
 Customize shortcuts in **Settings → Keybindings** on web and desktop. That page
 also lists the command IDs and defaults available in your version.
 
-On macOS, `Cmd+Shift+P` opens the command palette and `Cmd+K` focuses the main
-chat input, including from a terminal or the palette. Use `Ctrl+L` to clear the
-terminal. On Windows and Linux, `Ctrl+K` opens the command palette.
+On macOS, `Cmd+Shift+P` opens the command palette, `Cmd+K` focuses the main
+panel (and toggles between the conversation and chat input once focused there),
+`Cmd+J` opens or focuses a terminal in the right panel, and `Cmd+R` focuses or
+toggles the right panel. Use `Ctrl+L` to clear the terminal. On Windows and
+Linux, `Ctrl+K` opens the command palette.
 
 To free a default shortcut for another command, choose **Unassign** from its row's
 actions menu. **Reset to default** brings it back.

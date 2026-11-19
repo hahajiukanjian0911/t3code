@@ -26,11 +26,11 @@ can be remapped in Settings > Keybindings.
 
 In a chat workspace, move focus toward a neighboring window with `Ctrl+Command` on macOS
 or `Ctrl+Alt` on Windows and Linux, plus an arrow key or `H/J/K/L`. Add `M` to the same
-modifiers to maximize or restore a split within its panel. Press `Ctrl+1/2/3/4` on macOS
-or `Alt+1/2/3/4` elsewhere to focus the left panel, main composer, right panel or bottom panel.
-On macOS, `Cmd+K` returns to the main composer with the other panels still open.
+modifiers to maximize or restore a split within its panel. Press `Ctrl+1/2/3` on macOS
+or `Alt+1/2/3` elsewhere to focus the left panel, main composer, or right panel.
+On macOS, `Cmd+K` returns to the main composer with the other panels still open, and pressing `Cmd+K` again while focused in the main panel switches between the conversation history and the composer. `Cmd+J` opens or focuses a terminal tab in the right panel (and closes the right panel when already focused in that terminal), and `Cmd+R` opens or focuses the right panel (and closes it when already focused).
 To move a tool window, hold the directional focus modifiers plus Shift, then press `H` for
-left, `L` for right, `J` for bottom or Space to float it.
+left, `L` for right, or Space to float it.
 
 Press `Shift+Esc` or double-click the window title bar to maximize or restore a window in
 the app. Tool tabs in the right panel automatically share half of the workspace alongside

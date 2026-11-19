@@ -1,144 +1,140 @@
 import { useLayoutEffect, useRef } from "react";
-import { flushSync } from "react-dom";
 import { useStableCallback } from "../../hooks/useStableCallback";
-import { notifyWorkspaceLayout } from "../../lib/workspaceLayoutEvents";
+import {
+  notifyWorkspaceLayout,
+  notifyWorkspaceResizeStart,
+  workspacePanelClip,
+} from "../../lib/workspaceLayoutEvents";
 import { usePanelAnimationSettings } from "../../panelAnimations";
+import type { WorkspacePanel } from "./workspaceLayout";
 
-function measurePanes(dock: HTMLElement) {
-  const panes = new Map<string, { node: HTMLElement; rect: DOMRect; opacity: number }>();
-  for (const node of dock.querySelectorAll<HTMLElement>("[data-workspace-resize-window]")) {
-    if (node.closest("[inert]") && !node.hasAttribute("data-workspace-parked-window")) continue;
-    const rect = node.getBoundingClientRect();
-    if (rect.width && rect.height) {
-      panes.set(node.dataset.workspaceResizeWindow!, {
-        node,
-        rect,
-        opacity: Number(getComputedStyle(node).opacity),
-      });
-    }
-  }
-  return panes;
-}
-
-function paneFrame(rect: DOMRect): Keyframe {
+function frame(rect: DOMRect, destination: DOMRect, width: number, height: number): Keyframe {
   return {
-    position: "fixed",
-    inset: "auto",
-    margin: "0",
-    left: `${rect.left}px`,
-    top: `${rect.top}px`,
-    width: `${rect.width}px`,
-    height: `${rect.height}px`,
-    maxWidth: "none",
-    maxHeight: "none",
-    zIndex: "20",
+    transform: `translate3d(${rect.x - destination.x}px, ${rect.y - destination.y}px, 0)`,
+    clipPath: `inset(0 ${width - rect.width}px ${height - rect.height}px 0 round 10px)`,
   };
 }
 
 export function useWorkspaceResizeTransition() {
   const { active, durationMs } = usePanelAnimationSettings();
-  const running = useRef<(() => void) | null>(null);
-  const parkedTimelines = useRef(
-    new WeakMap<HTMLElement, { window: string; top: number; atEnd: boolean }>(),
-  );
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Release the temporary pane geometry on unmount or motion preference changes.
+  const pending = useRef(new Map<HTMLElement, { from: DOMRect; wasStage: boolean }>());
+  const running = useRef<((notify?: boolean) => void) | null>(null);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Release pinned surfaces when motion preferences change or the workspace unmounts.
   useLayoutEffect(() => {
-    if (active) return () => running.current?.();
+    if (active)
+      return () => {
+        pending.current.clear();
+        running.current?.();
+      };
   }, [active]);
 
-  return useStableCallback((dock: HTMLElement | null, resize: () => void) => {
-    if (!dock) {
-      resize();
-      return;
-    }
-    const timelines = dock.querySelectorAll<HTMLElement>(".messages-timeline-scroll");
-    for (const node of timelines) {
-      const owner = node.closest<HTMLElement>("[data-workspace-window]")?.dataset.workspaceWindow;
-      if (!owner || !node.clientHeight || node.closest("[inert]")) continue;
-      parkedTimelines.current.set(node, {
-        window: owner,
-        top: node.scrollTop,
-        atEnd: node.scrollHeight - node.clientHeight - node.scrollTop <= 1,
+  const capture = useStableCallback((body: HTMLElement, panels: (WorkspacePanel | null)[]) => {
+    const dock = body.parentElement;
+    if (!dock) return;
+    for (const key of new Set(panels)) {
+      if (!key) continue;
+      const panel = dock.querySelector<HTMLElement>(`[data-workspace-panel="${key}"]`);
+      if (!panel || panel.closest("[hidden], [inert]") || pending.current.has(panel)) continue;
+      notifyWorkspaceResizeStart(panel);
+      if (!active) continue;
+      const rect = workspacePanelClip.get(panel)?.() ?? panel.getBoundingClientRect();
+      if (!rect.width || !rect.height) continue;
+      pending.current.set(panel, {
+        from: rect,
+        wasStage: panel.hasAttribute("data-workspace-maximized-stage"),
       });
     }
-    const restoreTimelines = () => {
-      // Moving the portal through its parking slot can reset a live scroller to zero.
-      for (const node of dock.querySelectorAll<HTMLElement>(".messages-timeline-scroll")) {
-        const position = parkedTimelines.current.get(node);
-        if (!position || !node.clientHeight || node.closest("[inert]")) continue;
-        parkedTimelines.current.delete(node);
-        if (
-          node.closest<HTMLElement>("[data-workspace-window]")?.dataset.workspaceWindow !==
-          position.window
-        )
-          continue;
-        node.scrollTo({
-          top: position.atEnd ? node.scrollHeight : position.top,
-          behavior: "instant",
-        });
-      }
-    };
-    const before = active ? measurePanes(dock) : null;
-    running.current?.();
-    flushSync(resize);
-    if (!before) {
-      restoreTimelines();
-      return;
+  });
+
+  const play = useStableCallback(() => {
+    if (!pending.current.size) return;
+    const before = pending.current;
+    pending.current = new Map();
+    running.current?.(false);
+    const dock = before.keys().next().value?.closest<HTMLElement>("[data-workspace-dock]");
+    if (!dock || !active) return;
+    const targets: { panel: HTMLElement; surface: HTMLElement; from: DOMRect }[] = [];
+    for (const entry of before) {
+      const panel = entry[0];
+      const { from, wasStage } = entry[1];
+      const surface = panel.querySelector<HTMLElement>(":scope > [data-workspace-panel-surface]");
+      if (!surface || !panel.isConnected || panel.closest("[hidden], [inert]")) continue;
+      const stage = wasStage || panel.hasAttribute("data-workspace-maximized-stage");
+      // Pin before measuring the grid so the browser lays out text only at the larger endpoint.
+      surface.style.width = `max(100%, ${from.width}px)`;
+      surface.style.height = `max(100%, ${from.height}px)`;
+      panel.setAttribute("data-workspace-moving", stage ? "stage" : "panel");
+      targets.push({ panel, surface, from });
     }
-    const after = measurePanes(dock);
-    const animations: Animation[] = [];
+    if (!targets.length) return;
+    dock.setAttribute("data-workspace-resizing", "");
     const timing = {
       duration: durationMs,
       easing: getComputedStyle(dock).getPropertyValue("--ease-drawer").trim() || "ease-out",
       fill: "both",
     } as const;
-    for (const entry of after) {
-      const [id, { node, rect }] = entry;
-      const old = before.get(id);
-      // Pin every visible group so flex siblings keep their own bounds until the dock takes over.
-      const frames = [
-        { ...paneFrame(old?.rect ?? rect), opacity: old?.opacity ?? 0 },
-        { ...paneFrame(rect), opacity: 1 },
-      ];
-      animations.push(node.animate(frames, timing));
-    }
-
-    for (const node of dock.querySelectorAll<HTMLElement>("[data-workspace-parked-window]")) {
-      const previous = before.get(node.dataset.workspaceResizeWindow!);
-      if (!previous) continue;
-      const frame = {
-        ...paneFrame(previous.rect),
-        display: "block",
-        zIndex: "1",
-      };
-      animations.push(
-        node.animate(
-          [
-            { ...frame, opacity: previous.opacity },
-            { ...frame, opacity: 0 },
-          ],
-          timing,
-        ),
+    const animations: Animation[] = [];
+    const bounds = targets.map(({ panel }) => panel.getBoundingClientRect());
+    for (let index = 0; index < targets.length; index++) {
+      const { panel, surface, from } = targets[index]!;
+      const to = bounds[index]!;
+      if (
+        !to.width ||
+        !to.height ||
+        (from.x === to.x && from.y === to.y && from.width === to.width && from.height === to.height)
+      )
+        continue;
+      const width = Math.max(from.width, to.width);
+      const height = Math.max(from.height, to.height);
+      const animation = surface.animate(
+        [frame(from, to, width, height), frame(to, to, width, height)],
+        timing,
       );
+      animations.push(animation);
+      const handle = panel.querySelector<HTMLElement>(':scope > [role="separator"]');
+      if (handle) {
+        const dx = panel.dataset.workspacePanel === "left" ? from.right - to.right : from.x - to.x;
+        animations.push(
+          handle.animate(
+            [{ transform: `translate(${dx}px, ${from.y - to.y}px)` }, { transform: "none" }],
+            timing,
+          ),
+        );
+      }
+      workspacePanelClip.set(panel, () => {
+        const progress = animation.effect?.getComputedTiming().progress ?? 0;
+        return new DOMRect(
+          from.x + (to.x - from.x) * progress,
+          from.y + (to.y - from.y) * progress,
+          from.width + (to.width - from.width) * progress,
+          from.height + (to.height - from.height) * progress,
+        );
+      });
     }
-
-    restoreTimelines();
-    let frame = 0;
-    const finish = () => {
+    const finish = (notify = true) => {
       if (running.current !== finish) return;
       running.current = null;
-      cancelAnimationFrame(frame);
-      window.removeEventListener("resize", finish);
+      window.removeEventListener("resize", settle);
+      dock.removeEventListener("pointerdown", onPointerDown, true);
       for (const animation of animations) animation.cancel();
-      notifyWorkspaceLayout();
+      for (const { panel, surface } of targets) {
+        workspacePanelClip.delete(panel);
+        panel.removeAttribute("data-workspace-moving");
+        surface.style.width = "";
+        surface.style.height = "";
+      }
+      dock.removeAttribute("data-workspace-resizing");
+      if (notify) notifyWorkspaceLayout();
     };
-    const syncNativeSurfaces = () => {
-      notifyWorkspaceLayout();
-      frame = requestAnimationFrame(syncNativeSurfaces);
+    const settle = () => finish();
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest('[role="separator"]')) finish();
     };
     running.current = finish;
-    window.addEventListener("resize", finish);
-    if (dock.querySelector("[data-browser-surface-slot]")) syncNativeSurfaces();
-    void Promise.all(animations.map((animation) => animation.finished)).then(finish, finish);
+    window.addEventListener("resize", settle);
+    dock.addEventListener("pointerdown", onPointerDown, true);
+    notifyWorkspaceLayout();
+    void Promise.all(animations.map((animation) => animation.finished)).then(settle, settle);
   });
+  return { capture, play };
 }

@@ -23,11 +23,16 @@ import { parseScopedThreadKey } from "@t3tools/client-runtime/environment";
 import { resolveWorkGroupScrollAnchor } from "@t3tools/client-runtime/work-log/scroll-anchor";
 import type { WorkflowOpening } from "@t3tools/client-runtime/state/subagentRuntime";
 import { observeResize } from "~/lib/observeResize";
-import { subscribeWorkspaceLayout } from "~/lib/workspaceLayoutEvents";
+import {
+  subscribeWorkspaceLayout,
+  subscribeWorkspaceResizeStart,
+} from "~/lib/workspaceLayoutEvents";
 import { useStableCallback } from "~/hooks/useStableCallback";
 
 function isDockAnimating(element: HTMLElement | null): boolean {
-  return element !== null && element.closest("[data-dock-animating]") !== null;
+  return (
+    element !== null && element.closest("[data-dock-animating], [data-workspace-moving]") !== null
+  );
 }
 
 function syncTimelineScrolledState(scrollNode: HTMLElement | null) {
@@ -1109,6 +1114,11 @@ const ConversationTimeline = memo(function ConversationTimeline({
   const readingResizeAnchorRef = useRef<{ readonly rowId: string; readonly relTop: number } | null>(
     null,
   );
+  const anchorBeforeWorkspaceResize = useStableCallback(() => {
+    if (!followsEnd && !restoringThreadPosition && !findActive && !citationPositioning) {
+      listRef.current?.anchorVisibleContent();
+    }
+  });
   const pinAnchorAfterResize = useStableCallback((viewportElement: HTMLElement) => {
     const list = listRef.current;
     if (restoringThreadPosition || findActive || !list) return;
@@ -1121,7 +1131,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
       node.scrollTo({ top: node.scrollHeight, behavior: "instant" });
       return;
     }
-    if (!followsEnd && isDockAnimating(viewportElement)) {
+    if (!followsEnd && viewportElement.closest("[data-dock-animating]")) {
       const scrollRect = node.getBoundingClientRect();
       let anchor = readingResizeAnchorRef.current;
       if (!anchor) {
@@ -1152,6 +1162,10 @@ const ConversationTimeline = memo(function ConversationTimeline({
   const attachTimelineViewportElement = (viewportElement: HTMLDivElement | null) => {
     setTimelineViewportElement(viewportElement);
     if (!viewportElement) return;
+    const stopResizeStart = subscribeWorkspaceResizeStart((panel) => {
+      if (panel.contains(viewportElement) && !viewportElement.closest("[inert], [hidden]"))
+        anchorBeforeWorkspaceResize();
+    });
     let previousSize: DOMRectReadOnly | undefined;
     let deferredPostAnimationMeasure = false;
     const stopObserving = observeResize(viewportElement, ([entry]) => {
@@ -1185,6 +1199,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
     });
     return () => {
       stopWorkspaceLayout();
+      stopResizeStart();
       stopObserving();
       readingResizeAnchorRef.current = null;
       setTimelineViewportElement(null);

@@ -1756,12 +1756,6 @@ function OpenCommandPaletteDialog(props: {
       icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
     },
     {
-      command: "workspace.focusPanel.bottom",
-      title: "Focus Bottom Panel",
-      terms: ["window", "panel", "bottom"],
-      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
-    },
-    {
       command: "workspace.moveLeft",
       title: "Move Window to Left Panel",
       terms: ["window", "panel", "left"],
@@ -1771,12 +1765,6 @@ function OpenCommandPaletteDialog(props: {
       command: "workspace.moveRight",
       title: "Move Window to Right Panel",
       terms: ["window", "panel", "right"],
-      icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
-    },
-    {
-      command: "workspace.moveDown",
-      title: "Move Window to Bottom Panel",
-      terms: ["window", "panel", "bottom"],
       icon: <MonitorIcon className={ITEM_ICON_CLASS} />,
     },
     {

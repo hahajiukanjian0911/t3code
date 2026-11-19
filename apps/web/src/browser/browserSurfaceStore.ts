@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 export interface BrowserSurfaceRect {
+  readonly clipPath?: string;
   readonly x: number;
   readonly y: number;
   readonly width: number;
@@ -69,7 +70,8 @@ const rectEquals = (left: BrowserSurfaceRect | null, right: BrowserSurfaceRect):
   left.x === right.x &&
   left.y === right.y &&
   left.width === right.width &&
-  left.height === right.height;
+  left.height === right.height &&
+  left.clipPath === right.clipPath;
 
 export const useBrowserSurfaceStore = create<BrowserSurfaceStoreState>()((set) => ({
   activityByTabId: {},

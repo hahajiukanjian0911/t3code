@@ -40,13 +40,12 @@ function step(spring: Spring, target: number, dt: number, frequency: number, dam
 
 export function useDockedPanelMotion(
   getBody: () => HTMLDivElement | null,
-  edge: "left" | "right" | "bottom",
+  edge: "left" | "right",
   open: boolean | null,
   size: number,
-  instantSizeChange = false,
 ) {
   const { active, durationMs } = usePanelAnimationSettings();
-  const motion = useRef<{ position: Spring; opacity: Spring; span: Spring } | null>(null);
+  const motion = useRef<{ position: Spring; opacity: Spring } | null>(null);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Synchronize the panel and its live layout before paint, retaining both spring velocities on reversal.
   useLayoutEffect(() => {
@@ -62,14 +61,9 @@ export function useDockedPanelMotion(
       motion.current = {
         position: { value: target, velocity: 0 },
         opacity: { value: target, velocity: 0 },
-        span: { value: size, velocity: 0 },
       };
     }
-    const { position, opacity, span } = motion.current;
-    if (instantSizeChange || (!open && position.value === 0)) {
-      span.value = size;
-      span.velocity = 0;
-    }
+    const { position, opacity } = motion.current;
     let frame = 0;
     let markedAnimating = false;
     const releaseAnimating = () => {
@@ -78,27 +72,21 @@ export function useDockedPanelMotion(
       endDockAnimation(body);
     };
     const track = `--workspace-${edge}-track`;
-    const reserve = (p: number, currentSpan: number) => {
+    const reserve = (p: number) => {
       if (edge === "left") {
-        body.style.paddingLeft = p
-          ? `calc(${currentSpan * p}px + ${1 + p} * var(--workspace-seam))`
-          : "";
+        body.style.paddingLeft = p ? `calc(${size * p}px + ${1 + p} * var(--workspace-seam))` : "";
       } else {
-        const space = p ? `calc(${currentSpan * p}px + ${p} * var(--workspace-seam))` : "";
+        const space = p ? `calc(${size * p}px + ${p} * var(--workspace-seam))` : "";
         body.style.setProperty(track, space);
-        if (edge === "right") panel.style.width = `${currentSpan}px`;
-        else panel.style.height = `${currentSpan}px`;
       }
     };
     const paint = () => {
       const clamped = Math.max(0, Math.min(1, position.value));
-      reserve(clamped, Math.max(0, span.value));
+      reserve(clamped);
       if (edge === "left") {
         panel.style.transform = `translate3d(calc(${clamped - 1} * (100% + 2 * var(--workspace-seam))), 0, 0)`;
-      } else if (edge === "right") {
-        panel.style.transform = `translate3d(${((1 - clamped) * 18).toFixed(2)}px, 0, 0)`;
       } else {
-        panel.style.transform = `translate3d(0, ${((1 - clamped) * 14).toFixed(2)}px, 0)`;
+        panel.style.transform = `translate3d(${((1 - clamped) * 18).toFixed(2)}px, 0, 0)`;
       }
       panel.style.opacity = String(Math.max(0, Math.min(1, opacity.value)));
       notifyWorkspaceLayout();
@@ -106,9 +94,7 @@ export function useDockedPanelMotion(
     const settle = () => {
       position.value = opacity.value = target;
       position.velocity = opacity.velocity = 0;
-      span.value = size;
-      span.velocity = 0;
-      reserve(target, size);
+      reserve(target);
       panel.removeAttribute("data-dock-moving");
       panel.style.transform = "";
       panel.style.opacity = "";
@@ -116,11 +102,7 @@ export function useDockedPanelMotion(
       notifyWorkspaceLayout();
     };
 
-    const needsMotion =
-      position.value !== target ||
-      position.velocity !== 0 ||
-      Math.abs(span.value - size) > 0.5 ||
-      Math.abs(span.velocity) > 0.5;
+    const needsMotion = position.value !== target || position.velocity !== 0;
 
     if (active && needsMotion) {
       panel.setAttribute("data-dock-moving", "");
@@ -133,9 +115,7 @@ export function useDockedPanelMotion(
           now - start >= durationMs ||
           (Math.abs(target - position.value) < 0.001 &&
             Math.abs(position.velocity) < 0.01 &&
-            Math.abs(target - opacity.value) < 0.005 &&
-            Math.abs(size - span.value) < 0.5 &&
-            Math.abs(span.velocity) < 1)
+            Math.abs(target - opacity.value) < 0.005)
         ) {
           settle();
           return;
@@ -147,7 +127,6 @@ export function useDockedPanelMotion(
         for (let i = 0; i < steps; i++) {
           step(position, target, dt / steps, POSITION_FREQUENCY, 1);
           step(opacity, target, dt / steps, OPACITY_FREQUENCY, 1);
-          step(span, size, dt / steps, POSITION_FREQUENCY, 1);
         }
         paint();
         frame = requestAnimationFrame(tick);
@@ -159,11 +138,11 @@ export function useDockedPanelMotion(
     }
     return () => {
       cancelAnimationFrame(frame);
-      reserve(0, size);
+      reserve(0);
       panel.removeAttribute("data-dock-moving");
       panel.style.transform = "";
       panel.style.opacity = "";
       releaseAnimating();
     };
-  }, [getBody, edge, open, size, instantSizeChange, active, durationMs]);
+  }, [getBody, edge, open, size, active, durationMs]);
 }

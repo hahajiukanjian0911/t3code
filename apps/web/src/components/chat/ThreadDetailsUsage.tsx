@@ -176,12 +176,18 @@ export function ThreadDetailsUsage({
 }
 
 /** The thread's context window. The bar fills as context is used; the tick marks auto-compaction. */
+const CONTEXT_ROW_LABEL = "Context";
+
 export function ThreadDetailsContext({ usage }: { readonly usage: ContextWindowSnapshot }) {
   const maxTokens = usage.maxTokens != null && usage.maxTokens > 0 ? usage.maxTokens : null;
   const used =
     maxTokens !== null && usage.usedPercentage !== null
       ? Math.round(Math.max(0, Math.min(100, usage.usedPercentage)))
       : null;
+  const contextSizeLabel =
+    maxTokens !== null
+      ? `${formatContextWindowTokens(usage.usedTokens)} / ${formatContextWindowTokens(maxTokens)}`
+      : formatContextWindowTokens(usage.usedTokens);
   const threshold = usage.autoCompactThreshold ?? null;
   const tick =
     maxTokens !== null && threshold !== null && threshold > 0 && threshold < maxTokens
@@ -196,7 +202,7 @@ export function ThreadDetailsContext({ usage }: { readonly usage: ContextWindowS
     >
       <Collapsible>
         <CollapsibleTrigger className="group flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-left text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring">
-          <span>Context usage</span>
+          <span className="shrink-0">{CONTEXT_ROW_LABEL}</span>
           {used !== null ? (
             <span
               aria-hidden
@@ -219,7 +225,7 @@ export function ThreadDetailsContext({ usage }: { readonly usage: ContextWindowS
           ) : null}
           <span
             className={cn(
-              "ml-auto text-end tabular-nums",
+              "ml-auto shrink-0 whitespace-nowrap text-end tabular-nums",
               used !== null && used >= 90
                 ? "text-error-foreground"
                 : used !== null && used >= 80
@@ -227,7 +233,7 @@ export function ThreadDetailsContext({ usage }: { readonly usage: ContextWindowS
                   : "text-foreground/80",
             )}
           >
-            {used === null ? <>{formatContextWindowTokens(usage.usedTokens)} tokens</> : `${used}%`}
+            {contextSizeLabel}
           </span>
           <ChevronRightIcon
             aria-hidden

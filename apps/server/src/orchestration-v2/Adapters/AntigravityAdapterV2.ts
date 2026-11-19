@@ -235,12 +235,20 @@ export function makeAntigravityAcpAdapterFlavor(
           }),
       isOpenForegroundCommand: isAntigravityForegroundCommandOpen,
       isForegroundCommand: isAntigravityForegroundCommand,
-      buildContinuationPrompt: (openTools, { hasT3Mcp }) => {
+      buildContinuationPrompt: (openTools, { hasT3Mcp, settled }) => {
         const commands = openTools
           .map((tool) => tool.command ?? tool.title)
           .filter((value): value is string => Boolean(value?.trim()))
           .slice(0, 3);
         const summary = commands.length > 0 ? ` (${commands.join("; ")})` : "";
+        if (settled === true) {
+          return [
+            {
+              type: "text",
+              text: `<t3_background_continuation>\nBackground work started in this turn${summary} finished right as your waiting turn ended. Review its completed output and continue to finish the user's request.\n</t3_background_continuation>`,
+            },
+          ];
+        }
         const hasSubagents = openTools.some(
           (tool) => classifyAntigravitySubagentToolCall(tool) === "subagent",
         );

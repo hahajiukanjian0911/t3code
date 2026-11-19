@@ -99,7 +99,7 @@ describe("CommandPalette open intents", () => {
                 />
               </div>
             </WorkspaceWindow>
-            <WorkspaceWindow id="drawer:focus-test" title="Terminal" panel="bottom">
+            <WorkspaceWindow id="drawer:focus-test" title="Terminal" panel="right">
               <textarea aria-label="Terminal input" data-terminal-owner="drawer" />
             </WorkspaceWindow>
           </WorkspaceRoot>

@@ -6,7 +6,11 @@ import type {
 import { useEffect, useState } from "react";
 
 import type { ComposerFileAttachment, ComposerImageAttachment } from "../../composerDraftStore";
-import { fileContextReference, previewAnnotationContextId } from "../../lib/composerContextRecords";
+import {
+  fileContextReference,
+  imageContextReference,
+  previewAnnotationContextId,
+} from "../../lib/composerContextRecords";
 import type { TerminalContextDraft } from "../../lib/terminalContext";
 import type { ReviewCommentContext } from "../../reviewCommentContext";
 
@@ -17,6 +21,7 @@ interface RetainedPreviewAnnotation {
 
 export interface RetainedAttachmentContextPayloads {
   files: Map<string, ComposerFileAttachment>;
+  images: Map<string, ComposerImageAttachment>;
   previewAnnotations: Map<string, RetainedPreviewAnnotation>;
 }
 
@@ -34,6 +39,7 @@ function createRetainedContextPayloads(): RetainedContextPayloads {
     threads: new Map(),
     environments: new Map(),
     files: new Map(),
+    images: new Map(),
     previewAnnotations: new Map(),
   };
 }
@@ -67,6 +73,8 @@ export function reconcileAttachmentContextReferences(input: {
 }): {
   filesToRemove: string[];
   filesToRestore: ComposerFileAttachment[];
+  imagesToRemove: string[];
+  imagesToRestore: ComposerImageAttachment[];
   annotationIdsToRemove: string[];
   annotationsToRestore: RetainedPreviewAnnotation[];
 } {
@@ -87,6 +95,24 @@ export function reconcileAttachmentContextReferences(input: {
   });
 
   const imagesById = new Map(input.images.map((image) => [image.id, image]));
+  const previewAnnotationIds = new Set(input.previewAnnotations.map((annotation) => annotation.id));
+  const regularImages = input.images.filter((image) => !previewAnnotationIds.has(image.id));
+  const liveImageContextIds = new Set<string>(
+    regularImages.map((image) => imageContextReference(image).contextId),
+  );
+  const imagesToRemove: string[] = [];
+  for (const image of regularImages) {
+    const contextId = imageContextReference(image).contextId;
+    if (input.referencedContextIds.has(contextId)) continue;
+    input.retained.images.set(contextId, image);
+    imagesToRemove.push(image.id);
+  }
+  const imagesToRestore = [...input.referencedContextIds].flatMap((contextId) => {
+    if (liveImageContextIds.has(contextId)) return [];
+    const image = input.retained.images.get(contextId);
+    return image ? [image] : [];
+  });
+
   const liveAnnotationContextIds = new Set<string>(
     input.previewAnnotations.map((annotation) => previewAnnotationContextId(annotation.id)),
   );
@@ -106,5 +132,12 @@ export function reconcileAttachmentContextReferences(input: {
     return retained ? [retained] : [];
   });
 
-  return { filesToRemove, filesToRestore, annotationIdsToRemove, annotationsToRestore };
+  return {
+    filesToRemove,
+    filesToRestore,
+    imagesToRemove,
+    imagesToRestore,
+    annotationIdsToRemove,
+    annotationsToRestore,
+  };
 }

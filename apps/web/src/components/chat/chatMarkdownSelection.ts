@@ -1,3 +1,5 @@
+import { observeResize } from "../../lib/observeResize";
+
 export interface RawSelectionRect {
   readonly left: number;
   readonly right: number;
@@ -45,6 +47,7 @@ const MASK_VERTICAL_OVERHANG = 4;
 
 const SELECTION_ACTIVE_ATTR = "data-chat-markdown-selection-active";
 const SELECTION_MASK_VAR = "--chat-markdown-selection-mask";
+const SELECTION_MASK_SIZE_VAR = "--chat-markdown-selection-mask-size";
 const SKIPPED_ANCESTOR_SELECTOR =
   '[aria-hidden="true"], .select-none, pre, .chat-markdown-codeblock, button:not(.chat-markdown-file-link)';
 
@@ -297,21 +300,29 @@ function roundedRectPath(band: SelectionBand): string {
   ].join("");
 }
 
+interface SelectionMaskPayload {
+  readonly url: string;
+  readonly size: string;
+}
+
 function buildSelectionMaskDataUrl(
   bands: ReadonlyArray<SelectionBand>,
   width: number,
   height: number,
-): string | null {
+): SelectionMaskPayload | null {
   if (bands.length === 0 || width <= 0 || height <= 0) return null;
   const d = bands.map(roundedRectPath).filter(Boolean).join(" ");
   if (!d) return null;
   const w = Number(width.toFixed(2));
   const totalH = Number((height + MASK_VERTICAL_OVERHANG * 2).toFixed(2));
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${totalH}" viewBox="0 ${-MASK_VERTICAL_OVERHANG} ${w} ${totalH}"><path fill="#000" d="${d}"/></svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  return {
+    url: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
+    size: `${w}px ${totalH}px`,
+  };
 }
 
-function collectRootSelectionMask(root: HTMLElement, range: Range): string | null {
+function collectRootSelectionMask(root: HTMLElement, range: Range): SelectionMaskPayload | null {
   const rootRect = root.getBoundingClientRect();
   if (rootRect.width <= 0 || rootRect.height <= 0) return null;
 
@@ -387,30 +398,111 @@ function collectRootSelectionMask(root: HTMLElement, range: Range): string | nul
 }
 
 const registeredRoots = new Set<HTMLElement>();
-const activeRoots = new Set<HTMLElement>();
+const activeRoots = new Map<HTMLElement, { url: string; size: string }>();
+const activeResizeCleanups = new Map<HTMLElement, () => void>();
 let listenersAttached = false;
+let activeScrollListenerAttached = false;
+let activeMutationObserver: MutationObserver | null = null;
 let rafId: number | null = null;
 
+function ensureActiveObservers(): void {
+  if (activeMutationObserver === null && typeof MutationObserver !== "undefined") {
+    activeMutationObserver = new MutationObserver(() => {
+      if (activeRoots.size > 0) scheduleSelectionSync();
+    });
+  }
+}
+
+function handleActiveScroll(): void {
+  if (activeRoots.size === 0) return;
+  scheduleSelectionSync();
+}
+
+function syncActiveScrollListener(): void {
+  const shouldListen = activeRoots.size > 0;
+  if (shouldListen && !activeScrollListenerAttached) {
+    activeScrollListenerAttached = true;
+    document.addEventListener("scroll", handleActiveScroll, { capture: true, passive: true });
+  } else if (!shouldListen && activeScrollListenerAttached) {
+    activeScrollListenerAttached = false;
+    document.removeEventListener("scroll", handleActiveScroll, { capture: true });
+  }
+}
+
+function observeActiveRoot(root: HTMLElement): void {
+  ensureActiveObservers();
+  if (!activeResizeCleanups.has(root)) {
+    activeResizeCleanups.set(
+      root,
+      observeResize(root, () => {
+        if (activeRoots.size > 0) scheduleSelectionSync();
+      }),
+    );
+  }
+  activeMutationObserver?.observe(root, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+}
+
+function rebuildMutationObservers(): void {
+  if (!activeMutationObserver) return;
+  activeMutationObserver.disconnect();
+  for (const root of activeRoots.keys()) {
+    if (root.isConnected) {
+      activeMutationObserver.observe(root, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    }
+  }
+}
+
 function clearRootOverlay(root: HTMLElement): void {
+  const wasActive = activeRoots.delete(root);
   root.style.removeProperty(SELECTION_MASK_VAR);
+  root.style.removeProperty(SELECTION_MASK_SIZE_VAR);
   root.removeAttribute(SELECTION_ACTIVE_ATTR);
-  activeRoots.delete(root);
+  if (wasActive) {
+    activeResizeCleanups.get(root)?.();
+    activeResizeCleanups.delete(root);
+    rebuildMutationObservers();
+    syncActiveScrollListener();
+  }
 }
 
 function clearAllOverlays(): void {
-  for (const root of activeRoots) {
-    clearRootOverlay(root);
+  for (const root of activeRoots.keys()) {
+    root.style.removeProperty(SELECTION_MASK_VAR);
+    root.style.removeProperty(SELECTION_MASK_SIZE_VAR);
+    root.removeAttribute(SELECTION_ACTIVE_ATTR);
   }
+  activeRoots.clear();
+  for (const stop of activeResizeCleanups.values()) stop();
+  activeResizeCleanups.clear();
+  activeMutationObserver?.disconnect();
+  syncActiveScrollListener();
 }
 
-function applyRootOverlay(root: HTMLElement, maskUrl: string | null): void {
-  if (!maskUrl) {
+function applyRootOverlay(root: HTMLElement, mask: SelectionMaskPayload | null): void {
+  if (!mask) {
     clearRootOverlay(root);
     return;
   }
-  root.style.setProperty(SELECTION_MASK_VAR, maskUrl);
+  const previous = activeRoots.get(root);
+  if (previous && previous.url === mask.url && previous.size === mask.size) {
+    return;
+  }
+  root.style.setProperty(SELECTION_MASK_VAR, mask.url);
+  root.style.setProperty(SELECTION_MASK_SIZE_VAR, mask.size);
   root.setAttribute(SELECTION_ACTIVE_ATTR, "");
-  activeRoots.add(root);
+  activeRoots.set(root, mask);
+  if (!previous) {
+    observeActiveRoot(root);
+    syncActiveScrollListener();
+  }
 }
 
 function syncActiveSelection(): void {
@@ -435,7 +527,7 @@ function syncActiveSelection(): void {
     applyRootOverlay(root, collectRootSelectionMask(root, range));
   }
 
-  for (const root of activeRoots) {
+  for (const root of activeRoots.keys()) {
     if (!visited.has(root)) clearRootOverlay(root);
   }
 }
@@ -475,6 +567,14 @@ function detachListeners(): void {
   listenersAttached = false;
   document.removeEventListener("selectionchange", handleSelectionChange);
   window.removeEventListener("resize", handleResize);
+  if (activeScrollListenerAttached) {
+    activeScrollListenerAttached = false;
+    document.removeEventListener("scroll", handleActiveScroll, { capture: true });
+  }
+  for (const stop of activeResizeCleanups.values()) stop();
+  activeResizeCleanups.clear();
+  activeMutationObserver?.disconnect();
+  activeMutationObserver = null;
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;

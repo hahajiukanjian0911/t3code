@@ -75,5 +75,74 @@ it("selects draggable file links and paints continuous full-line selection witho
     expect(root.hasAttribute("data-chat-markdown-selection-active")).toBe(false);
   });
   expect(root.style.getPropertyValue("--chat-markdown-selection-mask")).toBe("");
+  expect(root.style.getPropertyValue("--chat-markdown-selection-mask-size")).toBe("");
   expect(wrapper.getBoundingClientRect().height).toBe(heightBefore);
+});
+
+it("keeps selection aligned when markdown height grows and its container scrolls", async () => {
+  const initialMarkdown = ["- 第一条需要选中的关键结论文本。", "- 第二条普通说明文本。"].join("\n");
+  const appendedMarkdown = [
+    initialMarkdown,
+    "- 第三条后续流式追加的说明文本。",
+    "- 第四条后续流式追加的说明文本。",
+    "- 第五条后续流式追加的说明文本。",
+    "",
+    "追加的总结段落，拉高整个消息容器。",
+  ].join("\n");
+
+  await using screen = await render(
+    <div className="h-[140px] w-[420px] overflow-y-auto p-4" data-testid="scroller">
+      <ChatMarkdown
+        text={initialMarkdown}
+        cwd="/tmp"
+        environmentId={EnvironmentId.make("env-sel-scroll")}
+      />
+    </div>,
+  );
+
+  const scroller = screen.container.querySelector<HTMLElement>('[data-testid="scroller"]')!;
+  const root = screen.container.querySelector<HTMLElement>(".chat-markdown")!;
+  const firstListItem = root.querySelector("li")!;
+  const range = document.createRange();
+  range.selectNodeContents(firstListItem);
+  const selection = window.getSelection()!;
+  selection.removeAllRanges();
+  selection.addRange(range);
+  document.dispatchEvent(new Event("selectionchange"));
+
+  await vi.waitFor(() => {
+    expect(root.style.getPropertyValue("--chat-markdown-selection-mask-size")).not.toBe("");
+  });
+  const initialSize = root.style.getPropertyValue("--chat-markdown-selection-mask-size");
+  const initialMask = decodeURIComponent(
+    root.style.getPropertyValue("--chat-markdown-selection-mask"),
+  );
+  const initialHeightMatch = /height="([\d.]+)"/.exec(initialMask);
+  expect(initialHeightMatch).not.toBeNull();
+
+  await screen.rerender(
+    <div className="h-[140px] w-[420px] overflow-y-auto p-4" data-testid="scroller">
+      <ChatMarkdown
+        text={appendedMarkdown}
+        cwd="/tmp"
+        environmentId={EnvironmentId.make("env-sel-scroll")}
+      />
+    </div>,
+  );
+  scroller.scrollTop = scroller.scrollHeight;
+  scroller.dispatchEvent(new Event("scroll"));
+
+  await vi.waitFor(() => {
+    expect(root.style.getPropertyValue("--chat-markdown-selection-mask-size")).not.toBe(
+      initialSize,
+    );
+  });
+  const updatedMask = decodeURIComponent(
+    root.style.getPropertyValue("--chat-markdown-selection-mask"),
+  );
+  const updatedHeightMatch = /height="([\d.]+)"/.exec(updatedMask);
+  expect(Number(updatedHeightMatch?.[1])).toBeGreaterThan(Number(initialHeightMatch?.[1]));
+  expect(root.style.getPropertyValue("--chat-markdown-selection-mask-size")).toContain(
+    `${updatedHeightMatch?.[1]}px`,
+  );
 });

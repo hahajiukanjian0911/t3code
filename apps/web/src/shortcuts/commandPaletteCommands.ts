@@ -67,11 +67,27 @@ export function installCommandPaletteCommands(
     if (isCommandPaletteMounted()) dispatchCommandPalette({ _tag: "ToggleMode", mode: "command" });
   };
   const focusCompactComposer = () => {
+    const composerArea = document.querySelector<HTMLElement>(
+      '[data-workspace-area="composer"]:not([data-side-chat-pane] *)',
+    );
     const editor = document.querySelector<HTMLElement>(
       '[data-workspace-area="composer"] [data-testid="composer-editor"]:not([data-side-chat-pane] *)',
     );
-    editor?.focus({ preventScroll: true });
-    return !!editor && document.activeElement === editor;
+    const conversation = document.querySelector<HTMLElement>(
+      '[data-workspace-area="conversation"]:not([data-side-chat-pane] *) [data-workspace-focus-default], [data-workspace-area="conversation"]:not([data-side-chat-pane] *)',
+    );
+    const active = document.activeElement;
+    if (
+      active instanceof HTMLElement &&
+      (composerArea?.contains(active) || editor?.contains(active)) &&
+      conversation
+    ) {
+      conversation.focus({ preventScroll: true });
+      return document.activeElement === conversation;
+    }
+    const target = editor ?? conversation;
+    target?.focus({ preventScroll: true });
+    return !!target && document.activeElement === target;
   };
 
   // A child search (files, contents) goes back to the palette on Escape before
