@@ -2138,11 +2138,42 @@ code {
 
 /* Chat markdown rendering */
 
+.chat-markdown {
+  position: relative;
+}
+
+.chat-markdown[data-chat-markdown-selection-active] ::selection {
+  background: transparent;
+}
+
+.chat-markdown[data-chat-markdown-selection-active] :is(pre, .chat-markdown-codeblock) ::selection {
+  background: revert;
+}
+
+.chat-markdown > [data-chat-markdown-selection-overlay] {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.chat-markdown > [data-chat-markdown-selection-overlay] > [data-chat-markdown-selection-band] {
+  position: absolute;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.dark
+  .chat-markdown
+  > [data-chat-markdown-selection-overlay]
+  > [data-chat-markdown-selection-band] {
+  background: color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
 .chat-markdown > :first-child {
   margin-top: 0;
 }
 
-.chat-markdown > :last-child {
+.chat-markdown > :nth-last-child(1 of :not([data-chat-markdown-selection-overlay])) {
   margin-bottom: 0;
 }
 
@@ -2319,12 +2350,15 @@ code {
 }
 
 /* Triple-click selection stops at block-level boxes, flex items included, so file chips in
-   prose stay inline-level down to the icon and label. */
+   prose stay inline-level down to the icon and label. Keep text selectable even when
+   draggable="true" enables native file drag on desktop. */
 .chat-markdown-file-link {
   display: inline-block;
   overflow-x: clip;
   text-overflow: ellipsis;
   white-space: nowrap;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .chat-markdown-file-link > :is(svg, img) {

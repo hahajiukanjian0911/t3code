@@ -216,6 +216,7 @@ import {
   markdownImageCopy,
 } from "./chat/ChatMarkdownMedia";
 import { MarkdownExternalLinkContent } from "./chat/MarkdownExternalLink";
+import { registerChatMarkdownSelectionRoot } from "./chat/chatMarkdownSelection";
 import { MarkdownFileLink } from "./chat/MarkdownFileLink";
 import { canUseMarkdownFileShellActions } from "./chat/MarkdownFileLink.logic";
 import { rehypeChipPunctuation } from "./chat/markdownChipPunctuation";
@@ -1883,6 +1884,8 @@ function ChatMarkdown({
   const Root = inline ? "span" : "div";
   const bindMarkdownRef = (node: HTMLElement | null) => {
     markdownRef.current = node;
+    if (!node || inline) return;
+    return registerChatMarkdownSelectionRoot(node);
   };
   const sharedRemarkPlugins =
     CHAT_MARKDOWN_REMARK_PLUGIN_SETS[
