@@ -62,8 +62,8 @@ describe("workspace window ownership", () => {
       dismissed: ["closed"],
       groupWeights: { main: 1.4 },
       panelZoomedGroup: { right: "right" },
-      maximized: { windowId: "surface:1:diff", stage: "companion" as const },
-      sizes: { left: 280, right: 390, bottom: 260 },
+      maximized: { windowId: "surface:1:diff", stage: "full" as const },
+      sizes: { left: 280, right: 390, rightContentShare: 0.55, bottom: 260 },
       floating: { x: 80, y: 40, width: 420, height: 300 },
     };
     expect(restoreWorkspaceLayout({ ...saved, sizes: { ...saved.sizes, companion: 310 } })).toEqual(
@@ -74,31 +74,45 @@ describe("workspace window ownership", () => {
     ).toEqual(["file"]);
     expect(
       restoreWorkspaceLayout({
-        sizes: { left: -10, right: "wide", bottom: Infinity, companion: -5 },
+        sizes: {
+          left: -10,
+          right: "wide",
+          rightContentShare: 9,
+          bottom: Infinity,
+          companion: -5,
+        },
         floating: { x: -500, height: null },
         maximized: { windowId: "threads", stage: "full" },
       }).sizes,
-    ).toEqual({ left: 246, right: 280, bottom: 152 });
+    ).toEqual({ left: 246, right: 280, rightContentShare: 0.75, bottom: 152 });
     expect(
       restoreWorkspaceLayout({
         maximized: { windowId: "threads", stage: "full" },
       }).maximized,
     ).toBeNull();
+    expect(
+      restoreWorkspaceLayout({
+        maximized: { windowId: "details:env:thread", stage: "full" },
+      }).maximized,
+    ).toBeNull();
+    expect(
+      restoreWorkspaceLayout({
+        maximized: { windowId: "surface:1:diff", stage: "companion" },
+      }).maximized,
+    ).toBeNull();
   });
 
-  it("enforces progressive 2-stage app maximize for non-chat windows and forbids sidebar maximize", () => {
+  it("toggles single-stage full app maximize for chat and tool windows while forbidding sidebar and inspector maximize", () => {
     expect(advanceWorkspaceMaximizeInApp(null, "threads")).toBeNull();
-    // Main chat goes straight to full and back
+    expect(advanceWorkspaceMaximizeInApp(null, "details:env:thread")).toBeNull();
+
     const chatStep1 = advanceWorkspaceMaximizeInApp(null, "chat:test");
     expect(chatStep1).toEqual({ windowId: "chat:test", stage: "full" });
     expect(advanceWorkspaceMaximizeInApp(chatStep1, "chat:test")).toBeNull();
 
-    // Tool windows open alongside chat before filling the app.
     const nonChat1 = advanceWorkspaceMaximizeInApp(null, "surface:test:file");
-    expect(nonChat1).toEqual({ windowId: "surface:test:file", stage: "companion" });
-    const nonChat2 = advanceWorkspaceMaximizeInApp(nonChat1, "surface:test:file");
-    expect(nonChat2).toEqual({ windowId: "surface:test:file", stage: "full" });
-    expect(advanceWorkspaceMaximizeInApp(nonChat2, "surface:test:file")).toBeNull();
+    expect(nonChat1).toEqual({ windowId: "surface:test:file", stage: "full" });
+    expect(advanceWorkspaceMaximizeInApp(nonChat1, "surface:test:file")).toBeNull();
 
     // Panel-level monocle toggle
     let layout = createWorkspaceLayout();

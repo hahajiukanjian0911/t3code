@@ -28,6 +28,7 @@ import {
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useStableCallback } from "../../hooks/useStableCallback";
 import { isElectron } from "../../env";
+import { observeResize } from "../../lib/observeResize";
 import { notifyWorkspaceLayout } from "../../lib/workspaceLayoutEvents";
 import { workspaceAreaProps } from "../../lib/workspaceFocus";
 import { registerCommands, registerMenuAction } from "../../shortcuts/dispatcher";
@@ -42,6 +43,7 @@ import {
   canMaximizeWorkspaceWindowInApp,
   createWorkspaceLayout,
   isChatWorkspaceWindowId,
+  isInspectorWorkspaceWindowId,
   moveWorkspaceWindow,
   restoreWorkspaceLayout,
   toggleWorkspaceMaximizeInPanel,
@@ -77,13 +79,13 @@ interface DockSnapshot {
 function activateInLayout(layout: WorkspaceLayout, id: string): WorkspaceLayout {
   const placement = layout.placements[id]!;
   let maximized = layout.maximized;
-  if (
-    maximized?.stage === "companion" &&
-    maximized.windowId !== id &&
-    !isChatWorkspaceWindowId(id)
-  ) {
-    if (placement.panel === "right") maximized = { windowId: id, stage: "companion" };
-    if (placement.panel === "main") maximized = null;
+  if (maximized && maximized.windowId !== id) {
+    const sourcePanel = layout.placements[maximized.windowId]?.panel;
+    if (canMaximizeWorkspaceWindowInApp(id) && placement.panel === sourcePanel) {
+      maximized = { windowId: id, stage: "full" };
+    } else {
+      maximized = null;
+    }
   }
   return {
     ...layout,
@@ -145,8 +147,7 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
     }
     for (const listener of listeners) listener();
   };
-  const updateLayout = (input: WorkspaceLayout, save = true) => {
-    let next = input;
+  const publishLayout = (next: WorkspaceLayout, save = true) => {
     for (const window of Object.values(snapshot.windows)) {
       const placement = next.placements[window.id];
       if (
@@ -158,8 +159,15 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
           group: window.defaultPanel,
         });
     }
-    publish({ ...snapshot, layout: next }, save);
+    if (snapshot.layout.maximized !== next.maximized) {
+      transitionResize(body?.parentElement ?? null, () =>
+        publish({ ...snapshot, layout: next }, save),
+      );
+    } else {
+      publish({ ...snapshot, layout: next }, save);
+    }
   };
+  const updateLayout = publishLayout;
   const resolveTargetWindowId = (explicitId?: string): string | null => {
     if (explicitId && snapshot.windows[explicitId]?.available) return explicitId;
     if (typeof document !== "undefined") {
@@ -197,14 +205,21 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
     const placement = snapshot.layout.placements[id];
     if (!placement) return;
     const window = snapshot.windows[id];
-    publish(
-      {
-        ...snapshot,
-        focused: id,
-        layout: activateInLayout(snapshot.layout, id),
-      },
-      true,
-    );
+    const nextLayout = activateInLayout(snapshot.layout, id);
+    const apply = () =>
+      publish(
+        {
+          ...snapshot,
+          focused: id,
+          layout: nextLayout,
+        },
+        true,
+      );
+    if (snapshot.layout.maximized !== nextLayout.maximized) {
+      transitionResize(body?.parentElement ?? null, apply);
+    } else {
+      apply();
+    }
     window?.onActivate();
   };
   return {
@@ -224,14 +239,16 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
       const view = dockView(snapshot);
       const members = view.groups[panel];
       const sourcePanel = view.max && snapshot.layout.placements[view.max.windowId]?.panel;
-      const keepStage =
-        (panel === "floating" && !view.maximizedFloating) ||
-        (view.paired && panel === "bottom" && (members.length > 0 || sourcePanel !== panel));
+      const keepStage = panel === "floating" && !view.maximizedFloating;
       if (members.length > 0 || sourcePanel === panel) {
+        const wasFullOnPanel = Boolean(view.full && sourcePanel === panel);
         updateLayout({
           ...snapshot.layout,
           maximized: keepStage ? snapshot.layout.maximized : null,
-          hidden: { ...snapshot.layout.hidden, [panel]: view.panelVisible(panel) },
+          hidden: {
+            ...snapshot.layout.hidden,
+            [panel]: wasFullOnPanel ? true : view.panelVisible(panel),
+          },
         });
         return;
       }
@@ -332,23 +349,19 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
       if (!targetId) return false;
       const canMaximize = canMaximizeWorkspaceWindowInApp(targetId);
       if (!canMaximize && !snapshot.layout.maximized) return false;
-      transitionResize(body?.parentElement ?? null, () => {
-        const maximized = canMaximize
-          ? advanceWorkspaceMaximizeInApp(snapshot.layout.maximized, targetId)
-          : null;
-        updateLayout({ ...snapshot.layout, maximized });
-        if (canMaximize) {
-          activate(targetId);
-          focusWindowContainer(targetId);
-        }
-      });
+      const maximized = canMaximize
+        ? advanceWorkspaceMaximizeInApp(snapshot.layout.maximized, targetId)
+        : null;
+      updateLayout({ ...snapshot.layout, maximized });
+      if (canMaximize) {
+        activate(targetId);
+        focusWindowContainer(targetId);
+      }
       return true;
     },
     exitMaximizeInApp() {
       if (!snapshot.layout.maximized) return false;
-      transitionResize(body?.parentElement ?? null, () =>
-        updateLayout({ ...snapshot.layout, maximized: null }),
-      );
+      updateLayout({ ...snapshot.layout, maximized: null });
       return true;
     },
     toggleMaximizeInPanel(explicitId?: string) {
@@ -377,9 +390,7 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
       const target =
         panel === "main"
           ? windows.find((win) => win.available && win.id.startsWith("chat:"))?.id
-          : panel === "right"
-            ? view.paired?.windowId
-            : undefined;
+          : undefined;
       const id = target ?? view.groups[panel][0]?.active;
       if (!id) {
         const open = openers[panel];
@@ -421,12 +432,11 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
       if (typeof document === "undefined") return false;
       const currentId = resolveTargetWindowId();
       const max = snapshot.layout.maximized;
-      // Niri column switch when maximized in app: left/right seamlessly slides between chat and non-chat columns!
       if (max) {
         const chatWin =
           Object.values(snapshot.windows).find((w) => w.available && w.id.startsWith("chat:")) ??
           (snapshot.windows.route?.available ? snapshot.windows.route : undefined);
-        if (max.stage === "full" && isChatWorkspaceWindowId(max.windowId)) {
+        if (isChatWorkspaceWindowId(max.windowId)) {
           if (direction === "left" && snapshot.windows.threads?.available) {
             updateLayout({
               ...snapshot.layout,
@@ -446,21 +456,18 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
             if (rightGroup) {
               updateLayout({
                 ...snapshot.layout,
-                maximized: { windowId: rightGroup.active, stage: "companion" },
+                maximized: null,
+                hidden: { ...snapshot.layout.hidden, right: false },
               });
               activate(rightGroup.active);
               focusWindowContainer(rightGroup.active);
               return true;
             }
           }
-        } else if (
-          max.stage === "full" &&
-          !isChatWorkspaceWindowId(max.windowId) &&
-          direction === "left"
-        ) {
+        } else if (direction === "left") {
           updateLayout({
             ...snapshot.layout,
-            maximized: { windowId: max.windowId, stage: "companion" },
+            maximized: null,
           });
           if (chatWin) {
             activate(chatWin.id);
@@ -536,43 +543,13 @@ function activeMaximizedState(snapshot: DockSnapshot) {
 function resolveDockView(snapshot: DockSnapshot) {
   const registered = Object.values(snapshot.windows);
   const chat = registered.find((window) => window.available && window.id.startsWith("chat:"));
-  const conversation =
-    chat ?? (snapshot.windows.route?.available ? snapshot.windows.route : undefined);
   const shown = registered.filter((window) => window.id !== "route" || !chat);
   const max = activeMaximizedState(snapshot);
-  const paired =
-    max?.stage === "companion" && conversation && conversation.id !== max.windowId ? max : null;
-  const full = paired ? null : max;
+  const full = max;
   const maximizedFloating = !!max && snapshot.layout.placements[max.windowId]?.panel === "floating";
-  let layout = snapshot.layout;
-  if (paired && conversation) {
-    const currentChat = layout.placements[conversation.id];
-    const currentTool = layout.placements[paired.windowId]!;
-    const main =
-      currentChat?.panel === "main" ? currentChat : ({ panel: "main", group: "main" } as const);
-    const right =
-      currentTool.panel === "right" ? currentTool : ({ panel: "right", group: "right" } as const);
-    layout = {
-      ...layout,
-      placements: { ...layout.placements, [conversation.id]: main, [paired.windowId]: right },
-      active: { ...layout.active, [main.group]: conversation.id, [right.group]: paired.windowId },
-      panelZoomedGroup: {
-        ...layout.panelZoomedGroup,
-        ...(layout.panelZoomedGroup.main ? { main: main.group } : {}),
-        ...(layout.panelZoomedGroup.right ? { right: right.group } : {}),
-      },
-      hidden: { ...layout.hidden, left: true, main: false, right: false },
-    };
-  }
+  const layout = snapshot.layout;
   const groups = Object.fromEntries(
-    workspacePanels.map((panel) => [
-      panel,
-      workspaceGroups(
-        panel === "floating" && maximizedFloating ? snapshot.layout : layout,
-        shown,
-        panel,
-      ),
-    ]),
+    workspacePanels.map((panel) => [panel, workspaceGroups(layout, shown, panel)]),
   ) as Record<WorkspacePanel, ReturnType<typeof workspaceGroups>>;
   const panelVisible = (panel: WorkspacePanel) => {
     if (panel === "floating")
@@ -583,7 +560,6 @@ function resolveDockView(snapshot: DockSnapshot) {
     layout,
     max,
     full,
-    paired,
     groups,
     panelVisible,
     maximizedFloating,
@@ -879,12 +855,24 @@ function DockFrame({
     layout,
     max: activeMax,
     full,
-    paired,
     groups,
     panelVisible,
     maximizedFloating,
     chatPresent,
   } = dockView(snapshot);
+  const [dockWidth, setDockWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1280,
+  );
+  const [resizingPanel, setResizingPanel] = useState<"left" | "right" | "bottom" | null>(null);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- tracks the outer dock width so content tabs in the right panel split remaining space dynamically
+  useLayoutEffect(() => {
+    const node = store.getBody()?.parentElement;
+    if (!node) return;
+    return observeResize(node, (entries) => {
+      const next = entries[0]?.contentRect.width;
+      if (next !== undefined && next > 0) setDockWidth(next);
+    });
+  }, [store]);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync, react/exhaustive-effect-dependencies -- repositions native browser layers after docking changes that do not resize their content
   useLayoutEffect(() => notifyWorkspaceLayout(), [layout]);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- registers global workspace window commands while the dock frame is mounted
@@ -949,14 +937,44 @@ function DockFrame({
     floatingVisible = panelVisible("floating");
   const dockedThreads = groups.left.length === 1 && groups.left[0]?.active === "threads";
   const leftGridColumn = left && !dockedThreads;
+  const rightContentMode = groups.right.some(
+    (group) => !isInspectorWorkspaceWindowId(group.active),
+  );
+  const seamPx = 6;
+  const leftReservedWidth = left ? layout.sizes.left + seamPx : 0;
+  const availableMainAndRight = Math.max(360, dockWidth - seamPx * 2 - leftReservedWidth);
+  const effectiveRightWidth = rightContentMode
+    ? Math.round(
+        Math.max(
+          260,
+          Math.min(
+            Math.max(260, availableMainAndRight - 280),
+            (availableMainAndRight - seamPx) * layout.sizes.rightContentShare,
+          ),
+        ),
+      )
+    : layout.sizes.right;
   useDockedPanelMotion(
     store.getBody,
     "left",
     dockedThreads && !activeMax ? left : null,
     layout.sizes.left,
+    resizingPanel === "left",
   );
-  useDockedPanelMotion(store.getBody, "right", full ? null : right, layout.sizes.right);
-  useDockedPanelMotion(store.getBody, "bottom", full ? null : bottom, layout.sizes.bottom);
+  useDockedPanelMotion(
+    store.getBody,
+    "right",
+    full ? null : right,
+    effectiveRightWidth,
+    resizingPanel === "right",
+  );
+  useDockedPanelMotion(
+    store.getBody,
+    "bottom",
+    full ? null : bottom,
+    layout.sizes.bottom,
+    resizingPanel === "bottom",
+  );
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- install dismissal before the restored floating window can receive its next key.
   useLayoutEffect(() => {
     if (!floatingVisible) return;
@@ -997,69 +1015,100 @@ function DockFrame({
     });
   const lastRightWindow = useLastDockWindow(groups.right[0]?.active);
   const lastBottomWindow = useLastDockWindow(groups.bottom[0]?.active);
-  const renderTabs = (tabs: { id: string; group: string; key: WorkspacePanel }[]) =>
-    tabs.map(({ id, group, key }) => (
-      <button
-        key={id}
-        role="tab"
-        aria-selected={
-          layout.active[group] === id || groups[key].some((value) => value.active === id)
-        }
-        aria-label={snapshot.windows[id]!.title}
-        draggable={!snapshot.windows[id]!.fixed}
-        onDragStart={(event) => event.dataTransfer.setData("application/x-t3-window", id)}
-        onDragOver={(event) => {
-          if (event.dataTransfer.types.includes("application/x-t3-window")) event.preventDefault();
-        }}
-        onDrop={(event) => {
-          const source = event.dataTransfer.getData("application/x-t3-window");
-          if (source) {
-            event.preventDefault();
-            store.move(source, { panel: key, group });
-          }
-        }}
-        onClick={() => store.activate(id)}
-        onDoubleClick={(event) => {
-          if (event.target instanceof Element && event.target.closest("[role='button']")) return;
-          if (store.toggleMaximizeInApp(id)) event.stopPropagation();
-        }}
-        onAuxClick={(event) => {
-          if (event.button === 1) store.close(id);
-        }}
-        className={cn(
-          "workspace-window-label group flex h-7 max-w-48 shrink-0 items-center gap-1.5 rounded px-1.5 text-muted-foreground transition-colors hover:bg-foreground/6 hover:text-foreground",
-          groups[key].some((value) => value.active === id) && "font-medium text-foreground",
-        )}
-      >
-        {snapshot.windows[id]!.icon ? (
-          <span aria-hidden className="relative flex shrink-0 items-center">
-            {snapshot.windows[id]!.icon}
-          </span>
-        ) : null}
-        <span className="truncate">{snapshot.windows[id]!.title}</span>
-        {snapshot.windows[id]!.fixed || !snapshot.windows[id]!.closable ? null : (
-          <span
-            role="button"
-            aria-label={`Close ${snapshot.windows[id]!.title}`}
-            tabIndex={0}
-            className="w-3 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
-            onClick={(event) => {
-              event.stopPropagation();
-              store.close(id);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
+  const renderTabs = (tabs: { id: string; group: string; key: WorkspacePanel }[]) => {
+    const rightHasContentTab =
+      tabs[0]?.key === "right" && tabs.some(({ id }) => !isInspectorWorkspaceWindowId(id));
+    const orderedTabs =
+      tabs[0]?.key === "right"
+        ? [
+            ...tabs.filter(({ id }) => isInspectorWorkspaceWindowId(id)),
+            ...tabs.filter(({ id }) => !isInspectorWorkspaceWindowId(id)),
+          ]
+        : tabs;
+    return orderedTabs.map(({ id, group, key }, index) => {
+      const selected =
+        (full ? full.windowId === id : false) ||
+        (!full &&
+          (layout.active[group] === id || groups[key].some((value) => value.active === id)));
+      const pinnedInspector = key === "right" && isInspectorWorkspaceWindowId(id);
+      const compactInspector = pinnedInspector && rightHasContentTab;
+      const showDividerAfter =
+        compactInspector &&
+        index + 1 < orderedTabs.length &&
+        !isInspectorWorkspaceWindowId(orderedTabs[index + 1]!.id);
+      return (
+        <Fragment key={id}>
+          <button
+            role="tab"
+            aria-selected={selected}
+            aria-label={snapshot.windows[id]!.title}
+            draggable={!snapshot.windows[id]!.fixed && !pinnedInspector}
+            onDragStart={(event) => event.dataTransfer.setData("application/x-t3-window", id)}
+            onDragOver={(event) => {
+              if (event.dataTransfer.types.includes("application/x-t3-window"))
                 event.preventDefault();
-                event.stopPropagation();
-                store.close(id);
+            }}
+            onDrop={(event) => {
+              const source = event.dataTransfer.getData("application/x-t3-window");
+              if (source) {
+                event.preventDefault();
+                store.move(source, { panel: key, group });
               }
             }}
+            onClick={() => store.activate(id)}
+            onDoubleClick={(event) => {
+              if (event.target instanceof Element && event.target.closest("[role='button']"))
+                return;
+              if (store.toggleMaximizeInApp(id)) event.stopPropagation();
+            }}
+            onAuxClick={(event) => {
+              if (event.button === 1 && !pinnedInspector) store.close(id);
+            }}
+            className={cn(
+              "workspace-window-label group flex h-6 max-w-44 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-[background-color,color,box-shadow] hover:bg-foreground/6 hover:text-foreground",
+              compactInspector && "px-1.5",
+              selected && "workspace-panel-tab-selected font-medium",
+            )}
           >
-            <XIcon className="size-3" />
-          </span>
-        )}
-      </button>
-    ));
+            {snapshot.windows[id]!.icon ? (
+              <span aria-hidden className="relative flex shrink-0 items-center">
+                {snapshot.windows[id]!.icon}
+              </span>
+            ) : null}
+            {compactInspector ? null : (
+              <span className="truncate">{snapshot.windows[id]!.title}</span>
+            )}
+            {snapshot.windows[id]!.fixed ||
+            !snapshot.windows[id]!.closable ||
+            pinnedInspector ? null : (
+              <span
+                role="button"
+                aria-label={`Close ${snapshot.windows[id]!.title}`}
+                tabIndex={0}
+                className="grid size-3.5 shrink-0 place-items-center rounded-sm opacity-0 transition-opacity hover:bg-foreground/10 group-hover:opacity-100 group-focus-within:opacity-100"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  store.close(id);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    store.close(id);
+                  }
+                }}
+              >
+                <XIcon className="size-3" />
+              </span>
+            )}
+          </button>
+          {showDividerAfter ? (
+            <span aria-hidden className="mx-0.5 h-3 w-px shrink-0 bg-foreground/12" />
+          ) : null}
+        </Fragment>
+      );
+    });
+  };
   const panel = (key: Exclude<WorkspacePanel, "floating">) => {
     if (key === "left" && groups.left.length === 0) return null;
     let panelGroups = groups[key];
@@ -1092,14 +1141,25 @@ function DockFrame({
       key === "right" ||
       key === "bottom" ||
       (key === "main" && tabs.length === 1 && !isChatWorkspaceWindowId(tabs[0]!.id));
+    const rightMaximizableId =
+      key === "right"
+        ? (
+            visibleGroups.find(
+              (group) =>
+                group.active === snapshot.focused && canMaximizeWorkspaceWindowInApp(group.active),
+            ) ?? visibleGroups.find((group) => canMaximizeWorkspaceWindowInApp(group.active))
+          )?.active
+        : undefined;
     return (
       <section
         key={key}
-        hidden={key === "left" && !left && (!threadSidebar || !!paired)}
+        hidden={key === "left" && !left && !threadSidebar}
         inert={!panelVisible(key)}
         aria-label={panelLabels[key]}
         data-workspace-panel={key}
-        data-workspace-maximized-stage={key === "right" ? paired?.stage : undefined}
+        data-workspace-right-mode={
+          key === "right" ? (rightContentMode ? "content" : "inspector") : undefined
+        }
         data-workspace-panel-zoomed={
           zoomedId && visibleGroups.length === 1 && panelGroups.length > 1 ? "" : undefined
         }
@@ -1119,7 +1179,7 @@ function DockFrame({
           width: threadSidebar
             ? layout.sizes.left
             : key === "right"
-              ? layout.sizes.right
+              ? effectiveRightWidth
               : undefined,
           height: key === "bottom" ? layout.sizes.bottom : undefined,
         }}
@@ -1143,7 +1203,7 @@ function DockFrame({
             <div
               role="tablist"
               aria-label={panelLabels[key]}
-              className="flex min-w-0 items-center gap-1 overflow-x-auto [scrollbar-width:none]"
+              className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none]"
             >
               {renderTabs(tabs)}
             </div>
@@ -1152,22 +1212,22 @@ function DockFrame({
                 <PortalMount node={store.getActionsContainer("panel:right")} />
               </div>
             ) : null}
-            {key === "right" && paired ? (
+            {rightMaximizableId ? (
               <Tooltip>
                 <TooltipTrigger
                   render={
                     <Button
                       size="icon-xs"
                       variant="ghost-muted"
-                      aria-label="Maximize in app (Stage 2)"
-                      onClick={() => store.toggleMaximizeInApp(paired.windowId)}
+                      aria-label="Maximize in app"
+                      onClick={() => store.toggleMaximizeInApp(rightMaximizableId)}
                     />
                   }
                 >
                   <Maximize2Icon className="size-3.5" />
                 </TooltipTrigger>
                 <TooltipPopup>
-                  <span>Maximize in app (Stage 2)</span>{" "}
+                  <span>Maximize in app</span>{" "}
                   <kbd>
                     {shortcutLabelForCommand(keybindings, "workspace.toggleMaximizeInApp") ??
                       "⇧Esc"}
@@ -1186,6 +1246,8 @@ function DockFrame({
               group.id !== zoomedId;
             const visibleIdx = visibleGroups.findIndex((item) => item.id === group.id);
             const weight = layout.groupWeights[group.id] ?? 1;
+            const raiseCard =
+              key === "main" || (key === "right" && !isInspectorWorkspaceWindowId(group.active));
             return (
               <Fragment key={group.id}>
                 {visibleIdx > 0 ? (
@@ -1206,7 +1268,7 @@ function DockFrame({
                   style={isHiddenByZoom ? undefined : { flex: `${weight} ${weight} 0%` }}
                   className={cn(
                     "relative flex min-h-0 min-w-0 flex-col overflow-hidden",
-                    key === "main" && "workspace-window-card workspace-window-surface-main",
+                    raiseCard && "workspace-window-card workspace-window-surface-main",
                   )}
                 >
                   {renderGroupWindows(group)}
@@ -1216,7 +1278,14 @@ function DockFrame({
           })}
         </div>
         {key === "left" || key === "right" || key === "bottom" ? (
-          <PanelResize store={store} panel={key} />
+          <PanelResize
+            store={store}
+            panel={key}
+            rightContentMode={key === "right" && rightContentMode}
+            availableMainAndRight={availableMainAndRight}
+            currentRightWidth={effectiveRightWidth}
+            onResizeStateChange={setResizingPanel}
+          />
         ) : null}
       </section>
     );
@@ -1303,42 +1372,100 @@ function DockFrame({
     </div>
   );
   const panels = full ? null : (["left", "main", "right", "bottom"] as const).map(panel);
-  const stageHeading = full ? (
-    <div className="workspace-stage-heading drag-region">
-      <button
-        type="button"
-        data-workspace-maximize-pill=""
-        onClick={() => store.toggleMaximizeInApp(full.windowId)}
-        className="inline-flex h-5 min-w-0 max-w-full cursor-pointer items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2 text-2xs font-medium text-primary transition-colors hover:bg-primary/15 [-webkit-app-region:no-drag]"
-      >
-        <span className="truncate">
-          {`${snapshot.windows[full.windowId]?.title ?? "Window"} · Maximized`}
-        </span>
-        <span className="shrink-0 font-mono text-3xs opacity-80">
-          {shortcutLabelForCommand(keybindings, "workspace.toggleMaximizeInApp") ?? "⇧Esc"}
-        </span>
-      </button>
-    </div>
-  ) : null;
+  const fullSourcePanel = full ? (layout.placements[full.windowId]?.panel ?? "main") : null;
+  const fullTabs =
+    full && fullSourcePanel && !isChatWorkspaceWindowId(full.windowId)
+      ? groups[fullSourcePanel].flatMap((group) =>
+          group.windows.map((id) => ({ id, group: group.id, key: fullSourcePanel })),
+        )
+      : [];
   const maximizedStageView = full ? (
     <section
       aria-label={snapshot.windows[full.windowId]?.title ?? "Maximized window"}
-      data-workspace-panel={layout.placements[full.windowId]?.panel ?? "main"}
+      data-workspace-panel={fullSourcePanel ?? "main"}
       data-workspace-maximized-stage="full"
-      className="workspace-window-card workspace-window-surface-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-      data-workspace-resize-window={full.windowId}
+      className={cn(
+        "relative flex min-h-0 min-w-0 flex-1 flex-col",
+        isChatWorkspaceWindowId(full.windowId)
+          ? "workspace-window-card workspace-window-surface-main overflow-hidden"
+          : "overflow-visible",
+      )}
+      data-workspace-resize-window={
+        isChatWorkspaceWindowId(full.windowId) ? full.windowId : undefined
+      }
       style={{ gridArea: "full" }}
     >
-      {stageHeading}
-      {(() => {
-        mounted.add(full.windowId);
-        return (
-          <PortalMount
-            node={snapshot.windows[full.windowId]!.container}
-            className="h-full min-h-0 min-w-0 flex-1"
-          />
-        );
-      })()}
+      {!isChatWorkspaceWindowId(full.windowId) ? (
+        <div
+          className="workspace-panel-heading drag-region"
+          data-workspace-panel-heading="right"
+          data-workspace-stage-heading=""
+          onDoubleClick={(event) => {
+            if (event.target instanceof Element && event.target.closest("button, [role='button']"))
+              return;
+            if (store.toggleMaximizeInApp(full.windowId)) event.stopPropagation();
+          }}
+        >
+          <div
+            role="tablist"
+            aria-label={panelLabels[fullSourcePanel ?? "right"]}
+            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none]"
+          >
+            {fullTabs.length > 0 ? (
+              renderTabs(fullTabs)
+            ) : (
+              <span className="workspace-window-label truncate px-2 font-medium text-foreground">
+                {snapshot.windows[full.windowId]?.title}
+              </span>
+            )}
+          </div>
+          {fullSourcePanel === "right" ? (
+            <div data-workspace-panel-actions="right" className="shrink-0">
+              <PortalMount node={store.getActionsContainer("panel:right")} />
+            </div>
+          ) : null}
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  size="icon-xs"
+                  variant="ghost-muted"
+                  aria-label="Restore from app maximize"
+                  onClick={() => store.toggleMaximizeInApp(full.windowId)}
+                />
+              }
+            >
+              <Minimize2Icon className="size-3.5" />
+            </TooltipTrigger>
+            <TooltipPopup>
+              <span>Restore from app maximize</span>{" "}
+              <kbd>
+                {shortcutLabelForCommand(keybindings, "workspace.toggleMaximizeInApp") ?? "⇧Esc"}
+              </kbd>
+            </TooltipPopup>
+          </Tooltip>
+        </div>
+      ) : null}
+      <div
+        data-workspace-resize-window={
+          !isChatWorkspaceWindowId(full.windowId) ? full.windowId : undefined
+        }
+        className={cn(
+          "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+          !isChatWorkspaceWindowId(full.windowId) &&
+            "workspace-window-card workspace-window-surface-main",
+        )}
+      >
+        {(() => {
+          mounted.add(full.windowId);
+          return (
+            <PortalMount
+              node={snapshot.windows[full.windowId]!.container}
+              className="h-full min-h-0 min-w-0 flex-1"
+            />
+          );
+        })()}
+      </div>
     </section>
   ) : null;
   const floatingTabs = groups.floating.flatMap((group) =>
@@ -1536,7 +1663,7 @@ function DockFrame({
               key={window.id}
               data-workspace-resize-window={window.id}
               data-workspace-parked-window=""
-              className="workspace-window-card hidden overflow-hidden bg-background"
+              className="workspace-window-card hidden overflow-hidden"
               inert
             >
               <PortalMount node={window.container} className="h-full min-h-0 min-w-0" />
@@ -1579,18 +1706,8 @@ function DockMenu({ store, id }: { store: DockStore; id: string }) {
       <MenuPopup>
         {canMaxInApp ? (
           <MenuItem onClick={() => store.toggleMaximizeInApp(id)}>
-            {isMaxInApp && snapshot.layout.maximized?.stage === "full" ? (
-              <Minimize2Icon />
-            ) : (
-              <Maximize2Icon />
-            )}
-            <span>
-              {isMaxInApp
-                ? snapshot.layout.maximized?.stage === "companion"
-                  ? "Maximize in app (Stage 2)"
-                  : "Restore from app maximize"
-                : "Maximize in app"}
-            </span>
+            {isMaxInApp ? <Minimize2Icon /> : <Maximize2Icon />}
+            <span>{isMaxInApp ? "Restore from app maximize" : "Maximize in app"}</span>
           </MenuItem>
         ) : null}
         {canMaxInPanel ? (
@@ -1712,7 +1829,21 @@ function GroupResize({
   );
 }
 
-function PanelResize({ store, panel }: { store: DockStore; panel: "left" | "right" | "bottom" }) {
+function PanelResize({
+  store,
+  panel,
+  rightContentMode = false,
+  availableMainAndRight = 900,
+  currentRightWidth = 280,
+  onResizeStateChange,
+}: {
+  store: DockStore;
+  panel: "left" | "right" | "bottom";
+  rightContentMode?: boolean;
+  availableMainAndRight?: number;
+  currentRightWidth?: number;
+  onResizeStateChange: (panel: "left" | "right" | "bottom" | null) => void;
+}) {
   const panelLabels = workspacePanelLabel();
   return (
     <div
@@ -1730,22 +1861,52 @@ function PanelResize({ store, panel }: { store: DockStore; panel: "left" | "righ
             ? "-left-(--workspace-seam)"
             : "",
       )}
+      onDoubleClick={(event) => {
+        if (panel !== "right") return;
+        event.preventDefault();
+        event.stopPropagation();
+        const current = store.getSnapshot().layout;
+        store.updateLayout({
+          ...current,
+          sizes: rightContentMode
+            ? { ...current.sizes, rightContentShare: 0.5 }
+            : { ...current.sizes, right: 280 },
+        });
+      }}
       onPointerDown={(event) => {
         event.preventDefault();
         const node = event.currentTarget;
         node.setPointerCapture(event.pointerId);
-        const initial = store.getSnapshot().layout.sizes[panel];
+        onResizeStateChange(panel);
+        const initial =
+          panel === "right" && rightContentMode
+            ? currentRightWidth
+            : store.getSnapshot().layout.sizes[panel];
         const start = panel === "bottom" ? event.clientY : event.clientX;
         const move = (next: PointerEvent) => {
           const delta = (panel === "bottom" ? next.clientY : next.clientX) - start;
+          const current = store.getSnapshot().layout;
+          if (panel === "right" && rightContentMode) {
+            const span = Math.max(1, availableMainAndRight - 6);
+            const nextPx = Math.max(
+              260,
+              Math.min(Math.max(260, availableMainAndRight - 280), initial - delta),
+            );
+            const share = Math.max(0.25, Math.min(0.75, nextPx / span));
+            store.updateLayout(
+              { ...current, sizes: { ...current.sizes, rightContentShare: share } },
+              false,
+            );
+            return;
+          }
           const value = Math.max(
             panel === "bottom" ? 120 : panel === "left" ? workspaceLeftMinWidth : 180,
             Math.min(600, initial + (panel === "left" ? delta : -delta)),
           );
-          const current = store.getSnapshot().layout;
           store.updateLayout({ ...current, sizes: { ...current.sizes, [panel]: value } }, false);
         };
         const stop = () => {
+          onResizeStateChange(null);
           store.updateLayout(store.getSnapshot().layout);
           node.removeEventListener("pointermove", move);
           node.removeEventListener("pointerup", stop);

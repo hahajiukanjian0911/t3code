@@ -3990,8 +3990,12 @@ msgstr "请在设置中启用服务提供方后再发送消息"
 
 #. 0: activeProjectName
 #. 0: activeProjectName
+#. 0: activeProjectName
+#. 0: activeProjectName
 #. 0: group.displayName
 #. 0: group.displayName
+#: src/components/chat/ChatHeader.tsx
+#: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ChatHeader.tsx
 #: src/components/sidebar/SidebarProjectFolderHeader.tsx
@@ -4000,6 +4004,8 @@ msgid "New thread in {0}"
 msgstr "在 {0} 中新建对话"
 
 #. 0: parentThreadLink.title
+#. 0: parentThreadLink.title
+#: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ChatHeader.tsx
 msgid "Open parent thread: {0}"
 msgstr "打开父对话：{0}"
@@ -4015,11 +4021,15 @@ msgid "Thread actions for {0}"
 msgstr "{0} 的对话操作"
 
 #. 0: activeThreadLinkOrigin
+#. 0: activeThreadLinkOrigin
+#: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ChatHeader.tsx
 msgid "From {0}"
 msgstr "来自 {0}"
 
 #. 0: activeThreadLinkOrigin
+#. 0: activeThreadLinkOrigin
+#: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ChatHeader.tsx
 msgid "Started by an agent on {0} through a linked environment."
 msgstr "由 {0} 上的 Agent 通过关联环境发起。"
@@ -5344,6 +5354,8 @@ msgstr "限额"
 msgid "Context window"
 msgstr "上下文窗口"
 
+#: src/components/chat/ChatHeader.tsx
+#: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ThreadFindBar.tsx
 #: src/components/chat/ThreadFindBar.tsx
 #: src/components/chat/ThreadFindBar.tsx
@@ -7407,6 +7419,7 @@ msgid "Search"
 msgstr "搜索"
 
 #: src/components/settings/ScheduledTasksSettings.tsx
+#: src/components/sidebar/SidebarThreadHeader.tsx
 #: src/components/sidebar/SidebarThreadHeader.tsx
 msgid "Search threads"
 msgstr "搜索任务"
@@ -14753,6 +14766,7 @@ msgid "Copied!"
 msgstr "已复制！"
 
 #: src/components/chat/ChatHeader.tsx
+#: src/components/chat/ChatHeader.tsx
 msgid "Thread breadcrumb"
 msgstr "对话导航"
 
@@ -21813,15 +21827,6 @@ msgid "Maximized window"
 msgstr "已最大化的窗口"
 
 #: src/components/workspace/WorkspaceDock.tsx
-msgid "Window"
-msgstr "窗口"
-
-#. 0: snapshot.windows[full.windowId]?.title ?? "Window"
-#: src/components/workspace/WorkspaceDock.tsx
-msgid "{0} · Maximized"
-msgstr "{0} · 已最大化"
-
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Peek left workspace column"
 msgstr "查看左侧面板"
 
@@ -21832,13 +21837,11 @@ msgstr "查看右侧面板"
 #: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
-msgid "Maximize in app (Stage 2)"
-msgstr "铺满应用窗口"
-
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Restore from app maximize"
 msgstr "恢复原布局"
 
+#: src/components/workspace/WorkspaceDock.tsx
+#: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Maximize in app"
 msgstr "在应用内最大化"
@@ -22015,3 +22018,18 @@ msgstr "格式化 JSON"
 #: src/components/settings/VimKeybindingsEditor.tsx
 msgid "{0} active Vim mappings (<0/>,{1} <1/>, <2/>,{2} <3/>)"
 msgstr "已启用 {0} 条 Vim 映射（<0/>、{1}<1/>、<2/>、{2}<3/>）"
+
+#. 0: telemetry.recordingRegister
+#: src/components/chat/ComposerVimStatusCluster.tsx
+msgid "REC @{0}"
+msgstr "REC @{0}"
+
+#. 0: telemetry.recordingRegister
+#: src/components/chat/ComposerVimStatusCluster.tsx
+msgid "Stop recording macro @{0}"
+msgstr "停止录制宏 @{0}"
+
+#. 0: telemetry.recordingRegister
+#: src/components/chat/ComposerVimStatusCluster.tsx
+msgid "Recording macro @{0}. Click or press q to stop."
+msgstr "正在录制宏 @{0}。点击或按 q 停止。"

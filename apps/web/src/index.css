@@ -557,7 +557,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 
 [data-workspace-dock] {
   --workspace-seam: 6px;
-  --workspace-topbar-height: 32px;
+  --workspace-topbar-height: 36px;
   --workspace-board: color-mix(in oklab, var(--app-chrome-background), var(--foreground) 8%);
   --leading-controls: calc(var(--workspace-controls-left) + 28px);
   --trailing-controls: calc(var(--workspace-controls-right) + 56px);
@@ -565,10 +565,12 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   &[data-has-floating] {
     --trailing-controls: calc(var(--workspace-controls-right) + 84px);
   }
-  &[data-left-open="false"] [data-workspace-panel="main"] {
+  &[data-left-open="false"] [data-workspace-panel="main"],
+  & [data-workspace-maximized-stage="full"] {
     --heading-start: var(--leading-controls);
   }
-  &[data-right-open="false"] [data-workspace-panel="main"] {
+  &[data-right-open="false"] [data-workspace-panel="main"],
+  & [data-workspace-maximized-stage="full"] {
     --heading-end: var(--trailing-controls);
   }
 }
@@ -586,8 +588,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   }
 }
 
-.workspace-panel-heading,
-.workspace-stage-heading {
+.workspace-panel-heading {
   display: flex;
   flex: 0 0 var(--workspace-topbar-height);
   min-width: 0;
@@ -598,23 +599,25 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 
 [data-workspace-panel-heading="right"] {
   --heading-end: var(--trailing-controls);
+}
 
-  & [role="tab"] {
-    border-radius: 0;
-    border-bottom: 2px solid transparent;
-  }
-  & [role="tab"][aria-selected="true"] {
-    border-bottom-color: var(--muted-foreground);
+.workspace-panel-tab-selected {
+  background-color: var(--background);
+  color: var(--foreground);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 8%),
+    0 0 0 0.5px color-mix(in oklab, var(--border) 72%, transparent);
+
+  @variant dark {
+    background-color: color-mix(in oklab, var(--foreground) 12%, transparent);
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 32%),
+      inset 0 0.5px 0 rgb(255 255 255 / 10%);
   }
 }
 
 [data-workspace-panel-heading="left"] {
   --heading-start: var(--leading-controls);
-}
-
-.workspace-stage-heading {
-  justify-content: center;
-  padding-inline: max(var(--leading-controls), var(--trailing-controls));
 }
 
 [data-workspace-chat-heading] {
@@ -624,18 +627,54 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     justify-content: center;
   }
   & [aria-current="page"] [data-slot="workspace-breadcrumb-text"] {
+    font-size: 13px;
     font-weight: 600;
+    letter-spacing: -0.01em;
   }
-  & [data-thread-title-chevron] {
-    margin-inline-end: -1.125rem;
+}
+
+[data-chat-window-surface][data-timeline-scrolled="true"] > [data-workspace-chat-heading] {
+  border-bottom-color: color-mix(in oklab, var(--border) 72%, transparent);
+}
+
+.messages-timeline-scroll {
+  transition:
+    opacity 165ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 165ms cubic-bezier(0.23, 1, 0.32, 1);
+
+  &[data-thread-restoring="true"] {
+    opacity: 0;
+    transform: translate3d(0, 5px, 0);
+    transition: none;
   }
-  & nav:has([data-workspace-parent-link]) {
-    position: relative;
-    padding-inline: 24px;
+}
+
+.chat-scroll-to-bottom {
+  transition:
+    opacity 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+
+  @starting-style {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0) scale(0.95);
   }
-  & li:has([data-workspace-parent-link]) {
-    position: absolute;
-    inset-inline-start: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .messages-timeline-scroll {
+    transition: opacity 120ms ease;
+
+    &[data-thread-restoring="true"] {
+      transform: none;
+    }
+  }
+
+  .chat-scroll-to-bottom {
+    transition: opacity 120ms ease;
+
+    @starting-style {
+      transform: none;
+    }
   }
 }
 
@@ -645,7 +684,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   }
   & > [data-workspace-grab] {
     left: max(4px, var(--heading-start, 0px));
-    top: 3px;
+    top: 5px;
     width: 24px;
     height: 24px;
     translate: none;
@@ -2150,30 +2189,36 @@ code {
   background: revert;
 }
 
-.chat-markdown > [data-chat-markdown-selection-overlay] {
+/* Paint the continuous full-line selection overlay on ::after so markdown DOM children
+   never mutate (preserving :last-child rules such as interface.css's p:last-child).
+   Use the OS Highlight system color so selection matches native system selection even
+   under custom accent themes; multiply keeps dark text razor-sharp in light mode. */
+.chat-markdown[data-chat-markdown-selection-active]::after {
+  content: "";
   pointer-events: none;
   position: absolute;
-  inset: 0;
+  inset: -4px 0;
   z-index: 1;
+  background: Highlight;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: var(--chat-markdown-selection-mask);
+  mask-image: var(--chat-markdown-selection-mask);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
 }
 
-.chat-markdown > [data-chat-markdown-selection-overlay] > [data-chat-markdown-selection-band] {
-  position: absolute;
-  background: color-mix(in srgb, var(--primary) 20%, transparent);
-}
-
-.dark
-  .chat-markdown
-  > [data-chat-markdown-selection-overlay]
-  > [data-chat-markdown-selection-band] {
-  background: color-mix(in srgb, var(--primary) 28%, transparent);
+.dark .chat-markdown[data-chat-markdown-selection-active]::after {
+  background: color-mix(in srgb, Highlight 36%, transparent);
+  mix-blend-mode: normal;
 }
 
 .chat-markdown > :first-child {
   margin-top: 0;
 }
 
-.chat-markdown > :nth-last-child(1 of :not([data-chat-markdown-selection-overlay])) {
+.chat-markdown > :last-child {
   margin-bottom: 0;
 }
 
@@ -2936,8 +2981,9 @@ code {
   }
 }
 
-/* Workspace areas and the conversation scroller never show a pane-level focus ring. */
+/* Workspace areas, window wrappers, and the conversation scroller never show a pane-level focus ring. */
 [data-workspace-area]:focus-visible,
+[data-workspace-window]:focus-visible,
 [data-workspace-keyboard-focus]:focus {
   outline: none;
 }

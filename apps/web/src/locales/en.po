@@ -3990,8 +3990,12 @@ msgstr "Enable a provider in Settings to send a message"
 
 #. 0: activeProjectName
 #. 0: activeProjectName
+#. 0: activeProjectName
+#. 0: activeProjectName
 #. 0: group.displayName
 #. 0: group.displayName
+#: src/components/chat/ChatHeader.tsx
+#: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ChatHeader.tsx
 #: src/components/sidebar/SidebarProjectFolderHeader.tsx
@@ -4000,6 +4004,8 @@ msgid "New thread in {0}"
 msgstr "New thread in {0}"
 
 #. 0: parentThreadLink.title
+#. 0: parentThreadLink.title
+#: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ChatHeader.tsx
 msgid "Open parent thread: {0}"
 msgstr "Open parent thread: {0}"
@@ -4015,11 +4021,15 @@ msgid "Thread actions for {0}"
 msgstr "Thread actions for {0}"
 
 #. 0: activeThreadLinkOrigin
+#. 0: activeThreadLinkOrigin
+#: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ChatHeader.tsx
 msgid "From {0}"
 msgstr "From {0}"
 
 #. 0: activeThreadLinkOrigin
+#. 0: activeThreadLinkOrigin
+#: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ChatHeader.tsx
 msgid "Started by an agent on {0} through a linked environment."
 msgstr "Started by an agent on {0} through a linked environment."
@@ -5344,6 +5354,8 @@ msgstr "Limits"
 msgid "Context window"
 msgstr "Context window"
 
+#: src/components/chat/ChatHeader.tsx
+#: src/components/chat/ChatHeader.tsx
 #: src/components/chat/ThreadFindBar.tsx
 #: src/components/chat/ThreadFindBar.tsx
 #: src/components/chat/ThreadFindBar.tsx
@@ -7407,6 +7419,7 @@ msgid "Search"
 msgstr "Search"
 
 #: src/components/settings/ScheduledTasksSettings.tsx
+#: src/components/sidebar/SidebarThreadHeader.tsx
 #: src/components/sidebar/SidebarThreadHeader.tsx
 msgid "Search threads"
 msgstr "Search threads"
@@ -14753,6 +14766,7 @@ msgid "Copied!"
 msgstr "Copied!"
 
 #: src/components/chat/ChatHeader.tsx
+#: src/components/chat/ChatHeader.tsx
 msgid "Thread breadcrumb"
 msgstr "Thread breadcrumb"
 
@@ -21813,15 +21827,6 @@ msgid "Maximized window"
 msgstr "Maximized window"
 
 #: src/components/workspace/WorkspaceDock.tsx
-msgid "Window"
-msgstr "Window"
-
-#. 0: snapshot.windows[full.windowId]?.title ?? "Window"
-#: src/components/workspace/WorkspaceDock.tsx
-msgid "{0} · Maximized"
-msgstr "{0} · Maximized"
-
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Peek left workspace column"
 msgstr "Peek left workspace column"
 
@@ -21832,13 +21837,11 @@ msgstr "Peek right workspace column"
 #: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
-msgid "Maximize in app (Stage 2)"
-msgstr "Maximize in app (Stage 2)"
-
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Restore from app maximize"
 msgstr "Restore from app maximize"
 
+#: src/components/workspace/WorkspaceDock.tsx
+#: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Maximize in app"
 msgstr "Maximize in app"
@@ -22015,3 +22018,18 @@ msgstr "Format JSON"
 #: src/components/settings/VimKeybindingsEditor.tsx
 msgid "{0} active Vim mappings (<0/>,{1} <1/>, <2/>,{2} <3/>)"
 msgstr "{0} active Vim mappings (<0/>,{1} <1/>, <2/>,{2} <3/>)"
+
+#. 0: telemetry.recordingRegister
+#: src/components/chat/ComposerVimStatusCluster.tsx
+msgid "REC @{0}"
+msgstr "REC @{0}"
+
+#. 0: telemetry.recordingRegister
+#: src/components/chat/ComposerVimStatusCluster.tsx
+msgid "Stop recording macro @{0}"
+msgstr "Stop recording macro @{0}"
+
+#. 0: telemetry.recordingRegister
+#: src/components/chat/ComposerVimStatusCluster.tsx
+msgid "Recording macro @{0}. Click or press q to stop."
+msgstr "Recording macro @{0}. Click or press q to stop."

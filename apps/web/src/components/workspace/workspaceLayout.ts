@@ -1,7 +1,7 @@
 export const workspacePanels = ["left", "main", "right", "bottom", "floating"] as const;
 export type WorkspacePanel = (typeof workspacePanels)[number];
 export type WorkspaceEdge = "left" | "right" | "top" | "bottom";
-export type WorkspaceMaximizeStage = "companion" | "full";
+export type WorkspaceMaximizeStage = "full";
 export interface WorkspaceMaximizeState {
   windowId: string;
   stage: WorkspaceMaximizeStage;
@@ -17,13 +17,14 @@ export interface WorkspaceLayout {
   vertical: Partial<Record<WorkspacePanel, boolean>>;
   hidden: Partial<Record<WorkspacePanel, boolean>>;
   dismissed: string[];
-  sizes: { left: number; right: number; bottom: number };
+  sizes: { left: number; right: number; rightContentShare: number; bottom: number };
   groupWeights: Record<string, number>;
   panelZoomedGroup: Partial<Record<WorkspacePanel, string>>;
   maximized: WorkspaceMaximizeState | null;
   floating: { x: number; y: number; width: number; height: number };
 }
 export const workspaceLeftMinWidth = 246;
+const workspaceRightContentDefaultShare = 0.5;
 
 export function createWorkspaceLayout(): WorkspaceLayout {
   return {
@@ -33,7 +34,12 @@ export function createWorkspaceLayout(): WorkspaceLayout {
     vertical: {},
     hidden: {},
     dismissed: [],
-    sizes: { left: 256, right: 280, bottom: 152 },
+    sizes: {
+      left: 256,
+      right: 280,
+      rightContentShare: workspaceRightContentDefaultShare,
+      bottom: 152,
+    },
     groupWeights: {},
     panelZoomedGroup: {},
     maximized: null,
@@ -43,23 +49,18 @@ export function createWorkspaceLayout(): WorkspaceLayout {
 export function isChatWorkspaceWindowId(id: string): boolean {
   return id === "route" || id.startsWith("chat:");
 }
+export function isInspectorWorkspaceWindowId(id: string): boolean {
+  return id.startsWith("details:");
+}
 export function canMaximizeWorkspaceWindowInApp(id: string): boolean {
-  return id !== "threads";
+  return id !== "threads" && !isInspectorWorkspaceWindowId(id);
 }
 export function advanceWorkspaceMaximizeInApp(
   current: WorkspaceMaximizeState | null,
   windowId: string,
 ): WorkspaceMaximizeState | null {
   if (!canMaximizeWorkspaceWindowInApp(windowId)) return current;
-  if (isChatWorkspaceWindowId(windowId)) {
-    return current?.windowId === windowId && current.stage === "full"
-      ? null
-      : { windowId, stage: "full" };
-  }
-  if (current?.windowId === windowId) {
-    return current.stage === "companion" ? { windowId, stage: "full" } : null;
-  }
-  return { windowId, stage: "companion" };
+  return current?.windowId === windowId ? null : { windowId, stage: "full" };
 }
 export function toggleWorkspaceMaximizeInPanel(
   layout: WorkspaceLayout,
@@ -188,10 +189,10 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
   const maximized: WorkspaceMaximizeState | null =
     typeof rawMax.windowId === "string" &&
     canMaximizeWorkspaceWindowInApp(rawMax.windowId) &&
-    (rawMax.stage === "companion" || rawMax.stage === "full")
+    rawMax.stage === "full"
       ? {
           windowId: rawMax.windowId,
-          stage: isChatWorkspaceWindowId(rawMax.windowId) ? "full" : rawMax.stage,
+          stage: "full",
         }
       : null;
   const finite = (raw: unknown, initial: number, min: number, max: number) =>
@@ -212,6 +213,12 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
     sizes: {
       left: finite(sizes.left, fallback.sizes.left, workspaceLeftMinWidth, 600),
       right: finite(sizes.right, fallback.sizes.right, 180, 600),
+      rightContentShare: finite(
+        sizes.rightContentShare,
+        fallback.sizes.rightContentShare,
+        0.25,
+        0.75,
+      ),
       bottom: finite(sizes.bottom, fallback.sizes.bottom, 120, 600),
     },
     floating: {

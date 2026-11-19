@@ -508,7 +508,7 @@ it("keeps side panels on the shared background and docks Details beside the rais
   await expect.element(screen.getByText("Solid conversation", { exact: true })).toBeVisible();
   await expect.element(screen.getByText("Workspace files", { exact: true })).toBeVisible();
   await expect.element(screen.getByRole("tab", { name: "Details", exact: true })).toBeVisible();
-  expect(screen.container.querySelector('[aria-label="Close Details"]')).not.toBeNull();
+  expect(screen.container.querySelector('[aria-label="Close Details"]')).toBeNull();
   expect(screen.container.querySelector('[aria-label="Close Files"]')).not.toBeNull();
   const dock = screen.container.querySelector<HTMLElement>("[data-workspace-dock]")!;
   const controls = screen.container.querySelector<HTMLElement>("[data-workspace-controls]")!;
@@ -568,16 +568,21 @@ it("keeps side panels on the shared background and docks Details beside the rais
   expect(alphaOf(mainGroup)).toBe(255);
   expect(alphaOf(mainWindowContainer)).toBe(0);
   expect(getComputedStyle(mainGroup).borderRadius).toBe("10px");
-  for (const panel of [leftGroup, rightGroup]) {
-    expect(getComputedStyle(panel).boxShadow).toBe("none");
-    expect(getComputedStyle(panel).borderTopWidth).toBe("0px");
-  }
+  expect(getComputedStyle(leftGroup).boxShadow).toBe("none");
+  expect(getComputedStyle(leftGroup).borderTopWidth).toBe("0px");
+  // Content tabs raise onto a card surface; switching to Details keeps the inspector on the shared frosted board.
+  expect(alphaOf(rightGroup)).toBe(255);
+  expect(getComputedStyle(rightGroup).borderRadius).toBe("10px");
   await userEvent.click(screen.getByRole("tab", { name: "Details", exact: true }));
   await expect.element(inspector).toBeVisible();
+  expect(alphaOf(rightGroup)).toBe(0);
+  expect(getComputedStyle(rightGroup).boxShadow).toBe("none");
   await userEvent.click(screen.getByRole("tab", { name: "Files", exact: true }));
   await userEvent.click(screen.getByText("Workspace files", { exact: true }));
-  expect(getComputedStyle(rightGroup).borderTopColor).toBe(
-    getComputedStyle(leftGroup).borderTopColor,
+  await vi.waitFor(() =>
+    expect(
+      Math.abs(rightGroup.getBoundingClientRect().width - mainGroup.getBoundingClientRect().width),
+    ).toBeLessThan(8),
   );
   const leftResizeBar = screen
     .getByRole("separator", { name: "Resize Left panel" })
@@ -605,6 +610,8 @@ it("keeps side panels on the shared background and docks Details beside the rais
     5,
   );
 
+  await userEvent.click(screen.getByRole("tab", { name: "Details", exact: true }));
+  await vi.waitFor(() => expect(Math.round(rightGroup.getBoundingClientRect().width)).toBe(280));
   expect(alphaOf(dock)).toBeGreaterThan(100);
   expect(alphaOf(dock)).toBeLessThan(160);
   expect(alphaOf(leftGroup)).toBe(0);
@@ -679,18 +686,16 @@ it("dismisses the floating modal overlay on backdrop click or Escape, restores f
 
   const floatingFile = screen.getByText("Floating file content");
   await floatingFile.click();
-  for (const stage of ["companion", "full"] as const) {
-    await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
-    await vi.waitFor(() =>
-      expect(
-        floatingFile
-          .element()
-          .closest("[data-workspace-maximized-stage]")
-          ?.getAttribute("data-workspace-maximized-stage"),
-      ).toBe(stage),
-    );
-    expect(overlay.hasAttribute("hidden")).toBe(true);
-  }
+  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+  await vi.waitFor(() =>
+    expect(
+      floatingFile
+        .element()
+        .closest("[data-workspace-maximized-stage]")
+        ?.getAttribute("data-workspace-maximized-stage"),
+    ).toBe("full"),
+  );
+  expect(overlay.hasAttribute("hidden")).toBe(true);
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
   await vi.waitFor(() => expect(overlay.contains(floatingFile.element())).toBe(true));
   expect(overlay.hasAttribute("hidden")).toBe(false);
@@ -714,7 +719,7 @@ it("dismisses the floating modal overlay on backdrop click or Escape, restores f
   );
 });
 
-it("keeps the conversation in its main panel when a tool is shown alongside it, then restores the layout after full view", async () => {
+it("automatically half-splits right content tabs while keeping the left sidebar open, forbids Details maximize, and toggles single-stage full view cleanly", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   await using screen = await render(
@@ -733,7 +738,10 @@ it("keeps the conversation in its main panel when a tool is shown alongside it, 
           </div>
           <input aria-label="chat draft" defaultValue="keep chat alive" />
         </WorkspaceWindow>
-        <WorkspaceWindow id="surface:file" title="README.md" panel="right">
+        <WorkspaceWindow id="details:env:main" title="Details" panel="right">
+          <button>Inspector item</button>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="surface:file" title="README.md" panel="right" selected>
           <input aria-label="file editor" defaultValue="keep editor alive" />
         </WorkspaceWindow>
         <WorkspaceWindow id="surface:notes" title="Notes.md" panel="right">
@@ -750,54 +758,47 @@ it("keeps the conversation in its main panel when a tool is shown alongside it, 
   const fileInput = screen.getByRole("textbox", { name: "file editor" }).element();
   const mainPanel = chatInput.closest<HTMLElement>('[data-workspace-panel="main"]')!;
   const rightPanel = fileInput.closest<HTMLElement>('[data-workspace-panel="right"]')!;
-  const mainWidth = mainPanel.getBoundingClientRect().width;
-  const fileWidth = rightPanel.getBoundingClientRect().width;
-  const chatHost = chatInput.closest("[data-workspace-window-container]")!.parentElement;
-  const terminal = screen.getByRole("textbox", { name: "terminal input" }).element();
   const leftToggle = screen.getByRole("button", { name: "Toggle Left panel" });
-  const rightToggle = screen.getByRole("button", { name: "Toggle Right panel" });
   const threadBtn = screen.getByRole("button", { name: "Thread item" }).element();
 
-  // 1. Left session sidebar (`threads`) cannot maximize in app.
+  // Left sidebar stays open while README.md automatically takes half of the remaining workspace.
+  expect(threadBtn.checkVisibility()).toBe(true);
+  await vi.waitFor(() =>
+    expect(
+      Math.abs(rightPanel.getBoundingClientRect().width - mainPanel.getBoundingClientRect().width),
+    ).toBeLessThan(8),
+  );
+  expect(
+    Math.round(rightPanel.getBoundingClientRect().left - mainPanel.getBoundingClientRect().right),
+  ).toBe(6);
+
+  // Left session sidebar (`threads`) and `details:*` inspector cannot maximize in app, and never show a pane outline.
   threadBtn.focus();
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
   expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull();
 
+  await userEvent.click(screen.getByRole("tab", { name: "Details", exact: true }));
+  await vi.waitFor(() => expect(Math.round(rightPanel.getBoundingClientRect().width)).toBe(280));
+  const inspectorWin = screen
+    .getByRole("button", { name: "Inspector item" })
+    .element()
+    .closest<HTMLElement>("[data-workspace-window]")!;
+  inspectorWin.focus();
+  expect(getComputedStyle(inspectorWin).outlineStyle).toBe("none");
+  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+  expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull();
+
+  await userEvent.click(screen.getByRole("tab", { name: "README.md", exact: true }));
+  await vi.waitFor(() =>
+    expect(
+      Math.abs(rightPanel.getBoundingClientRect().width - mainPanel.getBoundingClientRect().width),
+    ).toBeLessThan(8),
+  );
+
   const history = screen.getByRole("region", { name: "Conversation history" }).element();
   history.scrollTop = 420;
 
-  fileInput.focus();
-  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
-  await vi.waitFor(() =>
-    expect(
-      screen.container
-        .querySelector("[data-workspace-dock]")
-        ?.getAttribute("data-workspace-maximized"),
-    ).toBe("companion"),
-  );
-  expect(threadBtn.checkVisibility()).toBe(false);
-  const stageSection = screen.container.querySelector(
-    '[data-workspace-maximized-stage="companion"]',
-  )!;
-  expect(mainPanel.contains(chatInput)).toBe(true);
-  expect(chatInput.closest("[data-workspace-window-container]")!.parentElement).toBe(chatHost);
-  expect(terminal.checkVisibility()).toBe(true);
-  expect(stageSection).toBe(rightPanel);
-  expect(rightPanel.getBoundingClientRect().width).toBe(fileWidth);
-  expect(mainPanel.getBoundingClientRect().width).toBeGreaterThan(mainWidth);
-  await expect.element(rightToggle).toHaveAttribute("aria-pressed", "true");
-  expect(history.scrollTop).toBe(420);
-  expect(stageSection.contains(fileInput)).toBe(true);
-  expect(
-    Math.round(stageSection.getBoundingClientRect().left - mainPanel.getBoundingClientRect().right),
-  ).toBe(6);
-
-  await userEvent.click(screen.getByRole("tab", { name: "Notes.md", exact: true }));
-  await expect.element(screen.getByText("Project notes")).toBeVisible();
-  expect(stageSection.contains(screen.getByText("Project notes").element())).toBe(true);
-  expect(mainPanel.contains(chatInput)).toBe(true);
-  await userEvent.click(screen.getByRole("tab", { name: "README.md", exact: true }));
-
+  // 1st Shift+Esc on content tab jumps straight to full stage (no Stage 1, no redundant maximize pill).
   fileInput.focus();
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
   await vi.waitFor(() =>
@@ -807,11 +808,35 @@ it("keeps the conversation in its main panel when a tool is shown alongside it, 
         ?.getAttribute("data-workspace-maximized"),
     ).toBe("full"),
   );
+  expect(screen.container.querySelector("[data-workspace-maximize-pill]")).toBeNull();
   expect(chatInput.checkVisibility()).toBe(false);
   expect(fileInput.checkVisibility()).toBe(true);
   expect(screen.container.querySelector('[data-workspace-edge-peek="left"]')).not.toBeNull();
+  const fullStage = screen.container.querySelector<HTMLElement>(
+    '[data-workspace-maximized-stage="full"]',
+  )!;
+  const dockBounds = screen.container
+    .querySelector<HTMLElement>("[data-workspace-dock]")!
+    .getBoundingClientRect();
+  // Keeps 6px continuous frosted board seam around full stage!
+  expect(Math.round(fullStage.getBoundingClientRect().left - dockBounds.left)).toBe(6);
+  expect(Math.round(dockBounds.right - fullStage.getBoundingClientRect().right)).toBe(6);
+  expect(Math.round(dockBounds.bottom - fullStage.getBoundingClientRect().bottom)).toBe(6);
 
-  // 4. 3rd Shift+Esc -> Restores original 3-panel tile without remounting inputs.
+  // Clicking Details tab while maximized exits full stage back to narrow inspector.
+  await userEvent.click(screen.getByRole("tab", { name: "Details", exact: true }));
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull(),
+  );
+  expect(threadBtn.checkVisibility()).toBe(true);
+
+  // Switch back to README.md, maximize, then press 2nd Shift+Esc to restore 3-panel half-split without remounting inputs.
+  await userEvent.click(screen.getByRole("tab", { name: "README.md", exact: true }));
+  await userEvent.dblClick(screen.getByRole("tab", { name: "README.md", exact: true }));
+  await vi.waitFor(() =>
+    expect(fileInput.closest('[data-workspace-maximized-stage="full"]')).not.toBeNull(),
+  );
+  fileInput.focus();
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
   await vi.waitFor(() =>
     expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull(),
@@ -822,23 +847,16 @@ it("keeps the conversation in its main panel when a tool is shown alongside it, 
   expect(fileInput).toBe(screen.getByRole("textbox", { name: "file editor" }).element());
 
   await userEvent.click(leftToggle);
-  await userEvent.dblClick(screen.getByRole("tab", { name: "README.md", exact: true }));
   await expect.element(leftToggle).toHaveAttribute("aria-pressed", "false");
-  await userEvent.click(screen.getByRole("button", { name: "Maximize in app (Stage 2)" }));
+  await userEvent.click(screen.getByRole("button", { name: "Maximize in app" }));
   await vi.waitFor(() =>
     expect(fileInput.closest('[data-workspace-maximized-stage="full"]')).not.toBeNull(),
   );
-  fileInput.focus();
-  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+  await userEvent.click(screen.getByRole("button", { name: "Restore from app maximize" }));
   await vi.waitFor(() =>
     expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull(),
   );
   await expect.element(leftToggle).toHaveAttribute("aria-pressed", "false");
-
-  await userEvent.dblClick(screen.getByRole("tab", { name: "README.md", exact: true }));
-  await userEvent.click(leftToggle);
-  await expect.element(leftToggle).toHaveAttribute("aria-pressed", "true");
-  expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull();
 
   fileInput.focus();
   const mac = /mac/i.test(navigator.platform);
@@ -855,7 +873,7 @@ it("keeps the conversation in its main panel when a tool is shown alongside it, 
   await userEvent.keyboard(mac ? "{Control>}2{/Control}" : "{Alt>}2{/Alt}");
   await vi.waitFor(() => expect(document.activeElement).toBe(chatInput));
 
-  // 5. Main chat (`chat:main`): 1st Shift+Esc jumps straight to full app maximize.
+  // Main chat (`chat:main`): 1st Shift+Esc jumps straight to full app maximize without redundant header pill.
   chatInput.focus();
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
   await vi.waitFor(() =>
@@ -865,6 +883,7 @@ it("keeps the conversation in its main panel when a tool is shown alongside it, 
         ?.getAttribute("data-workspace-maximized"),
     ).toBe("full"),
   );
+  expect(screen.container.querySelector("[data-workspace-maximize-pill]")).toBeNull();
   expect(chatInput.checkVisibility()).toBe(true);
   expect(fileInput.checkVisibility()).toBe(false);
 });

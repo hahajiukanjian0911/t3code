@@ -7,6 +7,30 @@ interface Spring {
   velocity: number;
 }
 
+// Critically damped frequency tuned against the 0.375s reference scale so the panel
+// launches briskly, never overshoots, and converges smoothly before durationMs elapses.
+const POSITION_FREQUENCY = (2 * Math.PI) / 0.23;
+const OPACITY_FREQUENCY = (2 * Math.PI) / 0.18;
+const activeDockAnimations = new WeakMap<HTMLElement, number>();
+
+function beginDockAnimation(body: HTMLElement) {
+  const next = (activeDockAnimations.get(body) ?? 0) + 1;
+  activeDockAnimations.set(body, next);
+  if (next === 1) {
+    body.setAttribute("data-dock-animating", "true");
+  }
+}
+
+function endDockAnimation(body: HTMLElement) {
+  const current = activeDockAnimations.get(body) ?? 0;
+  if (current <= 1) {
+    activeDockAnimations.delete(body);
+    body.removeAttribute("data-dock-animating");
+  } else {
+    activeDockAnimations.set(body, current - 1);
+  }
+}
+
 function step(spring: Spring, target: number, dt: number, frequency: number, damping: number) {
   const acceleration =
     frequency * frequency * (target - spring.value) - 2 * damping * frequency * spring.velocity;
@@ -19,9 +43,10 @@ export function useDockedPanelMotion(
   edge: "left" | "right" | "bottom",
   open: boolean | null,
   size: number,
+  instantSizeChange = false,
 ) {
   const { active, durationMs } = usePanelAnimationSettings();
-  const motion = useRef<{ position: Spring; opacity: Spring } | null>(null);
+  const motion = useRef<{ position: Spring; opacity: Spring; span: Spring } | null>(null);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Synchronize the panel and its live layout before paint, retaining both spring velocities on reversal.
   useLayoutEffect(() => {
@@ -37,43 +62,81 @@ export function useDockedPanelMotion(
       motion.current = {
         position: { value: target, velocity: 0 },
         opacity: { value: target, velocity: 0 },
+        span: { value: size, velocity: 0 },
       };
     }
-    const { position, opacity } = motion.current;
+    const { position, opacity, span } = motion.current;
+    if (instantSizeChange || (!open && position.value === 0)) {
+      span.value = size;
+      span.velocity = 0;
+    }
     let frame = 0;
+    let markedAnimating = false;
+    const releaseAnimating = () => {
+      if (!markedAnimating) return;
+      markedAnimating = false;
+      endDockAnimation(body);
+    };
     const track = `--workspace-${edge}-track`;
-    const reserve = (p: number) => {
+    const reserve = (p: number, currentSpan: number) => {
       if (edge === "left") {
-        body.style.paddingLeft = p ? `calc(${size * p}px + ${1 + p} * var(--workspace-seam))` : "";
+        body.style.paddingLeft = p
+          ? `calc(${currentSpan * p}px + ${1 + p} * var(--workspace-seam))`
+          : "";
       } else {
-        const space = p ? `calc(${size * p}px + ${p} * var(--workspace-seam))` : "";
+        const space = p ? `calc(${currentSpan * p}px + ${p} * var(--workspace-seam))` : "";
         body.style.setProperty(track, space);
+        if (edge === "right") panel.style.width = `${currentSpan}px`;
+        else panel.style.height = `${currentSpan}px`;
       }
     };
     const paint = () => {
-      reserve(Math.max(0, Math.min(1, position.value)));
+      const clamped = Math.max(0, Math.min(1, position.value));
+      reserve(clamped, Math.max(0, span.value));
       if (edge === "left") {
-        panel.style.transform = `translate3d(calc(${position.value - 1} * (100% + 2 * var(--workspace-seam))), 0, 0)`;
+        panel.style.transform = `translate3d(calc(${clamped - 1} * (100% + 2 * var(--workspace-seam))), 0, 0)`;
+      } else if (edge === "right") {
+        panel.style.transform = `translate3d(${((1 - clamped) * 18).toFixed(2)}px, 0, 0)`;
+      } else {
+        panel.style.transform = `translate3d(0, ${((1 - clamped) * 14).toFixed(2)}px, 0)`;
       }
-      panel.style.opacity = String(opacity.value);
+      panel.style.opacity = String(Math.max(0, Math.min(1, opacity.value)));
       notifyWorkspaceLayout();
     };
     const settle = () => {
       position.value = opacity.value = target;
       position.velocity = opacity.velocity = 0;
-      reserve(target);
+      span.value = size;
+      span.velocity = 0;
+      reserve(target, size);
       panel.removeAttribute("data-dock-moving");
       panel.style.transform = "";
       panel.style.opacity = "";
+      releaseAnimating();
       notifyWorkspaceLayout();
     };
 
-    if (active && (position.value !== target || position.velocity !== 0)) {
+    const needsMotion =
+      position.value !== target ||
+      position.velocity !== 0 ||
+      Math.abs(span.value - size) > 0.5 ||
+      Math.abs(span.velocity) > 0.5;
+
+    if (active && needsMotion) {
       panel.setAttribute("data-dock-moving", "");
+      markedAnimating = true;
+      beginDockAnimation(body);
       const start = performance.now();
       let previous = start;
       const tick = (now: number) => {
-        if (now - start >= durationMs) {
+        if (
+          now - start >= durationMs ||
+          (Math.abs(target - position.value) < 0.001 &&
+            Math.abs(position.velocity) < 0.01 &&
+            Math.abs(target - opacity.value) < 0.005 &&
+            Math.abs(size - span.value) < 0.5 &&
+            Math.abs(span.velocity) < 1)
+        ) {
           settle();
           return;
         }
@@ -82,8 +145,9 @@ export function useDockedPanelMotion(
         previous = now;
         const steps = Math.max(1, Math.ceil(dt * 240));
         for (let i = 0; i < steps; i++) {
-          step(position, target, dt / steps, (2 * Math.PI) / 0.36, 0.9);
-          step(opacity, target, dt / steps, (2 * Math.PI) / 0.2, 1);
+          step(position, target, dt / steps, POSITION_FREQUENCY, 1);
+          step(opacity, target, dt / steps, OPACITY_FREQUENCY, 1);
+          step(span, size, dt / steps, POSITION_FREQUENCY, 1);
         }
         paint();
         frame = requestAnimationFrame(tick);
@@ -95,10 +159,11 @@ export function useDockedPanelMotion(
     }
     return () => {
       cancelAnimationFrame(frame);
-      reserve(0);
+      reserve(0, size);
       panel.removeAttribute("data-dock-moving");
       panel.style.transform = "";
       panel.style.opacity = "";
+      releaseAnimating();
     };
-  }, [getBody, edge, open, size, active, durationMs]);
+  }, [getBody, edge, open, size, instantSizeChange, active, durationMs]);
 }

@@ -32,10 +32,10 @@ On macOS, `Cmd+K` returns to the main composer with the other panels still open.
 To move a tool window, hold the directional focus modifiers plus Shift, then press `H` for
 left, `L` for right, `J` for bottom or Space to float it.
 
-Press `Shift+Esc` or double-click the window title bar to maximize. Chat fills the app in
-one step. For a tool window, the first press folds the Threads sidebar and opens the tool
-to the right of your main conversation. The second fills the app with the tool, and the
-third restores your previous layout.
+Press `Shift+Esc` or double-click the window title bar to maximize or restore a window in
+the app. Tool tabs in the right panel automatically share half of the workspace alongside
+your conversation while keeping the Threads sidebar open; `Shift+Esc` expands the active
+chat or tool window to fill the app and restores your layout on the next press.
 
 ## Browse threads
 

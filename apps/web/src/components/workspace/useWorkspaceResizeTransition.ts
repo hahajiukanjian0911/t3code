@@ -63,7 +63,7 @@ export function useWorkspaceResizeTransition() {
     }
     const restoreTimelines = () => {
       // Moving the portal through its parking slot can reset a live scroller to zero.
-      for (const node of timelines) {
+      for (const node of dock.querySelectorAll<HTMLElement>(".messages-timeline-scroll")) {
         const position = parkedTimelines.current.get(node);
         if (!position || !node.clientHeight || node.closest("[inert]")) continue;
         parkedTimelines.current.delete(node);
