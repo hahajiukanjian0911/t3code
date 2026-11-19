@@ -12,11 +12,9 @@ const MODE_LABELS: Readonly<Record<VimTelemetrySnapshot["mode"], string>> = {
 
 export function ComposerVimStatusCluster({
   telemetry,
-  singleRow,
   className,
 }: {
   telemetry: VimTelemetrySnapshot | null;
-  singleRow: boolean;
   className?: string;
 }) {
   if (!telemetry) return null;
@@ -47,11 +45,9 @@ export function ComposerVimStatusCluster({
       >
         {MODE_LABELS[telemetry.mode]}
       </span>
-      {!singleRow ? (
-        <span className="text-muted-foreground/75">
-          {telemetry.line}:{telemetry.column}
-        </span>
-      ) : null}
+      <span className="text-muted-foreground/75">
+        {telemetry.line}:{telemetry.column}
+      </span>
       {telemetry.pendingKeys ? (
         <span className="font-semibold text-foreground">{telemetry.pendingKeys}</span>
       ) : null}

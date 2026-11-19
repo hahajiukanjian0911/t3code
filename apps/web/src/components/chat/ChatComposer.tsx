@@ -1028,10 +1028,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   );
   const [composerMenuAnchor, setComposerMenuAnchor] = useState<HTMLDivElement | null>(null);
   const [vimTelemetry, setVimTelemetry] = useState<VimTelemetrySnapshot | null>(null);
-  const [singleRowTextFits, setSingleRowTextFits] = useState(true);
-  const singleRowProbeRef = useRef<HTMLSpanElement>(null);
-  const singleRowLeftRef = useRef<HTMLDivElement>(null);
-  const singleRowRightRef = useRef<HTMLDivElement>(null);
   const [hasWrappedPrompt, observeWrappedPrompt] = useComposerMultilinePrompt();
   const hasMultilinePrompt = prompt.includes("\n") || hasWrappedPrompt;
   // A pending question stays expanded: its card moves into the banner dock,
@@ -2498,6 +2494,55 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     : composerControlsCollapsed
       ? 0
       : expandedControlsIconOnlyBlockCount;
+  const composerControls = (
+    <ComposerControlsBar
+      environmentId={environmentId}
+      workspaceCwd={gitCwd}
+      routeKind={routeKind}
+      routeThreadRef={routeThreadRef}
+      draftId={draftId}
+      selectedProvider={selectedProvider}
+      selectedInstanceId={selectedInstanceId}
+      selectedModel={selectedModel}
+      selectedProviderModels={selectedProviderModels}
+      composerModelOptions={composerModelOptions}
+      reportedModelSelection={reportedModelSelection}
+      promptUltrathink={promptUltrathink}
+      onPromptEdit={editPromptFromTraitsStable}
+      compatibleRuntimeMode={compatibleRuntimeMode}
+      defaultRuntimeMode={props.defaultRuntimeMode}
+      compatibleRuntimeModeOptions={compatibleRuntimeModeOptions}
+      handleRuntimeModeChange={handleRuntimeModeChange}
+      composerControlsCollapsed={composerControlsCollapsed}
+      effortDisplay={settings.effortDisplay}
+      permissionsShownInStrip={props.permissionsShownInStrip}
+      composerControlsHidden={composerControlsHidden}
+      restingHiddenBlockCount={restingHiddenBlockCount}
+      iconOnlyBlockCount={iconOnlyBlockCount}
+      showProviderUnavailable={showProviderUnavailable}
+      providerSetupInstanceId={providerSetupInstanceId}
+      onOpenProviderSetup={onOpenProviderSetup}
+      providerCatalogPending={providerCatalogPending}
+      isSendBusy={isSendBusy}
+      multipleModelsEnabled={routeKind === "draft" && supportsMultipleModels}
+      multipleModelSelections={multipleModelSelections}
+      onMultipleModelSelectionsChange={setMultipleModelSelections}
+      selectedModelSelection={selectedModelSelection}
+      onProviderModelSelect={onProviderModelSelect}
+      activeThreadModelSelection={activeThreadModelSelection}
+      selectedModelForPickerWithCustomFallback={selectedModelForPickerWithCustomFallback}
+      lockedProvider={lockedProvider}
+      lockedContinuationGroupKey={lockedContinuationGroupKey}
+      providerInstanceEntries={providerInstanceEntries}
+      keybindings={keybindings}
+      modelOptionsByInstance={modelOptionsByInstance}
+      terminalOpen={terminalOpen}
+      modelPickerOpen={isComposerModelPickerOpen}
+      onModelPickerOpenChange={setIsComposerModelPickerOpen}
+      modelPickerIconClassName={composerProviderState.modelPickerIconClassName}
+      getModelDisabledReason={getModelDisabledReason}
+    />
+  );
   // An open question owns the space above the composer. Only a machine problem,
   // which is why an answer could not go through, stays beside it.
   const replyTo = composerDraft?.replyTo ?? null;
@@ -3358,117 +3403,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       focusComposer={focusComposer}
     />
   ) : null;
-  const activeEditorValue = activePendingProgress ? activePendingProgress.customAnswer : prompt;
-  const hasQueuedAttachmentRow =
-    !isComposerCollapsedMobile &&
-    pendingUserInputs.length === 0 &&
-    editingQueuedAttachments !== null &&
-    editingQueuedAttachments.length > 0;
-  const canConsiderSingleRow =
-    !isMobileViewport &&
-    !isComposerCollapsedMobile &&
-    !activeEditorValue.includes("\n") &&
-    composerAttachmentMediaRow === null &&
-    composerAttachmentFileList === null &&
-    !hasQueuedAttachmentRow &&
-    pendingUserInputs.length === 0 &&
-    !speechInput.preview &&
-    speechInput.state.phase === "idle" &&
-    (providerInputSubmissionError ?? composerSubmissionError) === null;
-
-  const measureSingleRowFit = useStableCallback(() => {
-    if (!canConsiderSingleRow) {
-      setSingleRowTextFits(false);
-      return;
-    }
-    const surface = composerSurfaceRef.current;
-    const probe = singleRowProbeRef.current;
-    if (!surface || !probe || surface.clientWidth === 0) {
-      setSingleRowTextFits(true);
-      return;
-    }
-    const leftW = singleRowLeftRef.current?.offsetWidth ?? 0;
-    const rightW = singleRowRightRef.current?.offsetWidth ?? 0;
-    const available = surface.clientWidth - leftW - rightW - 52;
-    const measured = probe.offsetWidth;
-    if (available <= 36) {
-      setSingleRowTextFits(activeEditorValue.length === 0);
-      return;
-    }
-    setSingleRowTextFits((prev) =>
-      activeEditorValue.length === 0
-        ? true
-        : prev
-          ? measured <= available
-          : measured <= available - 16,
-    );
-  });
-
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- measures whether the single-line prompt fits inline beside the left and right controls before paint.
-  useLayoutEffect(() => {
-    const surface = composerSurfaceRef.current;
-    const probe = singleRowProbeRef.current;
-    if (!canConsiderSingleRow || !surface || !probe) return;
-    measureSingleRowFit();
-    const targets = [
-      surface,
-      probe,
-      ...(singleRowLeftRef.current ? [singleRowLeftRef.current] : []),
-      ...(singleRowRightRef.current ? [singleRowRightRef.current] : []),
-    ];
-    return observeResize(targets, measureSingleRowFit);
-  }, [canConsiderSingleRow, measureSingleRowFit]);
-
-  const isSingleRowDesktop = canConsiderSingleRow && singleRowTextFits;
-  const composerControls = (
-    <ComposerControlsBar
-      environmentId={environmentId}
-      workspaceCwd={gitCwd}
-      routeKind={routeKind}
-      routeThreadRef={routeThreadRef}
-      draftId={draftId}
-      selectedProvider={selectedProvider}
-      selectedInstanceId={selectedInstanceId}
-      selectedModel={selectedModel}
-      selectedProviderModels={selectedProviderModels}
-      composerModelOptions={composerModelOptions}
-      reportedModelSelection={reportedModelSelection}
-      promptUltrathink={promptUltrathink}
-      onPromptEdit={editPromptFromTraitsStable}
-      compatibleRuntimeMode={compatibleRuntimeMode}
-      defaultRuntimeMode={props.defaultRuntimeMode}
-      compatibleRuntimeModeOptions={compatibleRuntimeModeOptions}
-      handleRuntimeModeChange={handleRuntimeModeChange}
-      composerControlsCollapsed={composerControlsCollapsed}
-      effortDisplay={settings.effortDisplay}
-      permissionsShownInStrip={props.permissionsShownInStrip}
-      composerControlsHidden={composerControlsHidden}
-      restingHiddenBlockCount={isSingleRowDesktop ? 0 : restingHiddenBlockCount}
-      iconOnlyBlockCount={isSingleRowDesktop ? 0 : iconOnlyBlockCount}
-      showProviderUnavailable={showProviderUnavailable}
-      providerSetupInstanceId={providerSetupInstanceId}
-      onOpenProviderSetup={onOpenProviderSetup}
-      providerCatalogPending={providerCatalogPending}
-      isSendBusy={isSendBusy}
-      multipleModelsEnabled={routeKind === "draft" && supportsMultipleModels}
-      multipleModelSelections={multipleModelSelections}
-      onMultipleModelSelectionsChange={setMultipleModelSelections}
-      selectedModelSelection={selectedModelSelection}
-      onProviderModelSelect={onProviderModelSelect}
-      activeThreadModelSelection={activeThreadModelSelection}
-      selectedModelForPickerWithCustomFallback={selectedModelForPickerWithCustomFallback}
-      lockedProvider={lockedProvider}
-      lockedContinuationGroupKey={lockedContinuationGroupKey}
-      providerInstanceEntries={providerInstanceEntries}
-      keybindings={keybindings}
-      modelOptionsByInstance={modelOptionsByInstance}
-      terminalOpen={terminalOpen}
-      modelPickerOpen={isComposerModelPickerOpen}
-      onModelPickerOpenChange={setIsComposerModelPickerOpen}
-      modelPickerIconClassName={composerProviderState.modelPickerIconClassName}
-      getModelDisabledReason={getModelDisabledReason}
-    />
-  );
   const attachComposerBodyRef = useStableCallback((node: HTMLDivElement | null) => {
     setComposerMenuAnchor(node);
     const stopObserving = observeWrappedPrompt(node);
@@ -3476,9 +3410,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       setComposerMenuAnchor(null);
       stopObserving?.();
     };
-  });
-  const attachExpandedControlsInlineGate = useStableCallback((element: HTMLDivElement | null) => {
-    attachExpandedComposerControls(isSingleRowDesktop ? null : element);
   });
   const onVimTelemetryChangeStable = useStableCallback((next: VimTelemetrySnapshot | null) =>
     setVimTelemetry(next),
@@ -3580,25 +3511,15 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           <div
             ref={composerSurfaceRef}
             data-chat-composer-surface="true"
-            data-chat-composer-single-row={isSingleRowDesktop ? "true" : "false"}
             data-chat-composer-mobile-collapsed={isComposerCollapsedMobile ? "true" : "false"}
             className={cn(
               "rounded-2xl transition-[background-color] duration-200",
-              isSingleRowDesktop &&
-                "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-2.5 py-1.5",
               "in-data-[thread-context-over]:bg-accent/45 in-data-[thread-context-over]:ring-1 in-data-[thread-context-over]:ring-inset in-data-[thread-context-over]:ring-primary/70",
               isDragOverComposer ? "bg-accent/45 ring-1 ring-inset ring-primary/70" : null,
               projectSelectionRequired ? "opacity-75" : null,
               composerProviderState.composerSurfaceClassName,
             )}
           >
-            <span
-              ref={singleRowProbeRef}
-              aria-hidden="true"
-              className="pointer-events-none invisible fixed -top-96 left-0 whitespace-pre font-(family-name:--font-composer,var(--font-mono)) text-(length:--font-size-prompt,var(--text-sm)) leading-normal"
-            >
-              {activeEditorValue || " "}
-            </span>
             {showCollapsedMobilePromptRow ? (
               <div className="flex items-center justify-between gap-2 px-3 py-2">
                 <button
@@ -3678,8 +3599,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
               ref={attachComposerBodyRef}
               data-chat-composer-body="true"
               className={cn(
-                "relative min-w-0",
-                isSingleRowDesktop ? "col-start-2 row-start-1 p-0" : "px-4 pb-2 pt-3.5 sm:pt-3",
+                "relative min-w-0 px-4 pb-2 pt-3.5 sm:pt-3",
                 isComposerCollapsedMobile && "hidden",
               )}
             >
@@ -3870,51 +3790,35 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
               <div
                 data-chat-composer-footer="true"
                 className={cn(
-                  isSingleRowDesktop
-                    ? "contents"
-                    : "flex min-w-0 flex-nowrap items-center overflow-visible px-2 pb-2",
-                  !isSingleRowDesktop && pendingUserInputs.length > 0 && "pt-2",
+                  "flex min-w-0 flex-nowrap items-center overflow-visible px-2 pb-2",
+                  pendingUserInputs.length > 0 && "pt-2",
                   showMobilePendingAnswerActions &&
                     speechInput.state.phase === "idle" &&
                     "hidden sm:flex",
                 )}
               >
                 {(composerAttachButton || settings.vimMode) && !dictationTakesFooter ? (
-                  <div
-                    ref={singleRowLeftRef}
-                    className={cn(
-                      "flex shrink-0 items-center gap-1.5",
-                      isSingleRowDesktop ? "col-start-1 row-start-1" : "me-2",
-                    )}
-                  >
+                  <div className="me-2 flex shrink-0 items-center gap-1.5">
                     {composerAttachButton}
                     {settings.vimMode ? (
-                      <ComposerVimStatusCluster
-                        telemetry={vimTelemetry}
-                        singleRow={isSingleRowDesktop}
-                      />
+                      <ComposerVimStatusCluster telemetry={vimTelemetry} />
                     ) : null}
                   </div>
                 ) : null}
                 <div
-                  ref={singleRowRightRef}
                   data-chat-composer-actions="right"
                   data-chat-composer-transition-actions="true"
                   data-chat-composer-primary-actions-compact={
                     isComposerPrimaryActionsCompact ? "true" : "false"
                   }
-                  className={cn(
-                    "flex min-w-0 flex-nowrap items-center justify-end gap-2",
-                    isSingleRowDesktop ? "col-start-3 row-start-1 shrink-0" : "flex-1",
-                  )}
+                  className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-2"
                 >
                   <div
-                    ref={attachExpandedControlsInlineGate}
+                    ref={attachExpandedComposerControls}
                     data-chat-composer-controls="footer"
                     data-chat-composer-footer-controls="true"
                     className={cn(
-                      "relative flex min-w-0 items-center justify-end gap-0.5",
-                      isSingleRowDesktop ? "shrink-0" : "flex-1",
+                      "relative flex min-w-0 flex-1 items-center justify-end gap-0.5",
                       dictationTakesFooter && "hidden",
                     )}
                   >

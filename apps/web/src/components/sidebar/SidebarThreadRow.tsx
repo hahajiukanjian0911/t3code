@@ -179,9 +179,39 @@ function terminalProcessLabel(count: number): string {
   return `${count} terminal ${count === 1 ? "process" : "processes"} running`;
 }
 
+function SidebarProviderThinkingRing() {
+  return (
+    <svg
+      ref={observeVisibleAnimation}
+      aria-hidden
+      data-sidebar-thinking-ring=""
+      data-testid="sidebar-provider-thinking-ring"
+      viewBox="0 0 16 16"
+      fill="none"
+      className="pointer-events-none absolute -inset-[1.5px] size-4 text-primary motion-safe:visible-animate-spin"
+    >
+      <circle
+        cx="8"
+        cy="8"
+        r="6.85"
+        stroke="currentColor"
+        strokeOpacity="0.22"
+        strokeWidth="1.45"
+      />
+      <path
+        d="M14.85 8A6.85 6.85 0 0 0 8 1.15"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function SidebarProviderStack(props: {
   thread: SidebarThreadSummary;
   providerEntryByInstanceId: ReadonlyMap<string, SidebarProviderEntry>;
+  isWorking?: boolean;
 }) {
   const stack = resolveThreadProviderStack(props.thread);
   const currentInstanceId = stack[stack.length - 1]!;
@@ -192,22 +222,31 @@ function SidebarProviderStack(props: {
     props.providerEntryByInstanceId.values(),
   );
   const current = (
-    <ProviderInstanceIcon
-      driverKind={currentEntry.driverKind}
-      displayName={currentEntry.displayName}
-      accentColor={currentEntry.accentColor}
-      acpRegistryAgentId={currentEntry.acpRegistryAgentId}
-      acpRegistryIconUrl={currentEntry.acpRegistryIconUrl}
-      showBadge={showInstanceBadge}
-      size="compact"
-      iconClassName="opacity-60"
-    />
+    <span
+      data-sidebar-provider-current=""
+      data-working={props.isWorking ? "true" : undefined}
+      className="relative inline-flex size-[13px] shrink-0 items-center justify-center"
+    >
+      {props.isWorking ? <SidebarProviderThinkingRing /> : null}
+      <ProviderInstanceIcon
+        driverKind={currentEntry.driverKind}
+        displayName={currentEntry.displayName}
+        accentColor={currentEntry.accentColor}
+        acpRegistryAgentId={currentEntry.acpRegistryAgentId}
+        acpRegistryIconUrl={currentEntry.acpRegistryIconUrl}
+        showBadge={showInstanceBadge && !props.isWorking}
+        size="compact"
+        iconClassName={props.isWorking ? "size-2.5 opacity-95" : "opacity-60"}
+      />
+    </span>
   );
   if (stack.length === 1) {
     return <span className="inline-flex shrink-0 items-center">{current}</span>;
   }
   return (
-    <span className="inline-flex shrink-0 items-center gap-1.5">
+    <span
+      className={cn("inline-flex shrink-0 items-center", props.isWorking ? "gap-2" : "gap-1.5")}
+    >
       {stack.slice(0, -1).map((instanceId) => {
         const entry = props.providerEntryByInstanceId.get(instanceId);
         if (entry === undefined) return null;
@@ -692,7 +731,12 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
     (status === "preparing" || status === "working" || status === "waiting") &&
     durationStartedAt != null &&
     !Number.isNaN(Date.parse(durationStartedAt));
-  const hasWorkingDuration = hasDuration && (status === "preparing" || status === "working");
+  const isWorkingStatus = status === "preparing" || status === "working";
+  const hasProviderEntry = resolveThreadProviderStack(thread).some((instanceId) =>
+    props.providerEntryByInstanceId.has(instanceId),
+  );
+  const showsProviderThinkingRing =
+    isWorkingStatus && hasProviderEntry && (variant === "card" || variant === "folder-multiline");
   const lastVisitedDate = lastVisitedAt === undefined ? null : parseTimestampDate(lastVisitedAt);
   const wokeAtDate = props.wokeAt === null ? null : parseTimestampDate(props.wokeAt);
   const isWoke =
@@ -1134,6 +1178,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
         <SidebarProviderStack
           thread={thread}
           providerEntryByInstanceId={props.providerEntryByInstanceId}
+          isWorking={showsProviderThinkingRing}
         />
       </span>
     </div>
@@ -1144,6 +1189,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
       <SidebarProviderStack
         thread={thread}
         providerEntryByInstanceId={props.providerEntryByInstanceId}
+        isWorking={showsProviderThinkingRing}
       />
     </span>
   ) : null;
@@ -1413,7 +1459,6 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
                 <span
                   className={cn(
                     "group/sidebar-status-slot relative ml-auto flex h-5 min-w-8 shrink-0 items-stretch justify-end text-xs",
-                    hasWorkingDuration && "w-15",
                     props.sweepAction !== null && "hidden",
                     jumpHintLabel && JUMP_HINT_SLOT_CLASS_NAME,
                   )}
@@ -1424,7 +1469,6 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
                         ? "pointer-events-auto"
                         : "pointer-events-none group-has-[:focus-visible]/sidebar-status-slot:absolute group-has-[:focus-visible]/sidebar-status-slot:right-0 group-has-[:focus-visible]/sidebar-status-slot:opacity-0 group-any-hover/sidebar-row:absolute group-any-hover/sidebar-row:right-0 group-any-hover/sidebar-row:opacity-0",
                       "flex items-center self-center justify-self-end tabular-nums text-secondary-label",
-                      hasWorkingDuration && "w-full",
                     )}
                   >
                     {topStatus ? (
@@ -1452,21 +1496,32 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
                         <span
                           className={cn(
                             "inline-flex items-center gap-1.5 font-medium",
-                            topStatus.className,
-                            hasWorkingDuration && "w-full justify-between",
+                            isWorkingStatus && showsProviderThinkingRing
+                              ? "text-sidebar-foreground"
+                              : topStatus.className,
                           )}
                         >
-                          <TopStatusIcon icon={topStatus.icon} className="size-3.5" />
-                          <span className={hasDuration ? "sr-only" : undefined}>
+                          {showsProviderThinkingRing ? null : (
+                            <TopStatusIcon icon={topStatus.icon} className="size-3.5" />
+                          )}
+                          <span
+                            className={
+                              hasDuration || (showsProviderThinkingRing && !hasDuration)
+                                ? hasDuration
+                                  ? "sr-only"
+                                  : undefined
+                                : undefined
+                            }
+                          >
                             {topStatus.label}
                           </span>
                           {/* Not a live region: a collapsed sidebar is inert, so
                             BackgroundThreadAnnouncer and the open thread's
                             timeline speak status changes instead. */}
-                          {status === "preparing" || status === "working" ? (
+                          {isWorkingStatus ? (
                             <span
                               aria-hidden
-                              className="min-w-0 truncate text-right text-sidebar-duration"
+                              className="min-w-0 truncate text-right text-sidebar-foreground"
                             >
                               <WorkingDuration
                                 environmentId={thread.environmentId}

@@ -8,6 +8,7 @@ import {
   EnvironmentId,
   type LocalApi,
   ProjectId,
+  ProviderDriverKind,
   ProviderInstanceId,
   RunId,
   ThreadId,
@@ -32,7 +33,7 @@ import { readLocalApi } from "../localApi";
 import type { Project } from "../types";
 import Sidebar from "./Sidebar";
 import { THREAD_JUMP_HINT_SHOW_DELAY_MS } from "./Sidebar.logic";
-import { SortableThreadRow } from "./sidebar/SidebarThreadRow";
+import { SortableThreadRow, type SidebarProviderEntry } from "./sidebar/SidebarThreadRow";
 import { SidebarProvider } from "./ui/sidebar";
 
 vi.mock(import("../state/olderSettledShelf"), async (original) => {
@@ -401,59 +402,118 @@ describe("sidebar settled pagination", () => {
 });
 
 describe("sidebar working thread indicator", () => {
-  it("shows a pulsing dot beside the working duration on card rows", async () => {
+  it("moves the working indicator onto the active provider icon ring and keeps top status duration clean", async () => {
     using _now = vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-01-01T00:07:00.000Z"));
     const activeProject = project("active");
     const runId = RunId.make("run-1");
-    const workingThread = makeThreadFixture({
-      environmentId: activeProject.environmentId,
-      id: ThreadId.make("working-1"),
-      projectId: activeProject.id,
-      title: "Running task",
-      runtime: {
-        providerName: "codex",
-        providerInstanceId: ProviderInstanceId.make("codex"),
-        status: "running",
-        activeRunId: runId,
-        lastError: null,
-        lastErrorClass: null,
-        updatedAt: "2026-01-01T00:00:00.000Z",
-      },
-      latestRun: {
-        runId,
-        status: "running",
-        requestedAt: "2026-01-01T00:00:00.000Z",
-        startedAt: "2026-01-01T00:00:00.000Z",
-        completedAt: null,
-        assistantMessageId: null,
-      },
-    });
-    const threadRef = { environmentId: activeProject.environmentId, threadId: workingThread.id };
-    vi.mocked(useProjects).mockReturnValue([activeProject]);
-    vi.mocked(useQuietThreadShells).mockReturnValue([workingThread]);
-    vi.mocked(useThreadRouteTarget).mockReturnValue({ kind: "server", threadRef });
-    vi.mocked(useHandleNewThread).mockReturnValue({
-      activeDraftThread: null,
-      activeThread: null,
-      defaultProjectRef: {
+    const codexId = ProviderInstanceId.make("codex");
+    const agyId = ProviderInstanceId.make("antigravity");
+    const workingThread = {
+      ...makeThreadFixture({
         environmentId: activeProject.environmentId,
+        id: ThreadId.make("working-1"),
         projectId: activeProject.id,
-      },
-      defaultProjectFallbackReady: true,
-      handleNewThread: vi.fn().mockResolvedValue(null),
-      routeDraftId: null,
-      routeThreadRef: threadRef,
-    });
+        title: "Running task",
+        modelSelection: { instanceId: agyId, model: "gemini-4-carbon" },
+        runtime: {
+          providerName: "antigravity",
+          providerInstanceId: agyId,
+          status: "running",
+          activeRunId: runId,
+          lastError: null,
+          lastErrorClass: null,
+          updatedAt: "2026-01-01T00:00:00.000Z",
+        },
+        latestRun: {
+          runId,
+          status: "running",
+          requestedAt: "2026-01-01T00:00:00.000Z",
+          startedAt: "2026-01-01T00:00:00.000Z",
+          completedAt: null,
+          assistantMessageId: null,
+        },
+      }),
+      providerInstanceHistory: [codexId, agyId],
+    };
+    const providerEntries = new Map<string, SidebarProviderEntry>([
+      [
+        codexId,
+        {
+          instanceId: codexId,
+          driverKind: ProviderDriverKind.make("codex"),
+          enabled: true,
+          displayName: "Codex",
+          models: [],
+        },
+      ],
+      [
+        agyId,
+        {
+          instanceId: agyId,
+          driverKind: ProviderDriverKind.make("antigravity"),
+          enabled: true,
+          displayName: "Antigravity",
+          models: [],
+        },
+      ],
+    ]);
     await using screen = await render(
       <SidebarProvider>
-        <Sidebar routeReveal={{ observedKey: null, pendingKey: null }} />
+        <ul>
+          <SortableThreadRow
+            sortableId="local:working-1"
+            sortableDisabled={true}
+            contextDrag={false}
+            thread={workingThread}
+            variant="card"
+            variantAction="settle"
+            settlementSupported={true}
+            snoozeSupported={true}
+            pinningSupported={true}
+            isPinned={false}
+            dropVerb={null}
+            dragOverPinned={false}
+            sweepAction={null}
+            snoozeWakeLabelText={null}
+            wokeAt={null}
+            isActive={true}
+            isRouteThread={true}
+            readOpensPullRequestsInRightPanel={() => false}
+            jumpLabel={null}
+            currentEnvironmentId={activeProject.environmentId}
+            environmentLabel={null}
+            environmentMachine="server"
+            scratchMachineLabel={null}
+            project={activeProject}
+            projectDisplayName={activeProject.title}
+            providerEntryByInstanceId={providerEntries}
+            timestampFormat="locale"
+            onThreadClick={vi.fn()}
+            onThreadActivate={vi.fn()}
+            onStartRename={vi.fn()}
+            onRenameTitleChange={vi.fn()}
+            onCommitRename={vi.fn()}
+            onCancelRename={vi.fn()}
+            isRenaming={false}
+            renamingTitle=""
+            onContextMenu={vi.fn()}
+            onSettle={vi.fn()}
+            onActionSweepStart={vi.fn()}
+            onUnsettle={vi.fn()}
+            onUnsnooze={vi.fn()}
+            onUnpin={vi.fn()}
+            onAcknowledgeWoke={vi.fn()}
+          />
+        </ul>
       </SidebarProvider>,
     );
     const card = screen.getByTestId("sidebar-row-card");
     await expect.element(screen.getByText("7m")).toBeInTheDocument();
     const statusSlot = card.element().querySelector(".group\\/sidebar-status-slot")!;
-    const pulseDot = statusSlot.querySelector("span.motion-safe\\:animate-status-pulse");
-    expect(pulseDot).not.toBeNull();
-    expect(pulseDot?.closest(".sr-only")).toBeNull();
+    expect(statusSlot.querySelector("span.motion-safe\\:animate-status-pulse")).toBeNull();
+    const rings = card.element().querySelectorAll('[data-testid="sidebar-provider-thinking-ring"]');
+    expect(rings).toHaveLength(1);
+    const currentProviderSlot = card.element().querySelector("[data-sidebar-provider-current]");
+    expect(currentProviderSlot?.contains(rings[0]!)).toBe(true);
   });
 });
