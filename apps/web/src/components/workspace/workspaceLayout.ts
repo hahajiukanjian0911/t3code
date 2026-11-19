@@ -17,7 +17,7 @@ export interface WorkspaceLayout {
   vertical: Partial<Record<WorkspacePanel, boolean>>;
   hidden: Partial<Record<WorkspacePanel, boolean>>;
   dismissed: string[];
-  sizes: { left: number; right: number; bottom: number; companion: number };
+  sizes: { left: number; right: number; bottom: number };
   groupWeights: Record<string, number>;
   panelZoomedGroup: Partial<Record<WorkspacePanel, string>>;
   maximized: WorkspaceMaximizeState | null;
@@ -33,7 +33,7 @@ export function createWorkspaceLayout(): WorkspaceLayout {
     vertical: {},
     hidden: {},
     dismissed: [],
-    sizes: { left: 256, right: 280, bottom: 152, companion: 320 },
+    sizes: { left: 256, right: 280, bottom: 152 },
     groupWeights: {},
     panelZoomedGroup: {},
     maximized: null,
@@ -213,7 +213,6 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
       left: finite(sizes.left, fallback.sizes.left, workspaceLeftMinWidth, 600),
       right: finite(sizes.right, fallback.sizes.right, 180, 600),
       bottom: finite(sizes.bottom, fallback.sizes.bottom, 120, 600),
-      companion: finite(sizes.companion, fallback.sizes.companion, 220, 640),
     },
     floating: {
       x: finite(floating.x, fallback.floating.x, 0, 10000),

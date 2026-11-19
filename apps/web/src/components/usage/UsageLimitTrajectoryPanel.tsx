@@ -304,14 +304,6 @@ function UsageLimitTrajectoryPanel({
             className="text-foreground/35"
             strokeWidth="1"
           />
-          <text
-            x={nowX}
-            y={PAD_TOP - 7}
-            textAnchor="middle"
-            className="fill-foreground/80 text-3xs font-semibold"
-          >
-            Now
-          </text>
           <circle
             cx={nowX}
             cy={nowY}
@@ -345,26 +337,13 @@ function UsageLimitTrajectoryPanel({
 
           {/* Empty touch-down marker */}
           {trajectory.emptyAtMs !== null && trajectory.emptyAtMs > now ? (
-            <g>
-              <circle
-                cx={xOf(trajectory.emptyAtMs)}
-                cy={yOf(0)}
-                r="4"
-                className="fill-background stroke-destructive"
-                strokeWidth="2"
-              />
-              <text
-                x={Math.min(
-                  viewWidth - PAD_RIGHT - 32,
-                  Math.max(PAD_LEFT + 32, xOf(trajectory.emptyAtMs)),
-                )}
-                y={yOf(0) - 7}
-                textAnchor="middle"
-                className="fill-destructive text-3xs font-semibold tabular-nums"
-              >
-                Empty
-              </text>
-            </g>
+            <circle
+              cx={xOf(trajectory.emptyAtMs)}
+              cy={yOf(0)}
+              r="4"
+              className="fill-background stroke-destructive"
+              strokeWidth="2"
+            />
           ) : null}
         </svg>
 

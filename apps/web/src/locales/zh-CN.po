@@ -21809,25 +21809,14 @@ msgid "Focus Window Down"
 msgstr "聚焦下方窗口"
 
 #: src/components/workspace/WorkspaceDock.tsx
-msgid "Companion conversation"
-msgstr "并排显示的对话"
-
-#: src/components/workspace/WorkspaceDock.tsx
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Maximized window"
 msgstr "已最大化的窗口"
 
 #: src/components/workspace/WorkspaceDock.tsx
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Window"
 msgstr "窗口"
 
-#. 0: snapshot.windows[activeMax.windowId]?.title ?? "Window"
-#: src/components/workspace/WorkspaceDock.tsx
-msgid "{0} · Stage 1"
-msgstr "{0} · 与对话并排"
-
-#. 0: snapshot.windows[activeMax.windowId]?.title ?? "Window"
+#. 0: snapshot.windows[full.windowId]?.title ?? "Window"
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "{0} · Maximized"
 msgstr "{0} · 已最大化"
@@ -21840,6 +21829,8 @@ msgstr "查看左侧面板"
 msgid "Peek right workspace column"
 msgstr "查看右侧面板"
 
+#: src/components/workspace/WorkspaceDock.tsx
+#: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Maximize in app (Stage 2)"
 msgstr "铺满应用窗口"
@@ -21864,10 +21855,6 @@ msgstr "在面板内最大化"
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Resize split in {0}"
 msgstr "调整{0}内的分屏大小"
-
-#: src/components/workspace/WorkspaceDock.tsx
-msgid "Resize companion conversation"
-msgstr "调整并排对话的宽度"
 
 #: src/components/usage/UsageLimitTrajectoryPanel.tsx
 msgid "Safe through cycle"

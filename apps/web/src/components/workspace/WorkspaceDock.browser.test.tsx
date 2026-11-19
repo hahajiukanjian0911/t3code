@@ -494,6 +494,8 @@ it("keeps side panels on the shared background and docks Details beside the rais
   await using screen = await render(ui(false, false));
   const inspector = screen.getByText("Inspector details");
   await expect.element(inspector).toBeVisible();
+  await userEvent.tab();
+  await expect.element(screen.getByRole("button", { name: "Toggle Left panel" })).toHaveFocus();
   expect(
     inspector.element().closest("[data-workspace-panel]")?.getAttribute("data-workspace-panel"),
   ).toBe("right");
@@ -546,6 +548,13 @@ it("keeps side panels on the shared background and docks Details beside the rais
 
   expect(document.documentElement.classList.contains("electron-macos")).toBe(true);
   expect(getComputedStyle(controls).position).toBe("absolute");
+  const rightHeading = screen.container.querySelector('[data-workspace-panel-heading="right"]')!;
+  expect(rightHeading.compareDocumentPosition(controls) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  for (const toggle of controls.querySelectorAll("button")) {
+    expect(getComputedStyle(toggle).getPropertyValue("app-region")).toBe("no-drag");
+  }
   expect(mainPanel.getBoundingClientRect().top - dock.getBoundingClientRect().top).toBe(6);
   expect(alphaOf(document.body)).toBe(0);
   expect(alphaOf(mainPanel)).toBe(0);
@@ -705,7 +714,7 @@ it("dismisses the floating modal overlay on backdrop click or Escape, restores f
   );
 });
 
-it("progressively maximizes non-chat windows (companion chat left -> full app) via Shift+Escape while keeping sidebar unmaximizable", async () => {
+it("keeps the conversation in its main panel when a tool is shown alongside it, then restores the layout after full view", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   await using screen = await render(
@@ -727,12 +736,26 @@ it("progressively maximizes non-chat windows (companion chat left -> full app) v
         <WorkspaceWindow id="surface:file" title="README.md" panel="right">
           <input aria-label="file editor" defaultValue="keep editor alive" />
         </WorkspaceWindow>
+        <WorkspaceWindow id="surface:notes" title="Notes.md" panel="right">
+          <p>Project notes</p>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="drawer:terminal" title="Terminal" panel="bottom">
+          <input aria-label="terminal input" />
+        </WorkspaceWindow>
       </WorkspaceRoot>
     </div>,
   );
 
   const chatInput = screen.getByRole("textbox", { name: "chat draft" }).element();
   const fileInput = screen.getByRole("textbox", { name: "file editor" }).element();
+  const mainPanel = chatInput.closest<HTMLElement>('[data-workspace-panel="main"]')!;
+  const rightPanel = fileInput.closest<HTMLElement>('[data-workspace-panel="right"]')!;
+  const mainWidth = mainPanel.getBoundingClientRect().width;
+  const fileWidth = rightPanel.getBoundingClientRect().width;
+  const chatHost = chatInput.closest("[data-workspace-window-container]")!.parentElement;
+  const terminal = screen.getByRole("textbox", { name: "terminal input" }).element();
+  const leftToggle = screen.getByRole("button", { name: "Toggle Left panel" });
+  const rightToggle = screen.getByRole("button", { name: "Toggle Right panel" });
   const threadBtn = screen.getByRole("button", { name: "Thread item" }).element();
 
   // 1. Left session sidebar (`threads`) cannot maximize in app.
@@ -743,7 +766,6 @@ it("progressively maximizes non-chat windows (companion chat left -> full app) v
   const history = screen.getByRole("region", { name: "Conversation history" }).element();
   history.scrollTop = 420;
 
-  // 2. Non-chat window (`surface:file`): 1st Shift+Esc -> Stage 1 (companion chat on left, file on right stage).
   fileInput.focus();
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
   await vi.waitFor(() =>
@@ -754,20 +776,28 @@ it("progressively maximizes non-chat windows (companion chat left -> full app) v
     ).toBe("companion"),
   );
   expect(threadBtn.checkVisibility()).toBe(false);
-  const companionChat = screen.container.querySelector("[data-workspace-companion-chat]")!;
   const stageSection = screen.container.querySelector(
     '[data-workspace-maximized-stage="companion"]',
   )!;
-  expect(companionChat.contains(chatInput)).toBe(true);
+  expect(mainPanel.contains(chatInput)).toBe(true);
+  expect(chatInput.closest("[data-workspace-window-container]")!.parentElement).toBe(chatHost);
+  expect(terminal.checkVisibility()).toBe(true);
+  expect(stageSection).toBe(rightPanel);
+  expect(rightPanel.getBoundingClientRect().width).toBe(fileWidth);
+  expect(mainPanel.getBoundingClientRect().width).toBeGreaterThan(mainWidth);
+  await expect.element(rightToggle).toHaveAttribute("aria-pressed", "true");
   expect(history.scrollTop).toBe(420);
   expect(stageSection.contains(fileInput)).toBe(true);
   expect(
-    Math.round(
-      stageSection.getBoundingClientRect().left - companionChat.getBoundingClientRect().right,
-    ),
+    Math.round(stageSection.getBoundingClientRect().left - mainPanel.getBoundingClientRect().right),
   ).toBe(6);
 
-  // 3. 2nd Shift+Esc -> Stage 2 (true full app maximize, companion chat hidden, left edge peek shown).
+  await userEvent.click(screen.getByRole("tab", { name: "Notes.md", exact: true }));
+  await expect.element(screen.getByText("Project notes")).toBeVisible();
+  expect(stageSection.contains(screen.getByText("Project notes").element())).toBe(true);
+  expect(mainPanel.contains(chatInput)).toBe(true);
+  await userEvent.click(screen.getByRole("tab", { name: "README.md", exact: true }));
+
   fileInput.focus();
   await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
   await vi.waitFor(() =>
@@ -790,6 +820,25 @@ it("progressively maximizes non-chat windows (companion chat left -> full app) v
   expect(history.scrollTop).toBe(420);
   expect(chatInput).toBe(screen.getByRole("textbox", { name: "chat draft" }).element());
   expect(fileInput).toBe(screen.getByRole("textbox", { name: "file editor" }).element());
+
+  await userEvent.click(leftToggle);
+  await userEvent.dblClick(screen.getByRole("tab", { name: "README.md", exact: true }));
+  await expect.element(leftToggle).toHaveAttribute("aria-pressed", "false");
+  await userEvent.click(screen.getByRole("button", { name: "Maximize in app (Stage 2)" }));
+  await vi.waitFor(() =>
+    expect(fileInput.closest('[data-workspace-maximized-stage="full"]')).not.toBeNull(),
+  );
+  fileInput.focus();
+  await userEvent.keyboard("{Shift>}{Escape}{/Shift}");
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull(),
+  );
+  await expect.element(leftToggle).toHaveAttribute("aria-pressed", "false");
+
+  await userEvent.dblClick(screen.getByRole("tab", { name: "README.md", exact: true }));
+  await userEvent.click(leftToggle);
+  await expect.element(leftToggle).toHaveAttribute("aria-pressed", "true");
+  expect(screen.container.querySelector("[data-workspace-maximized]")).toBeNull();
 
   fileInput.focus();
   const mac = /mac/i.test(navigator.platform);

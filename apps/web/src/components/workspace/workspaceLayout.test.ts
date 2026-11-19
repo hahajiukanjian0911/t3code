@@ -63,10 +63,12 @@ describe("workspace window ownership", () => {
       groupWeights: { main: 1.4 },
       panelZoomedGroup: { right: "right" },
       maximized: { windowId: "surface:1:diff", stage: "companion" as const },
-      sizes: { left: 280, right: 390, bottom: 260, companion: 310 },
+      sizes: { left: 280, right: 390, bottom: 260 },
       floating: { x: 80, y: 40, width: 420, height: 300 },
     };
-    expect(restoreWorkspaceLayout(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
+    expect(restoreWorkspaceLayout({ ...saved, sizes: { ...saved.sizes, companion: 310 } })).toEqual(
+      saved,
+    );
     expect(
       restoreWorkspaceLayout({ ...saved, dismissed: ["route", "chat:active", "file"] }).dismissed,
     ).toEqual(["file"]);
@@ -76,7 +78,7 @@ describe("workspace window ownership", () => {
         floating: { x: -500, height: null },
         maximized: { windowId: "threads", stage: "full" },
       }).sizes,
-    ).toEqual({ left: 246, right: 280, bottom: 152, companion: 220 });
+    ).toEqual({ left: 246, right: 280, bottom: 152 });
     expect(
       restoreWorkspaceLayout({
         maximized: { windowId: "threads", stage: "full" },
@@ -91,7 +93,7 @@ describe("workspace window ownership", () => {
     expect(chatStep1).toEqual({ windowId: "chat:test", stage: "full" });
     expect(advanceWorkspaceMaximizeInApp(chatStep1, "chat:test")).toBeNull();
 
-    // Non-chat window: Stage 1 (companion chat in left slot) -> Stage 2 (true full app) -> Tile
+    // Tool windows open alongside chat before filling the app.
     const nonChat1 = advanceWorkspaceMaximizeInApp(null, "surface:test:file");
     expect(nonChat1).toEqual({ windowId: "surface:test:file", stage: "companion" });
     const nonChat2 = advanceWorkspaceMaximizeInApp(nonChat1, "surface:test:file");

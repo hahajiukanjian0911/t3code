@@ -21809,25 +21809,14 @@ msgid "Focus Window Down"
 msgstr "Focus Window Down"
 
 #: src/components/workspace/WorkspaceDock.tsx
-msgid "Companion conversation"
-msgstr "Companion conversation"
-
-#: src/components/workspace/WorkspaceDock.tsx
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Maximized window"
 msgstr "Maximized window"
 
 #: src/components/workspace/WorkspaceDock.tsx
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Window"
 msgstr "Window"
 
-#. 0: snapshot.windows[activeMax.windowId]?.title ?? "Window"
-#: src/components/workspace/WorkspaceDock.tsx
-msgid "{0} · Stage 1"
-msgstr "{0} · Stage 1"
-
-#. 0: snapshot.windows[activeMax.windowId]?.title ?? "Window"
+#. 0: snapshot.windows[full.windowId]?.title ?? "Window"
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "{0} · Maximized"
 msgstr "{0} · Maximized"
@@ -21840,6 +21829,8 @@ msgstr "Peek left workspace column"
 msgid "Peek right workspace column"
 msgstr "Peek right workspace column"
 
+#: src/components/workspace/WorkspaceDock.tsx
+#: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Maximize in app (Stage 2)"
 msgstr "Maximize in app (Stage 2)"
@@ -21864,10 +21855,6 @@ msgstr "Maximize in panel"
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Resize split in {0}"
 msgstr "Resize split in {0}"
-
-#: src/components/workspace/WorkspaceDock.tsx
-msgid "Resize companion conversation"
-msgstr "Resize companion conversation"
 
 #: src/components/usage/UsageLimitTrajectoryPanel.tsx
 msgid "Safe through cycle"

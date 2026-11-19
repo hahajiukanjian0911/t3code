@@ -74,6 +74,25 @@ interface DockSnapshot {
   layout: WorkspaceLayout;
   focused: string | null;
 }
+function activateInLayout(layout: WorkspaceLayout, id: string): WorkspaceLayout {
+  const placement = layout.placements[id]!;
+  let maximized = layout.maximized;
+  if (
+    maximized?.stage === "companion" &&
+    maximized.windowId !== id &&
+    !isChatWorkspaceWindowId(id)
+  ) {
+    if (placement.panel === "right") maximized = { windowId: id, stage: "companion" };
+    if (placement.panel === "main") maximized = null;
+  }
+  return {
+    ...layout,
+    maximized,
+    active: { ...layout.active, [placement.group]: id },
+    hidden: { ...layout.hidden, [placement.panel]: false },
+    dismissed: layout.dismissed.filter((value) => value !== id),
+  };
+}
 function createDockStore(transitionResize: (dock: HTMLElement | null, resize: () => void) => void) {
   let layout = createWorkspaceLayout();
   try {
@@ -101,6 +120,21 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
     if (container && parking) moveContainer(parking, container);
   };
   const publish = (next: DockSnapshot, save = false) => {
+    if (snapshot.layout !== next.layout || snapshot.windows !== next.windows) {
+      const before = dockView(snapshot),
+        after = dockView(next);
+      for (const id of Object.keys(snapshot.windows)) {
+        const previous = before.layout.placements[id],
+          placement = after.layout.placements[id];
+        if (
+          previous?.panel !== placement?.panel ||
+          previous?.group !== placement?.group ||
+          before.full?.windowId !== after.full?.windowId ||
+          (previous?.panel === "floating" && before.maximizedFloating !== after.maximizedFloating)
+        )
+          park(id);
+      }
+    }
     snapshot = next;
     if (save) {
       try {
@@ -123,19 +157,6 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
           panel: window.defaultPanel,
           group: window.defaultPanel,
         });
-    }
-    for (const id of Object.keys(snapshot.windows)) {
-      const previous = snapshot.layout.placements[id],
-        placement = next.placements[id];
-      const maxChanged =
-        snapshot.layout.maximized?.windowId !== next.maximized?.windowId ||
-        snapshot.layout.maximized?.stage !== next.maximized?.stage;
-      if (
-        previous?.panel !== placement?.panel ||
-        previous?.group !== placement?.group ||
-        maxChanged
-      )
-        park(id);
     }
     publish({ ...snapshot, layout: next }, save);
   };
@@ -180,12 +201,7 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
       {
         ...snapshot,
         focused: id,
-        layout: {
-          ...snapshot.layout,
-          active: { ...snapshot.layout.active, [placement.group]: id },
-          hidden: { ...snapshot.layout.hidden, [placement.panel]: false },
-          dismissed: snapshot.layout.dismissed.filter((value) => value !== id),
-        },
+        layout: activateInLayout(snapshot.layout, id),
       },
       true,
     );
@@ -205,12 +221,17 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
       openers = next;
     },
     togglePanel(panel: WorkspacePanel) {
-      const members = workspaceGroups(snapshot.layout, Object.values(snapshot.windows), panel);
-      if (members.length > 0) {
+      const view = dockView(snapshot);
+      const members = view.groups[panel];
+      const sourcePanel = view.max && snapshot.layout.placements[view.max.windowId]?.panel;
+      const keepStage =
+        (panel === "floating" && !view.maximizedFloating) ||
+        (view.paired && panel === "bottom" && (members.length > 0 || sourcePanel !== panel));
+      if (members.length > 0 || sourcePanel === panel) {
         updateLayout({
           ...snapshot.layout,
-          maximized: panel === "floating" ? snapshot.layout.maximized : null,
-          hidden: { ...snapshot.layout.hidden, [panel]: !snapshot.layout.hidden[panel] },
+          maximized: keepStage ? snapshot.layout.maximized : null,
+          hidden: { ...snapshot.layout.hidden, [panel]: view.panelVisible(panel) },
         });
         return;
       }
@@ -220,7 +241,7 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
       if (window) {
         updateLayout({
           ...moveWorkspaceWindow(snapshot.layout, window.id, { panel, group: panel }),
-          maximized: panel === "floating" ? snapshot.layout.maximized : null,
+          maximized: keepStage ? snapshot.layout.maximized : null,
         });
         activate(window.id);
       } else openers[panel]?.();
@@ -261,13 +282,7 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
         !restored &&
         (!previous?.selected || previous.activation !== window.activation)
       ) {
-        const placement = next.placements[window.id]!;
-        next = {
-          ...next,
-          active: { ...next.active, [placement.group]: window.id },
-          hidden: { ...next.hidden, [placement.panel]: false },
-          dismissed: next.dismissed.filter((id) => id !== window.id),
-        };
+        next = activateInLayout(next, window.id);
       }
       publish({ ...snapshot, windows: { ...snapshot.windows, [window.id]: window }, layout: next });
     },
@@ -358,11 +373,14 @@ function createDockStore(transitionResize: (dock: HTMLElement | null, resize: ()
     },
     focusPanel(panel: WorkspacePanel) {
       const windows = Object.values(snapshot.windows);
+      const view = dockView(snapshot);
       const target =
         panel === "main"
           ? windows.find((win) => win.available && win.id.startsWith("chat:"))?.id
-          : undefined;
-      const id = target ?? workspaceGroups(snapshot.layout, windows, panel)[0]?.active;
+          : panel === "right"
+            ? view.paired?.windowId
+            : undefined;
+      const id = target ?? view.groups[panel][0]?.active;
       if (!id) {
         const open = openers[panel];
         if (!open) return false;
@@ -515,36 +533,85 @@ function activeMaximizedState(snapshot: DockSnapshot) {
   }
   return max;
 }
-function visibleWindow(snapshot: DockSnapshot, id: string): boolean {
-  const window = snapshot.windows[id];
-  const placement = snapshot.layout.placements[id];
-  if (!window?.available || !placement) return false;
+function resolveDockView(snapshot: DockSnapshot) {
   const registered = Object.values(snapshot.windows);
-  const chatPresent = registered.some((value) => value.available && value.id.startsWith("chat:"));
-  if (id === "route" && chatPresent) return false;
+  const chat = registered.find((window) => window.available && window.id.startsWith("chat:"));
+  const conversation =
+    chat ?? (snapshot.windows.route?.available ? snapshot.windows.route : undefined);
+  const shown = registered.filter((window) => window.id !== "route" || !chat);
   const max = activeMaximizedState(snapshot);
-  if (
-    max &&
-    (placement.panel !== "floating" ||
-      snapshot.layout.placements[max.windowId]?.panel === "floating")
-  ) {
-    if (id === max.windowId) return true;
-    if (max.stage === "companion") {
-      const chatId =
-        registered.find((value) => value.available && value.id.startsWith("chat:"))?.id ??
-        (snapshot.windows.route?.available ? "route" : undefined);
-      return id === chatId;
-    }
-    return false;
+  const paired =
+    max?.stage === "companion" && conversation && conversation.id !== max.windowId ? max : null;
+  const full = paired ? null : max;
+  const maximizedFloating = !!max && snapshot.layout.placements[max.windowId]?.panel === "floating";
+  let layout = snapshot.layout;
+  if (paired && conversation) {
+    const currentChat = layout.placements[conversation.id];
+    const currentTool = layout.placements[paired.windowId]!;
+    const main =
+      currentChat?.panel === "main" ? currentChat : ({ panel: "main", group: "main" } as const);
+    const right =
+      currentTool.panel === "right" ? currentTool : ({ panel: "right", group: "right" } as const);
+    layout = {
+      ...layout,
+      placements: { ...layout.placements, [conversation.id]: main, [paired.windowId]: right },
+      active: { ...layout.active, [main.group]: conversation.id, [right.group]: paired.windowId },
+      panelZoomedGroup: {
+        ...layout.panelZoomedGroup,
+        ...(layout.panelZoomedGroup.main ? { main: main.group } : {}),
+        ...(layout.panelZoomedGroup.right ? { right: right.group } : {}),
+      },
+      hidden: { ...layout.hidden, left: true, main: false, right: false },
+    };
   }
-  if (snapshot.layout.hidden[placement.panel]) return false;
-  const windows = registered.filter((value) => value.id !== "route" || !chatPresent);
-  const groups = workspaceGroups(snapshot.layout, windows, placement.panel);
-  const zoomed = snapshot.layout.panelZoomedGroup[placement.panel];
+  const groups = Object.fromEntries(
+    workspacePanels.map((panel) => [
+      panel,
+      workspaceGroups(
+        panel === "floating" && maximizedFloating ? snapshot.layout : layout,
+        shown,
+        panel,
+      ),
+    ]),
+  ) as Record<WorkspacePanel, ReturnType<typeof workspaceGroups>>;
+  const panelVisible = (panel: WorkspacePanel) => {
+    if (panel === "floating")
+      return !maximizedFloating && !layout.hidden.floating && groups.floating.length > 0;
+    return !full && !layout.hidden[panel] && (panel === "main" || groups[panel].length > 0);
+  };
+  return {
+    layout,
+    max,
+    full,
+    paired,
+    groups,
+    panelVisible,
+    maximizedFloating,
+    chatPresent: !!chat,
+  };
+}
+const dockViews = new WeakMap<DockSnapshot, ReturnType<typeof resolveDockView>>();
+function dockView(snapshot: DockSnapshot) {
+  let view = dockViews.get(snapshot);
+  if (!view) {
+    view = resolveDockView(snapshot);
+    dockViews.set(snapshot, view);
+  }
+  return view;
+}
+function visibleWindow(snapshot: DockSnapshot, id: string): boolean {
+  const { layout, groups, panelVisible, chatPresent, full } = dockView(snapshot);
+  const placement = layout.placements[id];
+  if (!snapshot.windows[id]?.available || !placement || (id === "route" && chatPresent))
+    return false;
+  if (full?.windowId === id) return true;
+  if (!panelVisible(placement.panel)) return false;
+  const panelGroups = groups[placement.panel];
+  const zoomed = layout.panelZoomedGroup[placement.panel];
   const activeGroups =
-    zoomed && groups.some((group) => group.id === zoomed)
-      ? groups.filter((group) => group.id === zoomed)
-      : groups;
+    zoomed && panelGroups.some((group) => group.id === zoomed)
+      ? panelGroups.filter((group) => group.id === zoomed)
+      : panelGroups;
   return activeGroups.some((group) => group.active === id);
 }
 export function useWorkspaceDockEnabled(): boolean {
@@ -752,11 +819,7 @@ export function useWorkspacePanel(panel: WorkspacePanel) {
   const store = use(DockContext);
   const visible = useSyncExternalStore(store?.subscribe ?? subscribeNothing, () => {
     if (!store) return false;
-    const snapshot = store.getSnapshot();
-    return (
-      !snapshot.layout.hidden[panel] &&
-      workspaceGroups(snapshot.layout, Object.values(snapshot.windows), panel).length > 0
-    );
+    return dockView(store.getSnapshot()).panelVisible(panel);
   });
   return store ? { visible, toggle: () => store.togglePanel(panel) } : null;
 }
@@ -812,7 +875,16 @@ function DockFrame({
   const panelLabels = workspacePanelLabel();
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
-  const { layout } = snapshot;
+  const {
+    layout,
+    max: activeMax,
+    full,
+    paired,
+    groups,
+    panelVisible,
+    maximizedFloating,
+    chatPresent,
+  } = dockView(snapshot);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync, react/exhaustive-effect-dependencies -- repositions native browser layers after docking changes that do not resize their content
   useLayoutEffect(() => notifyWorkspaceLayout(), [layout]);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- registers global workspace window commands while the dock frame is mounted
@@ -871,23 +943,6 @@ function DockFrame({
     };
   }, [keybindings, store]);
   const windows = Object.values(snapshot.windows);
-  const chatPresent = windows.some((window) => window.available && window.id.startsWith("chat:"));
-  const shown = windows.filter((window) => window.id !== "route" || !chatPresent);
-  const activeMax = activeMaximizedState(snapshot);
-  const maximizedFloating =
-    !!activeMax && layout.placements[activeMax.windowId]?.panel === "floating";
-  const companionChatId =
-    shown.find((window) => window.available && window.id.startsWith("chat:"))?.id ??
-    (snapshot.windows.route?.available ? "route" : undefined);
-  const groups = Object.fromEntries(
-    workspacePanels.map((panel) => [panel, workspaceGroups(layout, shown, panel)]),
-  ) as Record<WorkspacePanel, ReturnType<typeof workspaceGroups>>;
-  const panelVisible = (panel: WorkspacePanel) => {
-    if (panel === "floating")
-      return !maximizedFloating && !layout.hidden.floating && groups.floating.length > 0;
-    if (activeMax) return false;
-    return !layout.hidden[panel] && (panel === "main" || groups[panel].length > 0);
-  };
   const left = panelVisible("left"),
     right = panelVisible("right"),
     bottom = panelVisible("bottom"),
@@ -900,8 +955,8 @@ function DockFrame({
     dockedThreads && !activeMax ? left : null,
     layout.sizes.left,
   );
-  useDockedPanelMotion(store.getBody, "right", activeMax ? null : right, layout.sizes.right);
-  useDockedPanelMotion(store.getBody, "bottom", activeMax ? null : bottom, layout.sizes.bottom);
+  useDockedPanelMotion(store.getBody, "right", full ? null : right, layout.sizes.right);
+  useDockedPanelMotion(store.getBody, "bottom", full ? null : bottom, layout.sizes.bottom);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- install dismissal before the restored floating window can receive its next key.
   useLayoutEffect(() => {
     if (!floatingVisible) return;
@@ -1040,10 +1095,11 @@ function DockFrame({
     return (
       <section
         key={key}
-        hidden={key === "left" && !threadSidebar && !left}
+        hidden={key === "left" && !left && (!threadSidebar || !!paired)}
         inert={!panelVisible(key)}
         aria-label={panelLabels[key]}
         data-workspace-panel={key}
+        data-workspace-maximized-stage={key === "right" ? paired?.stage : undefined}
         data-workspace-panel-zoomed={
           zoomedId && visibleGroups.length === 1 && panelGroups.length > 1 ? "" : undefined
         }
@@ -1095,6 +1151,29 @@ function DockFrame({
               <div data-workspace-panel-actions="right" className="shrink-0">
                 <PortalMount node={store.getActionsContainer("panel:right")} />
               </div>
+            ) : null}
+            {key === "right" && paired ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="icon-xs"
+                      variant="ghost-muted"
+                      aria-label="Maximize in app (Stage 2)"
+                      onClick={() => store.toggleMaximizeInApp(paired.windowId)}
+                    />
+                  }
+                >
+                  <Maximize2Icon className="size-3.5" />
+                </TooltipTrigger>
+                <TooltipPopup>
+                  <span>Maximize in app (Stage 2)</span>{" "}
+                  <kbd>
+                    {shortcutLabelForCommand(keybindings, "workspace.toggleMaximizeInApp") ??
+                      "⇧Esc"}
+                  </kbd>
+                </TooltipPopup>
+              </Tooltip>
             ) : null}
           </div>
         ) : null}
@@ -1191,19 +1270,49 @@ function DockFrame({
       </Tooltip>
     );
   };
-  const panels = activeMax ? null : (["left", "main", "right", "bottom"] as const).map(panel);
-  const stageHeading = activeMax ? (
+  const panelControls = (
+    <div
+      data-workspace-controls=""
+      className="pointer-events-none absolute inset-x-0 z-30 flex h-8 items-center justify-between"
+    >
+      <div className="pointer-events-auto flex" data-workspace-controls-leading="">
+        {renderPanelToggle("left")}
+      </div>
+      <div className="pointer-events-auto flex items-center gap-1">
+        {groups.floating.length > 0 ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
+                  aria-label={`Toggle ${panelLabels.floating}`}
+                  aria-pressed={floatingVisible}
+                  onClick={() => store.togglePanel("floating")}
+                />
+              }
+            >
+              <LayersIcon className="size-3.5" aria-hidden />
+            </TooltipTrigger>
+            <TooltipPopup>{panelLabels.floating}</TooltipPopup>
+          </Tooltip>
+        ) : null}
+        {renderPanelToggle("bottom")}
+        {renderPanelToggle("right")}
+      </div>
+    </div>
+  );
+  const panels = full ? null : (["left", "main", "right", "bottom"] as const).map(panel);
+  const stageHeading = full ? (
     <div className="workspace-stage-heading drag-region">
       <button
         type="button"
         data-workspace-maximize-pill=""
-        onClick={() => store.toggleMaximizeInApp(activeMax.windowId)}
+        onClick={() => store.toggleMaximizeInApp(full.windowId)}
         className="inline-flex h-5 min-w-0 max-w-full cursor-pointer items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2 text-2xs font-medium text-primary transition-colors hover:bg-primary/15 [-webkit-app-region:no-drag]"
       >
         <span className="truncate">
-          {activeMax.stage === "companion"
-            ? `${snapshot.windows[activeMax.windowId]?.title ?? "Window"} · Stage 1`
-            : `${snapshot.windows[activeMax.windowId]?.title ?? "Window"} · Maximized`}
+          {`${snapshot.windows[full.windowId]?.title ?? "Window"} · Maximized`}
         </span>
         <span className="shrink-0 font-mono text-3xs opacity-80">
           {shortcutLabelForCommand(keybindings, "workspace.toggleMaximizeInApp") ?? "⇧Esc"}
@@ -1211,76 +1320,26 @@ function DockFrame({
       </button>
     </div>
   ) : null;
-  const maximizedStageView = activeMax ? (
-    activeMax.stage === "companion" &&
-    companionChatId &&
-    companionChatId !== activeMax.windowId &&
-    snapshot.windows[companionChatId] ? (
-      <>
-        <section
-          aria-label="Companion conversation"
-          data-workspace-panel="left"
-          data-workspace-companion-chat=""
-          className="relative flex min-h-0 min-w-0 overflow-visible"
-          style={{ gridArea: "companion" }}
-        >
-          <div
-            data-workspace-resize-window={companionChatId}
-            className="workspace-window-card workspace-window-surface-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-          >
-            {(() => {
-              mounted.add(companionChatId);
-              return (
-                <PortalMount
-                  node={snapshot.windows[companionChatId]!.container}
-                  className="h-full min-h-0 min-w-0 flex-1"
-                />
-              );
-            })()}
-          </div>
-          <CompanionResize store={store} />
-        </section>
-        <section
-          aria-label={snapshot.windows[activeMax.windowId]?.title ?? "Maximized window"}
-          data-workspace-panel={layout.placements[activeMax.windowId]?.panel ?? "right"}
-          data-workspace-maximized-stage="companion"
-          className="workspace-window-card workspace-window-surface-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-          data-workspace-resize-window={activeMax.windowId}
-          style={{ gridArea: "stage" }}
-        >
-          {stageHeading}
-          {(() => {
-            mounted.add(activeMax.windowId);
-            return (
-              <PortalMount
-                node={snapshot.windows[activeMax.windowId]!.container}
-                className="h-full min-h-0 min-w-0 flex-1"
-              />
-            );
-          })()}
-        </section>
-      </>
-    ) : (
-      <section
-        aria-label={snapshot.windows[activeMax.windowId]?.title ?? "Maximized window"}
-        data-workspace-panel={layout.placements[activeMax.windowId]?.panel ?? "main"}
-        data-workspace-maximized-stage="full"
-        className="workspace-window-card workspace-window-surface-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-        data-workspace-resize-window={activeMax.windowId}
-        style={{ gridArea: "full" }}
-      >
-        {stageHeading}
-        {(() => {
-          mounted.add(activeMax.windowId);
-          return (
-            <PortalMount
-              node={snapshot.windows[activeMax.windowId]!.container}
-              className="h-full min-h-0 min-w-0 flex-1"
-            />
-          );
-        })()}
-      </section>
-    )
+  const maximizedStageView = full ? (
+    <section
+      aria-label={snapshot.windows[full.windowId]?.title ?? "Maximized window"}
+      data-workspace-panel={layout.placements[full.windowId]?.panel ?? "main"}
+      data-workspace-maximized-stage="full"
+      className="workspace-window-card workspace-window-surface-main relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+      data-workspace-resize-window={full.windowId}
+      style={{ gridArea: "full" }}
+    >
+      {stageHeading}
+      {(() => {
+        mounted.add(full.windowId);
+        return (
+          <PortalMount
+            node={snapshot.windows[full.windowId]!.container}
+            className="h-full min-h-0 min-w-0 flex-1"
+          />
+        );
+      })()}
+    </section>
   ) : null;
   const floatingTabs = groups.floating.flatMap((group) =>
     group.windows.map((id) => ({ id, group: group.id, key: "floating" as const })),
@@ -1413,56 +1472,18 @@ function DockFrame({
         if (store.toggleMaximizeInApp(id)) event.stopPropagation();
       }}
     >
-      <div
-        data-workspace-controls=""
-        className="pointer-events-none absolute inset-x-0 z-30 flex h-8 items-center justify-between"
-      >
-        <div className="pointer-events-auto flex" data-workspace-controls-leading="">
-          {renderPanelToggle("left")}
-        </div>
-        <div className="pointer-events-auto flex items-center gap-1">
-          {groups.floating.length > 0 ? (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <button
-                    type="button"
-                    className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
-                    aria-label={`Toggle ${panelLabels.floating}`}
-                    aria-pressed={floatingVisible}
-                    onClick={() => store.togglePanel("floating")}
-                  />
-                }
-              >
-                <LayersIcon className="size-3.5" aria-hidden />
-              </TooltipTrigger>
-              <TooltipPopup>{panelLabels.floating}</TooltipPopup>
-            </Tooltip>
-          ) : null}
-          {renderPanelToggle("bottom")}
-          {renderPanelToggle("right")}
-        </div>
-      </div>
+      {!isElectron && panelControls}
       {controls}
       <div
         ref={(node) => store.setBody(node)}
         className="relative grid min-h-0 flex-1 gap-(--workspace-seam) overflow-clip p-(--workspace-seam)"
         style={
-          activeMax
-            ? activeMax.stage === "companion" &&
-              companionChatId &&
-              companionChatId !== activeMax.windowId &&
-              snapshot.windows[companionChatId]
-              ? {
-                  gridTemplateColumns: `${layout.sizes.companion}px minmax(0,1fr)`,
-                  gridTemplateRows: "minmax(0,1fr)",
-                  gridTemplateAreas: `"companion stage"`,
-                }
-              : {
-                  gridTemplateColumns: "minmax(0,1fr)",
-                  gridTemplateRows: "minmax(0,1fr)",
-                  gridTemplateAreas: `"full"`,
-                }
+          full
+            ? {
+                gridTemplateColumns: "minmax(0,1fr)",
+                gridTemplateRows: "minmax(0,1fr)",
+                gridTemplateAreas: '"full"',
+              }
             : {
                 gap: 0,
                 gridTemplateColumns: `${leftGridColumn ? `${layout.sizes.left}px var(--workspace-seam) ` : ""}minmax(0,1fr) var(--workspace-right-track)`,
@@ -1522,6 +1543,8 @@ function DockFrame({
             </div>
           ))}
       </div>
+      {/* Electron applies native drag regions in layout order, regardless of z-index. */}
+      {isElectron && panelControls}
       {floatingOverlay}
     </div>
   );
@@ -1684,44 +1707,6 @@ function GroupResize({
           "pointer-events-none shrink-0 rounded-full bg-foreground/40 opacity-0 group-hover/resize:opacity-100 group-active/resize:opacity-100",
           vertical ? "h-[2px] w-8" : "h-8 w-[2px]",
         )}
-      />
-    </div>
-  );
-}
-
-function CompanionResize({ store }: { store: DockStore }) {
-  return (
-    <div
-      role="separator"
-      aria-label="Resize companion conversation"
-      aria-orientation="vertical"
-      className="group/resize absolute inset-y-0 -right-(--workspace-seam) z-20 flex w-(--workspace-seam) cursor-col-resize touch-none items-center justify-center before:absolute before:-inset-1"
-      onPointerDown={(event) => {
-        event.preventDefault();
-        const node = event.currentTarget;
-        node.setPointerCapture(event.pointerId);
-        const initial = store.getSnapshot().layout.sizes.companion;
-        const start = event.clientX;
-        const move = (next: PointerEvent) => {
-          const delta = next.clientX - start;
-          const value = Math.max(220, Math.min(640, initial + delta));
-          const current = store.getSnapshot().layout;
-          store.updateLayout({ ...current, sizes: { ...current.sizes, companion: value } }, false);
-        };
-        const stop = () => {
-          store.updateLayout(store.getSnapshot().layout);
-          node.removeEventListener("pointermove", move);
-          node.removeEventListener("pointerup", stop);
-          node.removeEventListener("pointercancel", stop);
-        };
-        node.addEventListener("pointermove", move);
-        node.addEventListener("pointerup", stop);
-        node.addEventListener("pointercancel", stop);
-      }}
-    >
-      <span
-        aria-hidden
-        className="pointer-events-none h-8 w-[2px] shrink-0 rounded-full bg-foreground/40 opacity-0 group-hover/resize:opacity-100 group-active/resize:opacity-100"
       />
     </div>
   );

@@ -33,8 +33,9 @@ To move a tool window, hold the directional focus modifiers plus Shift, then pre
 left, `L` for right, `J` for bottom or Space to float it.
 
 Press `Shift+Esc` or double-click the window title bar to maximize. Chat fills the app in
-one step. For a tool window, the first press keeps chat alongside it, the second fills the
-app, and the third restores your layout. The Threads sidebar stays in its panel.
+one step. For a tool window, the first press folds the Threads sidebar and opens the tool
+to the right of your main conversation. The second fills the app with the tool, and the
+third restores your previous layout.
 
 ## Browse threads
 
