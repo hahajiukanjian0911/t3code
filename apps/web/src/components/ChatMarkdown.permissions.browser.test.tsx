@@ -12,6 +12,7 @@ import { expect, it, vi } from "vite-plus/test";
 import { userEvent } from "vite-plus/test/browser";
 
 import { act, render } from "../../test/render";
+import { isMacPlatform } from "../lib/utils";
 import { useRightPanelStore } from "../rightPanelStore";
 
 const state = vi.hoisted(() => ({
@@ -204,7 +205,16 @@ it.each(["[Docs](https://example.com/docs)", "[Readme](docs/readme.md)"])(
     using _setup = setup();
     await using screen = await renderMarkdown(text);
     screen.anchor().focus();
-    await userEvent.keyboard("{Shift>}{F10}{/Shift}");
+    // Chromium on macOS does not trigger a native contextmenu event for Shift+F10.
+    if (isMacPlatform(navigator.platform)) {
+      screen
+        .anchor()
+        .dispatchEvent(
+          new PointerEvent("contextmenu", { bubbles: true, cancelable: true, button: -1 }),
+        );
+    } else {
+      await userEvent.keyboard("{Shift>}{F10}{/Shift}");
+    }
     await vi.waitFor(() => expect(state.choose.mock.lastCall?.[2]).toBe("keyboard"));
     await userEvent.click(screen.anchor(), { button: "right" });
     await vi.waitFor(() => expect(state.choose.mock.lastCall?.[2]).toBe("mouse"));
