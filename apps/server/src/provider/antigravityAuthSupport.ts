@@ -232,74 +232,113 @@ function antigravityEnvironment(
   };
 }
 
-class AntigravitySkillLinkError extends Schema.TaggedError<AntigravitySkillLinkError>()(
-  "AntigravitySkillLinkError",
+class AntigravityProfileLinkError extends Schema.TaggedError<AntigravityProfileLinkError>()(
+  "AntigravityProfileLinkError",
   { link: Schema.String, cause: Schema.Defect() },
 ) {
   override get message(): string {
-    return `Could not link Antigravity user skills at ${this.link}.`;
+    return `Could not link Antigravity user customization at ${this.link}.`;
   }
 }
 
-/** Private GEMINI_HOME isolates credentials/hooks/MCP; link global skills from the real ~/.gemini. */
-const linkAntigravityUserSkills = Effect.fn("linkAntigravityUserSkills")(function* (input: {
-  readonly profileDirectory: string;
-  readonly userHome: string;
-  readonly platform: NodeJS.Platform;
-}): Effect.fn.Return<void, never, FileSystem.FileSystem | Path.Path> {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const links = antigravityUserSkillDirectories(path, input.profileDirectory);
-  const targets = antigravityUserSkillDirectories(path, path.join(input.userHome, ".gemini"));
-  for (const [link, target] of [
-    [links[0], targets[0]],
-    [links[1], targets[1]],
-  ] as const) {
-    yield* Effect.gen(function* () {
-      // The harness creates these folders itself, and mkdir fails on a dangling link.
-      if (!(yield* fs.exists(target))) {
-        const linked = yield* fs.readLink(link).pipe(
-          Effect.as(true),
-          Effect.orElseSucceed(() => false),
-        );
-        if (linked) yield* fs.remove(link);
-        return;
-      }
-      const existing = yield* fs.readLink(link).pipe(
-        Effect.map((value): string | undefined => path.resolve(path.dirname(link), value)),
-        Effect.catchReason("PlatformError", "NotFound", () => Effect.undefined),
-        // An empty folder is the harness's placeholder from a launch without the link.
-        // rmdir refuses a non-empty folder, so content added meanwhile is never deleted.
-        Effect.catch((error) =>
-          Effect.tryPromise({
-            try: () => NodeFSP.rmdir(link),
-            catch: (cause) => new AntigravitySkillLinkError({ link, cause }),
-          }).pipe(
-            Effect.as(undefined),
-            Effect.mapError(() => error),
+const ANTIGRAVITY_USER_RULE_RELATIVE_PATHS = [
+  ["GEMINI.md"],
+  ["AGENTS.md"],
+  ["config", "GEMINI.md"],
+  ["config", "AGENTS.md"],
+] as const;
+
+interface AntigravityProfileLinkSpec {
+  readonly kind: "dir" | "file";
+  readonly link: string;
+  readonly target: string;
+}
+
+/** Private GEMINI_HOME isolates credentials/hooks/MCP; link global skills and rules from the real ~/.gemini. */
+const linkAntigravityUserCustomizations = Effect.fn("linkAntigravityUserCustomizations")(
+  function* (input: {
+    readonly profileDirectory: string;
+    readonly userHome: string;
+    readonly platform: NodeJS.Platform;
+  }): Effect.fn.Return<void, never, FileSystem.FileSystem | Path.Path> {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const realGeminiHome = path.join(input.userHome, ".gemini");
+    const skillLinks = antigravityUserSkillDirectories(path, input.profileDirectory);
+    const skillTargets = antigravityUserSkillDirectories(path, realGeminiHome);
+    const specs: ReadonlyArray<AntigravityProfileLinkSpec> = [
+      { kind: "dir", link: skillLinks[0], target: skillTargets[0] },
+      { kind: "dir", link: skillLinks[1], target: skillTargets[1] },
+      ...ANTIGRAVITY_USER_RULE_RELATIVE_PATHS.map((segments) => ({
+        kind: "file" as const,
+        link: path.join(input.profileDirectory, ...segments),
+        target: path.join(realGeminiHome, ...segments),
+      })),
+    ];
+
+    for (const { kind, link, target } of specs) {
+      yield* Effect.gen(function* () {
+        const targetPresent =
+          kind === "dir"
+            ? yield* fs.exists(target)
+            : yield* fs.stat(target).pipe(
+                Effect.map((info) => info.type === "File"),
+                Effect.orElseSucceed(() => false),
+              );
+        // The harness creates skill folders itself, and mkdir/reads fail on a dangling link.
+        if (!targetPresent) {
+          const linked = yield* fs.readLink(link).pipe(
+            Effect.as(true),
+            Effect.orElseSucceed(() => false),
+          );
+          if (linked) yield* fs.remove(link);
+          return;
+        }
+        const existing = yield* fs.readLink(link).pipe(
+          Effect.map((value): string | undefined => path.resolve(path.dirname(link), value)),
+          Effect.catchReason("PlatformError", "NotFound", () => Effect.undefined),
+          // For directories, an empty folder is the harness's placeholder from a launch without
+          // the link; rmdir refuses a non-empty folder, so content added meanwhile is never deleted.
+          // For files, never overwrite a real file already present in the profile.
+          Effect.catch((error) =>
+            kind === "dir"
+              ? Effect.tryPromise({
+                  try: () => NodeFSP.rmdir(link),
+                  catch: (cause) => new AntigravityProfileLinkError({ link, cause }),
+                }).pipe(
+                  Effect.as(undefined),
+                  Effect.mapError(() => error),
+                )
+              : Effect.fail(error),
           ),
+        );
+        if (existing === target) return;
+        if (existing !== undefined) {
+          yield* fs.remove(link);
+        }
+        yield* fs.makeDirectory(path.dirname(link), { recursive: true });
+        yield* Effect.tryPromise({
+          try: () =>
+            NodeFSP.symlink(
+              target,
+              link,
+              kind === "file" ? "file" : input.platform === "win32" ? "junction" : "dir",
+            ),
+          catch: (cause) => new AntigravityProfileLinkError({ link, cause }),
+        });
+      }).pipe(
+        Effect.catch((error) =>
+          Effect.logWarning("Antigravity user customization is not linked into the profile.", {
+            kind,
+            link,
+            target,
+            error,
+          }),
         ),
       );
-      if (existing === target) return;
-      if (existing !== undefined) {
-        yield* fs.remove(link);
-      }
-      yield* fs.makeDirectory(path.dirname(link), { recursive: true });
-      yield* Effect.tryPromise({
-        try: () => NodeFSP.symlink(target, link, input.platform === "win32" ? "junction" : "dir"),
-        catch: (cause) => new AntigravitySkillLinkError({ link, cause }),
-      });
-    }).pipe(
-      Effect.catch((error) =>
-        Effect.logWarning("Antigravity user skills are not linked into the profile.", {
-          link,
-          target,
-          error,
-        }),
-      ),
-    );
-  }
-});
+    }
+  },
+);
 
 export const prepareAntigravityProfile = Effect.fn("prepareAntigravityProfile")(function* (input: {
   readonly profileDirectory: string;
@@ -447,7 +486,7 @@ export const prepareAntigravityProfile = Effect.fn("prepareAntigravityProfile")(
         authSupportError("The Antigravity profile settings could not be written."),
       ),
     );
-  yield* linkAntigravityUserSkills({ profileDirectory: geminiHome, userHome, platform });
+  yield* linkAntigravityUserCustomizations({ profileDirectory: geminiHome, userHome, platform });
   return profile;
 });
 

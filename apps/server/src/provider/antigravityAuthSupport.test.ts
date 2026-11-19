@@ -655,6 +655,59 @@ it.layer(NodeServices.layer)("Antigravity profile preparation", (it) => {
       }),
   );
 
+  it.effect.skipIf(!symlinksSupported)(
+    "links only the user's existing global rule files without overwriting real profile files",
+    () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const temporaryDirectory = yield* fs.makeTempDirectoryScoped();
+        const userHome = path.join(temporaryDirectory, "home");
+        const profileDirectory = path.join(temporaryDirectory, "profile");
+        const realGeminiHome = path.join(userHome, ".gemini");
+        const sharedRules = path.join(userHome, ".codex", "AGENTS.md");
+        const userGeminiRules = path.join(realGeminiHome, "GEMINI.md");
+        const userConfigRules = path.join(realGeminiHome, "config", "AGENTS.md");
+        const isLink = (link: string) =>
+          fs.readLink(link).pipe(
+            Effect.as(true),
+            Effect.catchReason("PlatformError", "NotFound", () => Effect.succeed(false)),
+          );
+
+        yield* fs.makeDirectory(path.dirname(sharedRules), { recursive: true });
+        yield* fs.makeDirectory(path.dirname(userConfigRules), { recursive: true });
+        yield* fs.writeFileString(sharedRules, "Enable poteto-mode by default.");
+        yield* fs.symlink(sharedRules, userGeminiRules);
+        yield* fs.writeFileString(userConfigRules, "Config-scoped rule.");
+
+        yield* prepareAntigravityProfile({ profileDirectory, userHome });
+        const profileGeminiLink = path.join(profileDirectory, "GEMINI.md");
+        const profileAgentsLink = path.join(profileDirectory, "AGENTS.md");
+        const profileConfigAgentsLink = path.join(profileDirectory, "config", "AGENTS.md");
+        expect(yield* fs.readLink(profileGeminiLink)).toBe(userGeminiRules);
+        expect(yield* fs.readFileString(profileGeminiLink)).toBe("Enable poteto-mode by default.");
+        expect(yield* fs.readLink(profileConfigAgentsLink)).toBe(userConfigRules);
+        expect(yield* isLink(profileAgentsLink)).toBe(false);
+
+        // Preserve a real file already owned by the profile.
+        yield* fs.remove(profileConfigAgentsLink);
+        yield* fs.writeFileString(profileConfigAgentsLink, "Profile-local override.");
+        yield* prepareAntigravityProfile({ profileDirectory, userHome });
+        expect(yield* fs.readFileString(profileConfigAgentsLink)).toBe("Profile-local override.");
+
+        // Repoint a stale symlink to the real user rule file.
+        yield* fs.remove(profileGeminiLink);
+        yield* fs.symlink(path.join(temporaryDirectory, "elsewhere.md"), profileGeminiLink);
+        yield* prepareAntigravityProfile({ profileDirectory, userHome });
+        expect(yield* fs.readLink(profileGeminiLink)).toBe(userGeminiRules);
+
+        // Clean up the profile symlink if the user removes their rule file.
+        yield* fs.remove(userGeminiRules);
+        yield* prepareAntigravityProfile({ profileDirectory, userHome });
+        expect(yield* isLink(profileGeminiLink)).toBe(false);
+      }),
+  );
+
   it.effect("rewrites the GCP block on every launch and never stores the API key", () =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
