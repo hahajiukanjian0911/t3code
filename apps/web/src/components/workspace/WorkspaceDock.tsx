@@ -1398,7 +1398,7 @@ function DockFrame({
     const showFocusIndicator = isFocusedPanel && multiPanelVisible;
     const cardClass = "workspace-window-card workspace-window-surface-main overflow-hidden";
     const focusedCardClass =
-      "border-foreground/20 ring-1 ring-inset ring-foreground/10 transition-[border-color,box-shadow] duration-150";
+      "border-foreground/28 ring-1 ring-inset ring-foreground/12 transition-[border-color,box-shadow] duration-150";
     const maximizeLabel = isStage ? "Restore from app maximize" : "Maximize in app";
     const panelBody = (
       <>
@@ -1407,7 +1407,7 @@ function DockFrame({
             className={cn(
               "workspace-panel-heading drag-region transition-opacity duration-150",
               (raiseRightCard || isStage) && "border-b border-border/60",
-              multiPanelVisible && !isFocusedPanel && "opacity-65",
+              multiPanelVisible && !isFocusedPanel && "opacity-55",
             )}
             data-workspace-panel-heading={key}
             data-workspace-stage-heading={isStage ? "" : undefined}
@@ -1468,7 +1468,13 @@ function DockFrame({
             ) : null}
           </div>
         ) : null}
-        <div className={cn("relative flex min-h-0 min-w-0 flex-1", isVertical && "flex-col")}>
+        <div
+          className={cn(
+            "relative flex min-h-0 min-w-0 flex-1 transition-opacity duration-150",
+            isVertical && "flex-col",
+            multiPanelVisible && !isFocusedPanel && "opacity-90",
+          )}
+        >
           {panelGroups.map((group) => {
             const isHiddenByZoom =
               Boolean(zoomedId) &&
@@ -1554,17 +1560,9 @@ function DockFrame({
             "relative flex min-h-0 min-w-0 flex-1 flex-col",
             isStage && key !== "right" && cardClass,
             key === "left" && "rounded-xl ring-1 ring-inset transition-shadow duration-150",
-            key === "left" && (showFocusIndicator ? "ring-foreground/15" : "ring-transparent"),
+            key === "left" && (showFocusIndicator ? "ring-foreground/20" : "ring-transparent"),
           )}
         >
-          <span
-            aria-hidden
-            data-workspace-focus-beam=""
-            className={cn(
-              "pointer-events-none absolute top-0 right-3.5 left-3.5 z-30 h-0.5 rounded-b-full bg-foreground/55 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none",
-              showFocusIndicator ? "scale-x-100 opacity-100" : "scale-x-50 opacity-0",
-            )}
-          />
           {key === "right" ? (
             <div
               data-workspace-right-contents=""
@@ -1578,7 +1576,7 @@ function DockFrame({
                   "rounded-xl ring-1 ring-inset transition-shadow duration-150",
                 !raiseRightCard &&
                   !isStage &&
-                  (showFocusIndicator ? "ring-foreground/15" : "ring-transparent"),
+                  (showFocusIndicator ? "ring-foreground/20" : "ring-transparent"),
               )}
             >
               {panelBody}
