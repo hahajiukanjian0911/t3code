@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { userEvent } from "vite-plus/test/browser";
 
 import { act, render } from "../../test/render";
+import "../index.css";
 import { EMPTY_COMPOSER_CONTEXT_RECORDS } from "./composerContextPresentation";
 import {
   ComposerPromptEditorTiptap as ComposerPromptEditor,
@@ -230,6 +231,84 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
     });
   });
 
+  it("returns to Normal mode when committing `jk` with Enter under CJK IME in Insert mode, without triggering on Chinese commits", async () => {
+    let latestTelemetry: VimTelemetrySnapshot | null = null;
+    await using screen = await render(
+      <VimHarness
+        initialValue="你好"
+        onVimTelemetryChange={(next) => {
+          latestTelemetry = next;
+        }}
+      />,
+    );
+    const editor = screen.getByTestId("composer-editor");
+    await expect.element(editor).toBeVisible();
+    const dom = editor.element();
+    await userEvent.click(editor);
+    await userEvent.keyboard("{Escape}A");
+    await vi.waitFor(() => {
+      expect(latestTelemetry?.mode).toBe("insert");
+      expect(dom.getAttribute("contenteditable")).toBe("true");
+    });
+
+    // Committing a Chinese candidate with Space must stay in Insert mode
+    await act(() => {
+      dom.dispatchEvent(new CompositionEvent("compositionstart", { data: "", bubbles: true }));
+      dom.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Process",
+          code: "Space",
+          keyCode: 229,
+          isComposing: true,
+          bubbles: true,
+        }),
+      );
+    });
+    await userEvent.keyboard("接口");
+    await act(() => {
+      dom.dispatchEvent(new CompositionEvent("compositionend", { data: "接口", bubbles: true }));
+    });
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe("你好接口");
+      expect(latestTelemetry?.mode).toBe("insert");
+    });
+
+    // Committing raw `jk` with Enter under CJK IME removes `jk` and exits to Normal mode
+    await act(() => {
+      dom.dispatchEvent(new CompositionEvent("compositionstart", { data: "", bubbles: true }));
+    });
+    // Simulate IME mutating the line with `jk` and committing via Enter
+    await act(() => {
+      const textNode = dom.querySelector(".cm-line")?.firstChild;
+      if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+        textNode.textContent = `${textNode.textContent ?? ""}jk`;
+        const sel = window.getSelection();
+        const range = document.createRange();
+        range.setStart(textNode, textNode.textContent.length);
+        range.collapse(true);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+      dom.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Process",
+          code: "Enter",
+          keyCode: 229,
+          isComposing: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      dom.dispatchEvent(new CompositionEvent("compositionend", { data: "jk", bubbles: true }));
+    });
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe("你好接口");
+      expect(latestTelemetry?.mode).toBe("normal");
+      expect(dom.getAttribute("contenteditable")).toBe("false");
+    });
+  });
+
   it("inserts a newline on plain Enter in Insert mode while forwarding Normal-mode Enter to submit", async () => {
     const submitted: Array<string> = [];
     await using screen = await render(
@@ -324,5 +403,47 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
         "1. first\n2. second\n3. third",
       );
     });
+  });
+
+  it("keeps single-line container height stable from empty placeholder through ASCII and CJK input", async () => {
+    await using screen = await render(
+      <div className="w-[420px]">
+        <VimHarness initialValue="" />
+      </div>,
+    );
+    const editor = screen.getByTestId("composer-editor");
+    await expect.element(editor).toBeVisible();
+    const host = screen.container.querySelector<HTMLElement>("[data-composer-codemirror]")!;
+    const placeholder = screen.container.querySelector<HTMLElement>("[data-composer-placeholder]")!;
+    const container = host.parentElement!;
+
+    expect(getComputedStyle(placeholder).lineHeight).toBe(getComputedStyle(host).lineHeight);
+    const emptyHeight = container.getBoundingClientRect().height;
+
+    await userEvent.click(editor);
+    await userEvent.keyboard("ia");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe("a");
+    });
+    expect(container.getBoundingClientRect().height).toBe(emptyHeight);
+
+    await userEvent.keyboard("中文");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe("a中文");
+    });
+    expect(container.getBoundingClientRect().height).toBe(emptyHeight);
+
+    // Clearing back to empty preserves height; adding a newline still grows the composer.
+    await userEvent.keyboard("{Backspace}{Backspace}{Backspace}");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe("");
+    });
+    expect(container.getBoundingClientRect().height).toBe(emptyHeight);
+
+    await userEvent.keyboard("first{Enter}second");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe("first\nsecond");
+    });
+    expect(container.getBoundingClientRect().height).toBeGreaterThan(emptyHeight);
   });
 });

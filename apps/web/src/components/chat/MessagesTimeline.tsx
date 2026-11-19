@@ -23,7 +23,22 @@ import { parseScopedThreadKey } from "@t3tools/client-runtime/environment";
 import { resolveWorkGroupScrollAnchor } from "@t3tools/client-runtime/work-log/scroll-anchor";
 import type { WorkflowOpening } from "@t3tools/client-runtime/state/subagentRuntime";
 import { observeResize } from "~/lib/observeResize";
+import { subscribeWorkspaceLayout } from "~/lib/workspaceLayoutEvents";
 import { useStableCallback } from "~/hooks/useStableCallback";
+
+function isDockAnimating(element: HTMLElement | null): boolean {
+  return element !== null && element.closest("[data-dock-animating]") !== null;
+}
+
+function syncTimelineScrolledState(scrollNode: HTMLElement | null) {
+  if (!scrollNode) return;
+  const surface = scrollNode.closest<HTMLElement>("[data-chat-window-surface]");
+  if (!surface) return;
+  const next = scrollNode.scrollTop > 8 ? "true" : "false";
+  if (surface.dataset.timelineScrolled !== next) {
+    surface.dataset.timelineScrolled = next;
+  }
+}
 
 const NOOP_USE_ARTIFACT_TEMPLATE = () => {};
 const EMPTY_PENDING_APPROVALS: ReadonlyArray<PendingApproval> = [];
@@ -983,8 +998,11 @@ const ConversationTimeline = memo(function ConversationTimeline({
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- the minimap skips refreshes until the restore commits, and the restore can land without a scroll event
   useLayoutEffect(() => {
-    if (!restoringThreadPosition) scheduleMinimapRefresh();
-  }, [restoringThreadPosition, scheduleMinimapRefresh]);
+    if (!restoringThreadPosition) {
+      scheduleMinimapRefresh();
+      syncTimelineScrolledState(listRef.current?.getScrollableNode() ?? null);
+    }
+  }, [listRef, restoringThreadPosition, scheduleMinimapRefresh]);
 
   // The measurement the last remember wrote, so a follow release can rewrite
   // it without reading render state from a listener.
@@ -1031,8 +1049,11 @@ const ConversationTimeline = memo(function ConversationTimeline({
   };
 
   const handleScroll = () => {
+    const scrollNode = listRef.current?.getScrollableNode() ?? null;
+    syncTimelineScrolledState(scrollNode);
     if (restoringThreadPosition || listRef.current?.getState?.().data !== rows) return;
-    const isAtEnd = rememberPosition(liveFollowEnabled && !anchoredEndSpace);
+    if (isDockAnimating(scrollNode)) return;
+    const isAtEnd = rememberPosition(liveFollowEnabled);
     if (isAtEnd !== undefined && !citationPositioning) {
       onIsAtEndChange(isAtEnd);
     }
@@ -1074,7 +1095,9 @@ const ConversationTimeline = memo(function ConversationTimeline({
       if (width === undefined || width === measuredLaneWidthRef.current) return;
       measuredLaneWidthRef.current = width;
       const viewportElement = lane.closest<HTMLElement>("[data-assistant-citation-viewport]");
-      if (viewportElement) measureTimelineGutter(viewportElement);
+      if (viewportElement && !isDockAnimating(viewportElement)) {
+        measureTimelineGutter(viewportElement);
+      }
     });
   };
   const followsEnd =
@@ -1083,21 +1106,57 @@ const ConversationTimeline = memo(function ConversationTimeline({
     !citationPositioning &&
     fullscreenAppRowId === null &&
     !(restoringThreadPosition && rememberedPosition?.atEnd === false);
-  const pinEndAfterResize = useStableCallback(() => {
+  const readingResizeAnchorRef = useRef<{ readonly rowId: string; readonly relTop: number } | null>(
+    null,
+  );
+  const pinAnchorAfterResize = useStableCallback((viewportElement: HTMLElement) => {
     const list = listRef.current;
-    if (!followsEnd || restoringThreadPosition || findActive || !list?.getState().isFollowingEnd)
-      return;
-    // Resizing rewraps many rows together. Follow the new end before paint so the chat
-    // doesn't animate through earlier messages after the panel stops.
+    if (restoringThreadPosition || findActive || !list) return;
     const node = list.getScrollableNode();
-    node?.scrollTo({ top: node.scrollHeight, behavior: "instant" });
+    if (!node) return;
+    if (followsEnd && list.getState().isFollowingEnd) {
+      readingResizeAnchorRef.current = null;
+      // Resizing rewraps many rows together. Follow the new end before paint so the chat
+      // doesn't animate through earlier messages after the panel stops.
+      node.scrollTo({ top: node.scrollHeight, behavior: "instant" });
+      return;
+    }
+    if (!followsEnd && isDockAnimating(viewportElement)) {
+      const scrollRect = node.getBoundingClientRect();
+      let anchor = readingResizeAnchorRef.current;
+      if (!anchor) {
+        for (const row of node.querySelectorAll<HTMLElement>("[data-timeline-row-id]")) {
+          const rect = row.getBoundingClientRect();
+          if (rect.bottom > scrollRect.top + 8) {
+            const rowId = row.dataset.timelineRowId;
+            if (rowId) {
+              anchor = { rowId, relTop: rect.top - scrollRect.top };
+              readingResizeAnchorRef.current = anchor;
+            }
+            break;
+          }
+        }
+        return;
+      }
+      const targetRow = node.querySelector<HTMLElement>(
+        `[data-timeline-row-id="${CSS.escape(anchor.rowId)}"]`,
+      );
+      if (targetRow) {
+        const delta = targetRow.getBoundingClientRect().top - scrollRect.top - anchor.relTop;
+        if (Math.abs(delta) > 0.5) {
+          node.scrollTop += delta;
+        }
+      }
+    }
   });
   const attachTimelineViewportElement = (viewportElement: HTMLDivElement | null) => {
     setTimelineViewportElement(viewportElement);
     if (!viewportElement) return;
     let previousSize: DOMRectReadOnly | undefined;
+    let deferredPostAnimationMeasure = false;
     const stopObserving = observeResize(viewportElement, ([entry]) => {
       const size = entry?.contentRect;
+      const animating = isDockAnimating(viewportElement);
       if (
         size &&
         previousSize &&
@@ -1105,14 +1164,29 @@ const ConversationTimeline = memo(function ConversationTimeline({
         size.height > 0 &&
         (size.width !== previousSize.width || size.height !== previousSize.height)
       ) {
-        pinEndAfterResize();
+        pinAnchorAfterResize(viewportElement);
       }
       previousSize = size;
+      if (animating) {
+        deferredPostAnimationMeasure = true;
+        return;
+      }
+      readingResizeAnchorRef.current = null;
       measureTimelineGutter(viewportElement);
       scheduleMinimapRefresh();
     });
+    const stopWorkspaceLayout = subscribeWorkspaceLayout(() => {
+      if (!deferredPostAnimationMeasure || isDockAnimating(viewportElement)) return;
+      deferredPostAnimationMeasure = false;
+      readingResizeAnchorRef.current = null;
+      measureTimelineGutter(viewportElement);
+      scheduleMinimapRefresh();
+      syncTimelineScrolledState(listRef.current?.getScrollableNode() ?? null);
+    });
     return () => {
+      stopWorkspaceLayout();
       stopObserving();
+      readingResizeAnchorRef.current = null;
       setTimelineViewportElement(null);
     };
   };
@@ -1497,6 +1571,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
               // Keyboard scrolling only moves the focused element; F6 and clicks land here.
               tabIndex={-1}
               data-workspace-focus-default
+              data-thread-restoring={restoringThreadPosition ? "true" : undefined}
               className={cn(
                 "messages-timeline-scroll scrollbar-gutter-both h-full min-h-0 overflow-x-hidden overscroll-y-contain [overflow-anchor:none]",
                 topFadeEnabled && "topbar-scroll-fade",

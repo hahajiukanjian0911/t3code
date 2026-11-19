@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { isCjkImeHijackedEvent, resolvePhysicalVimKey } from "./vimKeymapsAndIme";
+import {
+  extractInsertEscapeSequences,
+  isCjkImeHijackedEvent,
+  resolvePhysicalVimKey,
+} from "./vimKeymapsAndIme";
 
 describe("vimKeymapsAndIme", () => {
   it("resolves physical key codes for Vim Normal/Visual motions regardless of CJK IME character output", () => {
@@ -74,5 +78,17 @@ describe("vimKeymapsAndIme", () => {
     expect(isCjkImeHijackedEvent({ isComposing: false, keyCode: 189, key: "——" })).toBe(true);
     expect(isCjkImeHijackedEvent({ isComposing: false, keyCode: 192, key: "～" })).toBe(true);
     expect(isCjkImeHijackedEvent({ isComposing: false, keyCode: 74, key: "j" })).toBe(false);
+  });
+
+  it("extracts multi-key ASCII insert-mode escape sequences from user Vim keybindings", () => {
+    const seqs = extractInsertEscapeSequences([
+      { mode: "insert", lhs: "jk", rhs: "<Esc>" },
+      { mode: "insert", lhs: "jj", rhs: "<C-[>" },
+      { mode: "insert", lhs: "fd", rhs: "<C-c>" },
+      { mode: "insert", lhs: "a", rhs: "<Esc>" },
+      { mode: "normal", lhs: "jk", rhs: "<Esc>" },
+      { mode: "insert", lhs: "zz", rhs: "hello" },
+    ]);
+    expect([...seqs]).toEqual(["jk", "jj", "fd"]);
   });
 });

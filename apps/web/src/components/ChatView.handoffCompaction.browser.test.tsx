@@ -110,7 +110,7 @@ it("sends a Codex follow-up on a cold Claude thread without compacting first", a
 
   const editor = page.getByTestId("composer-editor");
   await userEvent.click(editor);
-  await userEvent.keyboard("ikeep going{Enter}");
+  await userEvent.keyboard("ikeep going{Escape}{Enter}");
 
   const messages = () =>
     dispatchedCommands().flatMap((command) =>

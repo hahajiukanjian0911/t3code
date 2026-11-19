@@ -1,6 +1,6 @@
 import type { ClientSettings } from "@t3tools/contracts/settings";
 import { EditorState, Prec, StateEffect, StateField } from "@codemirror/state";
-import { EditorView, ViewPlugin } from "@codemirror/view";
+import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 import { CodeMirror, Vim, getCM } from "@replit/codemirror-vim";
 import { listContinuationForEnter } from "~/composer-list-continuation";
 
@@ -98,7 +98,31 @@ export function isCjkImeHijackedEvent(event: {
   );
 }
 
+const INSERT_ESCAPE_RHS = /^<(?:esc|c-\[|c-c)>$/i;
+const ASCII_INSERT_ESCAPE_LHS = /^[!-~]{2,}$/;
+
 let appliedKeybindingsSignature = "";
+let activeInsertEscapeSequences = new Set<string>(["jk"]);
+
+export function extractInsertEscapeSequences(
+  rules: ReadonlyArray<VimKeybindingRule>,
+): ReadonlySet<string> {
+  const sequences = new Set<string>();
+  for (const rule of rules) {
+    if (
+      rule.mode === "insert" &&
+      ASCII_INSERT_ESCAPE_LHS.test(rule.lhs) &&
+      INSERT_ESCAPE_RHS.test(rule.rhs.trim())
+    ) {
+      sequences.add(rule.lhs);
+    }
+  }
+  return sequences;
+}
+
+function isActiveInsertEscapeSequence(text: string): boolean {
+  return activeInsertEscapeSequences.has(text);
+}
 
 /**
  * Applies user-configured `vimKeybindings` into `@replit/codemirror-vim` idempotently.
@@ -108,6 +132,7 @@ export function syncVimKeybindings(rules: ReadonlyArray<VimKeybindingRule>): voi
   const signature = JSON.stringify(rules);
   if (signature === appliedKeybindingsSignature) return;
   appliedKeybindingsSignature = signature;
+  activeInsertEscapeSequences = new Set(extractInsertEscapeSequences(rules));
 
   Vim.setOption("insertModeEscKeysTimeout", 400);
   Vim.mapclear();
@@ -225,10 +250,90 @@ const vimImeEditableSyncPlugin = ViewPlugin.fromClass(
   class {
     private cm: ReturnType<typeof getCM> = null;
     private readonly onVimEvent: () => void;
+    private inComposition = false;
+    private pendingImeEnterCommit = false;
+    private pendingImeEscapeSeq: string | null = null;
+    private readonly onCaptureKeyDown: (event: KeyboardEvent) => void;
+    private readonly onCompositionStart: () => void;
+    private readonly onCompositionEnd: (event: CompositionEvent) => void;
 
     constructor(private readonly view: EditorView) {
       this.onVimEvent = () => syncVimImeEditable(this.view, false);
+      // Capture-phase listener runs before CodeMirror's ignoreDuringComposition drops keydowns.
+      this.onCaptureKeyDown = (event) => {
+        const vim = getCM(this.view)?.state.vim;
+        if (!vim?.insertMode) {
+          this.pendingImeEnterCommit = false;
+          this.pendingImeEscapeSeq = null;
+          return;
+        }
+        const composing =
+          this.inComposition || event.isComposing || event.keyCode === 229 || this.view.composing;
+        if (!composing) {
+          this.pendingImeEnterCommit = false;
+          this.pendingImeEscapeSeq = null;
+          return;
+        }
+        const isPlainEnter =
+          (event.code === "Enter" || event.code === "NumpadEnter" || event.key === "Enter") &&
+          !event.metaKey &&
+          !event.ctrlKey &&
+          !event.altKey;
+        if (isPlainEnter) {
+          this.pendingImeEnterCommit = true;
+        } else if (!["Shift", "Control", "Alt", "Meta"].includes(event.key)) {
+          this.pendingImeEnterCommit = false;
+        }
+      };
+      this.onCompositionStart = () => {
+        this.inComposition = true;
+        this.pendingImeEnterCommit = false;
+        this.pendingImeEscapeSeq = null;
+      };
+      this.onCompositionEnd = (event) => {
+        const committedByEnter = this.pendingImeEnterCommit;
+        this.inComposition = false;
+        this.pendingImeEnterCommit = false;
+        if (!committedByEnter) return;
+        const vim = getCM(this.view)?.state.vim;
+        if (!vim?.insertMode) return;
+        const committed = event.data;
+        if (!committed || !isActiveInsertEscapeSequence(committed)) return;
+        this.pendingImeEscapeSeq = committed;
+        // Run after CodeMirror's own compositionend microtask observer flush.
+        Promise.resolve().then(() => queueMicrotask(() => this.flushPendingImeEscape()));
+      };
+      this.view.contentDOM.addEventListener("keydown", this.onCaptureKeyDown, { capture: true });
+      this.view.contentDOM.addEventListener("compositionstart", this.onCompositionStart);
+      this.view.contentDOM.addEventListener("compositionend", this.onCompositionEnd);
       this.attach(true);
+    }
+
+    private flushPendingImeEscape(): void {
+      const seq = this.pendingImeEscapeSeq;
+      if (!seq || !this.view.dom.isConnected) return;
+      const cm = getCM(this.view);
+      const vim = cm?.state.vim;
+      if (!cm || !vim?.insertMode) {
+        this.pendingImeEscapeSeq = null;
+        return;
+      }
+      const head = this.view.state.selection.main.head;
+      if (head < seq.length || this.view.state.sliceDoc(head - seq.length, head) !== seq) {
+        return;
+      }
+      this.pendingImeEscapeSeq = null;
+      this.view.dispatch({
+        changes: { from: head - seq.length, to: head, insert: "" },
+        selection: { anchor: head - seq.length },
+        userEvent: "delete",
+      });
+      Vim.multiSelectHandleKey(cm, "<Esc>", "user");
+      CodeMirror.signal(cm, "vim-keypress", "<Esc>");
+      (
+        cm.state as { vimPlugin?: { blockCursor?: { scheduleRedraw: () => void } } }
+      ).vimPlugin?.blockCursor?.scheduleRedraw();
+      syncVimImeEditable(this.view, false);
     }
 
     private attach(defer: boolean): void {
@@ -250,12 +355,20 @@ const vimImeEditableSyncPlugin = ViewPlugin.fromClass(
       this.cm = null;
     }
 
-    update(): void {
+    update(update: ViewUpdate): void {
       if (!this.cm) this.attach(true);
+      if (update.docChanged && this.pendingImeEscapeSeq) {
+        queueMicrotask(() => this.flushPendingImeEscape());
+      }
       syncVimImeEditable(this.view, true);
     }
 
     destroy(): void {
+      this.view.contentDOM.removeEventListener("keydown", this.onCaptureKeyDown, {
+        capture: true,
+      });
+      this.view.contentDOM.removeEventListener("compositionstart", this.onCompositionStart);
+      this.view.contentDOM.removeEventListener("compositionend", this.onCompositionEnd);
       this.detach();
     }
   },

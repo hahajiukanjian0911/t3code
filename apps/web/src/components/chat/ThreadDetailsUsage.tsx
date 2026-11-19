@@ -14,8 +14,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { Fragment, useState, type ReactNode } from "react";
 import { ChartNoAxesColumnIcon, ChevronRightIcon } from "lucide-react";
 
+import geminiMark from "../../assets/gemini-mark.png";
 import { ClaudeAI, OpenAI } from "../Icons";
-import geminiLogo from "../mcp/logos/gemini.png";
 import { preferredUsageLimit } from "../usage/UsageLimitTrajectory.logic";
 import { UsageLimitTrajectoryHost } from "../usage/UsageLimitTrajectoryPanel";
 import { PROVIDER_PRESENTATION } from "../usage/usageProviders";
@@ -91,13 +91,7 @@ export function ThreadDetailsUsage({
             } else if (shared || pool.driver === "claudeAgent") {
               logo = <ClaudeAI aria-hidden className="size-3.5" />;
             } else if (pool.driver === "antigravity" && window.id.startsWith("gemini-")) {
-              logo = (
-                <img
-                  src={geminiLogo}
-                  alt=""
-                  className="size-3.5 rounded-full object-cover object-center [object-view-box:inset(20%)]"
-                />
-              );
+              logo = <img src={geminiMark} alt="" className="size-3.5" />;
             }
             const rowLabel = logo ? label.replace(/^(?:Gemini|Others) · /, "") : label;
             return (

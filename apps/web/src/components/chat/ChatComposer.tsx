@@ -3701,7 +3701,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     importContextFragment={importContextFragmentStable}
                     skills={selectedProviderSkills}
                     containerClassName="grid grid-cols-1 [&>div]:col-start-1 [&>div]:row-start-1"
-                    placeholderClassName="static"
+                    {...(settings.vimMode ? {} : { placeholderClassName: "static" })}
                     className={cn(
                       settings.vimMode
                         ? "min-h-[1lh]"
@@ -3736,7 +3736,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     }
                     placeholderSuffix={
                       offeredPromptSuggestion !== null ? (
-                        <span className="ml-2 inline-flex align-[1px]">
+                        <span className="ml-2 inline-flex h-[1lh] items-center align-top">
                           <Kbd variant="outline">⇥ Tab</Kbd>
                         </span>
                       ) : undefined

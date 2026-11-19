@@ -442,12 +442,12 @@ it("a rejected send leaves the timeline when a new draft was typed meanwhile", a
 
   const editor = page.getByTestId("composer-editor");
   await userEvent.click(editor);
-  await userEvent.keyboard("iFailed prompt{Enter}");
+  await userEvent.keyboard("iFailed prompt{Escape}{Enter}");
   await vi.waitFor(() =>
     expect(dispatchedCommands().map((command) => command.type)).toContain("message.dispatch"),
   );
   await expect.element(page.getByText("Failed prompt")).toBeVisible();
-  await userEvent.keyboard("Next draft");
+  await userEvent.keyboard("iNext draft");
 
   await rejectPendingCommand("Attachment 'sample.png' cannot be sent.");
 

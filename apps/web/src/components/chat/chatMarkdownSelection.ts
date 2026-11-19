@@ -41,10 +41,10 @@ const DEFAULT_CORNER_RADIUS = 3;
 const DEFAULT_VERTICAL_PAD = 1.5;
 const DEFAULT_MAX_SEAM_GAP = 18;
 const LEFT_EDGE_SNAP_PX = 4;
+const MASK_VERTICAL_OVERHANG = 4;
 
-const SELECTION_OVERLAY_ATTR = "data-chat-markdown-selection-overlay";
 const SELECTION_ACTIVE_ATTR = "data-chat-markdown-selection-active";
-const SELECTION_BAND_ATTR = "data-chat-markdown-selection-band";
+const SELECTION_MASK_VAR = "--chat-markdown-selection-mask";
 const SKIPPED_ANCESTOR_SELECTOR =
   '[aria-hidden="true"], .select-none, pre, .chat-markdown-codeblock, button:not(.chat-markdown-file-link)';
 
@@ -178,6 +178,23 @@ export function mergeSelectionBands(
   });
 }
 
+function isAtListItemStart(textNode: Text, startOffset: number, root: HTMLElement): boolean {
+  if (startOffset !== 0) return false;
+  const listItem = textNode.parentElement?.closest("li");
+  if (!listItem || !root.contains(listItem)) return false;
+  const walker = document.createTreeWalker(listItem, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode();
+  while (node !== null) {
+    if (node === textNode) return true;
+    const text = node.textContent ?? "";
+    if (text.trim().length > 0 && !node.parentElement?.closest(SKIPPED_ANCESTOR_SELECTOR)) {
+      return false;
+    }
+    node = walker.nextNode();
+  }
+  return false;
+}
+
 function getInlinePaddingBox(textNode: Text, root: HTMLElement): HTMLElement | null {
   let el = textNode.parentElement;
   while (el && el !== root) {
@@ -252,9 +269,51 @@ function isRangeOutsideRootEdge(
   return { startsBeforeRoot, endsAfterRoot };
 }
 
-function collectRootSelectionBands(root: HTMLElement, range: Range): SelectionBand[] {
+function roundedRectPath(band: SelectionBand): string {
+  const x = Number(band.left.toFixed(2));
+  const y = Number(band.top.toFixed(2));
+  const w = Number(band.width.toFixed(2));
+  const h = Number(band.height.toFixed(2));
+  if (w <= 0 || h <= 0) return "";
+  const maxR = Math.min(w / 2, h / 2);
+  const tl = Math.min(band.radiusTopLeft, maxR);
+  const tr = Math.min(band.radiusTopRight, maxR);
+  const br = Math.min(band.radiusBottomRight, maxR);
+  const bl = Math.min(band.radiusBottomLeft, maxR);
+  if (tl === 0 && tr === 0 && br === 0 && bl === 0) {
+    return `M${x} ${y}H${x + w}V${y + h}H${x}Z`;
+  }
+  return [
+    `M${x + tl} ${y}`,
+    `H${x + w - tr}`,
+    tr > 0 ? `Q${x + w} ${y} ${x + w} ${y + tr}` : "",
+    `V${y + h - br}`,
+    br > 0 ? `Q${x + w} ${y + h} ${x + w - br} ${y + h}` : "",
+    `H${x + bl}`,
+    bl > 0 ? `Q${x} ${y + h} ${x} ${y + h - bl}` : "",
+    `V${y + tl}`,
+    tl > 0 ? `Q${x} ${y} ${x + tl} ${y}` : "",
+    "Z",
+  ].join("");
+}
+
+function buildSelectionMaskDataUrl(
+  bands: ReadonlyArray<SelectionBand>,
+  width: number,
+  height: number,
+): string | null {
+  if (bands.length === 0 || width <= 0 || height <= 0) return null;
+  const d = bands.map(roundedRectPath).filter(Boolean).join(" ");
+  if (!d) return null;
+  const w = Number(width.toFixed(2));
+  const totalH = Number((height + MASK_VERTICAL_OVERHANG * 2).toFixed(2));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${totalH}" viewBox="0 ${-MASK_VERTICAL_OVERHANG} ${w} ${totalH}"><path fill="#000" d="${d}"/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+function collectRootSelectionMask(root: HTMLElement, range: Range): string | null {
   const rootRect = root.getBoundingClientRect();
-  if (rootRect.width <= 0 || rootRect.height <= 0) return [];
+  if (rootRect.width <= 0 || rootRect.height <= 0) return null;
 
   const scratch = document.createRange();
   const rawRects: RawSelectionRect[] = [];
@@ -285,6 +344,7 @@ function collectRootSelectionBands(root: HTMLElement, range: Range): SelectionBa
         const inlineBoxRect = inlineBox ? inlineBox.getBoundingClientRect() : null;
         const expandLeft = inlineBoxRect !== null && offsets.start === 0;
         const expandRight = inlineBoxRect !== null && offsets.end === textNode.length;
+        const coverListMarker = isAtListItemStart(textNode, offsets.start, root);
 
         for (let i = 0; i < clientRects.length; i++) {
           const r = clientRects[i]!;
@@ -294,7 +354,9 @@ function collectRootSelectionBands(root: HTMLElement, range: Range): SelectionBa
           const top = r.top - rootRect.top;
           const bottom = r.bottom - rootRect.top;
 
-          if (expandLeft && i === 0 && inlineBoxRect) {
+          if (coverListMarker && i === 0) {
+            left = scope.lineLeft;
+          } else if (expandLeft && i === 0 && inlineBoxRect) {
             const boxLeft = inlineBoxRect.left - rootRect.left;
             if (Math.abs(left - boxLeft) <= 28) left = Math.min(left, boxLeft);
           }
@@ -318,67 +380,37 @@ function collectRootSelectionBands(root: HTMLElement, range: Range): SelectionBa
     current = walker.nextNode();
   }
 
-  if (rawRects.length === 0) return [];
+  if (rawRects.length === 0) return null;
   const edges = isRangeOutsideRootEdge(root, range);
-  return mergeSelectionBands(rawRects, edges);
+  const bands = mergeSelectionBands(rawRects, edges);
+  return buildSelectionMaskDataUrl(bands, rootRect.width, rootRect.height);
 }
 
 const registeredRoots = new Set<HTMLElement>();
-const activeOverlays = new Map<HTMLElement, HTMLDivElement>();
+const activeRoots = new Set<HTMLElement>();
 let listenersAttached = false;
 let rafId: number | null = null;
 
 function clearRootOverlay(root: HTMLElement): void {
-  const overlay = activeOverlays.get(root);
-  if (overlay) {
-    overlay.remove();
-    activeOverlays.delete(root);
-  }
+  root.style.removeProperty(SELECTION_MASK_VAR);
   root.removeAttribute(SELECTION_ACTIVE_ATTR);
+  activeRoots.delete(root);
 }
 
 function clearAllOverlays(): void {
-  for (const root of activeOverlays.keys()) {
+  for (const root of activeRoots) {
     clearRootOverlay(root);
   }
 }
 
-function renderRootOverlay(root: HTMLElement, bands: ReadonlyArray<SelectionBand>): void {
-  if (bands.length === 0) {
+function applyRootOverlay(root: HTMLElement, maskUrl: string | null): void {
+  if (!maskUrl) {
     clearRootOverlay(root);
     return;
   }
-
-  let overlay = activeOverlays.get(root);
-  if (!overlay || overlay.parentElement !== root) {
-    overlay = document.createElement("div");
-    overlay.setAttribute(SELECTION_OVERLAY_ATTR, "");
-    overlay.setAttribute("aria-hidden", "true");
-    overlay.className = "select-none";
-    root.append(overlay);
-    activeOverlays.set(root, overlay);
-  }
-
+  root.style.setProperty(SELECTION_MASK_VAR, maskUrl);
   root.setAttribute(SELECTION_ACTIVE_ATTR, "");
-
-  // Reuse existing band nodes to avoid churn while drag-selecting.
-  while (overlay.childElementCount > bands.length) {
-    overlay.lastElementChild?.remove();
-  }
-  for (let i = 0; i < bands.length; i++) {
-    const band = bands[i]!;
-    let node = overlay.children[i] as HTMLSpanElement | undefined;
-    if (!node) {
-      node = document.createElement("span");
-      node.setAttribute(SELECTION_BAND_ATTR, "");
-      overlay.append(node);
-    }
-    node.style.left = `${band.left}px`;
-    node.style.top = `${band.top}px`;
-    node.style.width = `${band.width}px`;
-    node.style.height = `${band.height}px`;
-    node.style.borderRadius = `${band.radiusTopLeft}px ${band.radiusTopRight}px ${band.radiusBottomRight}px ${band.radiusBottomLeft}px`;
-  }
+  activeRoots.add(root);
 }
 
 function syncActiveSelection(): void {
@@ -400,11 +432,10 @@ function syncActiveSelection(): void {
   for (const root of registeredRoots) {
     if (!root.isConnected || !range.intersectsNode(root)) continue;
     visited.add(root);
-    const bands = collectRootSelectionBands(root, range);
-    renderRootOverlay(root, bands);
+    applyRootOverlay(root, collectRootSelectionMask(root, range));
   }
 
-  for (const root of activeOverlays.keys()) {
+  for (const root of activeRoots) {
     if (!visited.has(root)) clearRootOverlay(root);
   }
 }
@@ -428,7 +459,7 @@ function handleSelectionChange(): void {
 }
 
 function handleResize(): void {
-  if (activeOverlays.size === 0) return;
+  if (activeRoots.size === 0) return;
   scheduleSelectionSync();
 }
 

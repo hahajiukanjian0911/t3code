@@ -499,6 +499,7 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
         />
         {value.length === 0 && contextRecords.size === 0 && props.placeholder ? (
           <div
+            data-composer-codemirror=""
             data-composer-placeholder=""
             style={isInsertMode ? undefined : { paddingInlineStart: "calc(0.55em + 4px)" }}
             className={cn(

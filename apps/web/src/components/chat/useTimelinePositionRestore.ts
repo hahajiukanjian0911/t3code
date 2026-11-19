@@ -116,7 +116,10 @@ export function startTimelinePositionRestore({
         listOpenedOn === listIdentityKey
         ? undefined
         : list.scrollToEnd({ animated: false });
-  const settlesAtEnd = position?.atEnd !== false && scrolling !== undefined;
+  // Even when LegendList freshly opened on this thread (initialScrollAtEnd), tall rows
+  // or delayed hydration can leave scrollTop short of the real end; verify and settle
+  // against measuredEndOffset before marking positioned so handleScroll never records atEnd=false.
+  const settlesAtEnd = position?.atEnd !== false;
   void Promise.resolve(scrolling).then(async () => {
     if (cancelled) return;
     if (settlesAtEnd) {

@@ -3386,7 +3386,7 @@ export default function ChatView(props: ChatViewProps) {
         "relative [[data-panel-animations=true]_&]:motion-safe:transition-[padding-left] [[data-panel-animations=true]_&]:motion-safe:duration-(--panel-animation-duration) [[data-panel-animations=true]_&]:motion-safe:ease-out",
         !workspaceDock && "bg-background",
         workspaceDock
-          ? "drag-region flex h-8 shrink-0 items-center"
+          ? "drag-region flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center border-b border-transparent bg-background/85 backdrop-blur-md transition-[border-color] duration-180"
           : isElectron
             ? cn(
                 "drag-region flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center px-3 sm:px-5",
@@ -3419,6 +3419,7 @@ export default function ChatView(props: ChatViewProps) {
         onOpenThread={onOpenRelatedThreadStable}
         rightPanelOpen={inlineRightPanelOwnsTitleBar}
         onNewThreadInProject={handleNewThreadInActiveProjectStable}
+        isWorking={isWorking}
         {...(activeDraftLogicalProjectKey
           ? { onOpenProjectSettings: handleOpenDraftProjectSettingsStable }
           : {})}
@@ -3598,6 +3599,7 @@ export default function ChatView(props: ChatViewProps) {
           )}
           data-chat-column-maximized-away={rightPanelMaximized ? "true" : "false"}
           data-chat-column
+          data-chat-window-surface=""
           inert={rightPanelMaximized}
           onMouseUp={preventMiddleClickPasteOutsideEditable}
         >

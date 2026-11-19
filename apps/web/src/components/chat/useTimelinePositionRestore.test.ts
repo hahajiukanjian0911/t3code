@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { measuredEndOffset, settleListScroll } from "./useTimelinePositionRestore";
+import type { LegendListRef } from "@legendapp/list/react";
+import type { TimelineViewport } from "./timelineViewport";
+import {
+  measuredEndOffset,
+  settleListScroll,
+  startTimelinePositionRestore,
+} from "./useTimelinePositionRestore";
 
 describe("settleListScroll", () => {
   it("hands off when a streaming reply keeps moving the end", async () => {
@@ -27,5 +33,54 @@ describe("settleListScroll", () => {
     vi.unstubAllGlobals();
 
     expect(settled).toBe(true);
+  });
+});
+
+describe("startTimelinePositionRestore", () => {
+  it("settles to the measured end when a remounted list opens on a thread whose initialScrollAtEnd fell short", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) =>
+      setTimeout(() => callback(0), 16),
+    );
+    const element = { scrollTop: 0, scrollHeight: 4_000, clientHeight: 800 };
+    const list = {
+      getState: () => ({ data: [{ id: "row-1" }, { id: "row-2" }] }),
+      getScrollableNode: () => element as unknown as HTMLElement,
+      scrollToOffset: async ({ offset }: { offset: number }) => {
+        element.scrollTop = offset;
+      },
+      scrollToEnd: async () => {
+        element.scrollTop = element.scrollHeight - element.clientHeight;
+      },
+    } as unknown as LegendListRef;
+    const viewport = {
+      scrollNode: element as unknown as HTMLElement,
+      navigate: vi.fn(),
+      holdProgrammaticScroll: () => () => {},
+      subscribe: () => () => {},
+      followReleased: vi.fn(),
+      onFollowReleased: () => () => {},
+    } as unknown as TimelineViewport;
+
+    let positionedAtScrollTop: number | null = null;
+    startTimelinePositionRestore({
+      list,
+      viewport,
+      listIdentityKey: "env:thread-b",
+      listOpenedOn: "env:thread-b",
+      rememberedPosition: undefined,
+      citationPending: false,
+      releaseForFind: false,
+      onPositioned: () => {
+        positionedAtScrollTop = element.scrollTop;
+      },
+    });
+
+    await vi.advanceTimersByTimeAsync(200);
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+
+    expect(positionedAtScrollTop).toBe(3_200);
+    expect(element.scrollTop).toBe(3_200);
   });
 });
