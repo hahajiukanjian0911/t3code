@@ -4061,6 +4061,26 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
     };
   });
 
+  const parseGitDecorateRefs = (raw: string): string[] => {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) return [];
+    const seen = new Set<string>();
+    const refs: string[] = [];
+    for (const part of trimmed.split(", ")) {
+      const entry = part.trim();
+      if (!entry || entry === "HEAD" || entry.endsWith("/HEAD")) continue;
+      const normalized = entry.startsWith("HEAD -> ")
+        ? entry.slice("HEAD -> ".length).trim()
+        : entry.startsWith("tag: ")
+          ? entry.slice("tag: ".length).trim()
+          : entry;
+      if (!normalized || seen.has(normalized)) continue;
+      seen.add(normalized);
+      refs.push(normalized);
+    }
+    return refs;
+  };
+
   const getReviewBranchCommits = Effect.fn("getReviewBranchCommits")(function* (
     input: ReviewBranchCommitsInput,
   ) {
@@ -4075,9 +4095,98 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
     );
     if (head.exitCode !== 0) {
       if (head.exitCode === 1 && head.stderr.trim() === "") {
-        return { commits: [], truncated: false };
+        return {
+          commits: [],
+          truncated: false,
+          ...(input.includeHistory ? { totalCount: 0 } : {}),
+        };
       }
       return yield* reviewCommitError(cwd, "Could not resolve the current branch commit.");
+    }
+    const maxCommits = Math.min(
+      REVIEW_BRANCH_COMMIT_LIMIT,
+      Math.max(1, input.limit ?? REVIEW_BRANCH_COMMIT_LIMIT),
+    );
+    if (input.includeHistory) {
+      const [countResult, logResult] = yield* Effect.all([
+        executeGit(
+          "GitVcsDriver.getReviewBranchCommits.count",
+          cwd,
+          ["rev-list", "--count", "HEAD", "--"],
+          { allowNonZeroExit: true },
+        ),
+        executeGit(
+          "GitVcsDriver.getReviewBranchCommits.history",
+          cwd,
+          [
+            "log",
+            "-z",
+            "--no-notes",
+            "--no-show-signature",
+            "--decorate=short",
+            "--format=%H%x00%s%x00%cI%x00%D",
+            `--max-count=${maxCommits + 1}`,
+            "HEAD",
+            "--",
+          ],
+          {
+            maxOutputBytes: REVIEW_BRANCH_COMMIT_MAX_OUTPUT_BYTES,
+            appendTruncationMarker: true,
+          },
+        ),
+      ]);
+      if (
+        !logResult.stdoutTruncated &&
+        logResult.stdout.length > 0 &&
+        !logResult.stdout.endsWith("\0")
+      ) {
+        return yield* reviewCommitError(cwd, "Could not read branch commit metadata.");
+      }
+      const fields = logResult.stdout.split("\0");
+      const completeFieldCount = fields.length - 1;
+      const commits: Array<{
+        sha: string;
+        subject: string;
+        committedAt: string;
+        refs?: string[];
+      }> = [];
+      for (
+        let index = 0;
+        index + 3 < completeFieldCount && commits.length <= maxCommits;
+        index += 4
+      ) {
+        const sha = fields[index];
+        const subject = fields[index + 1];
+        const committedAt = fields[index + 2];
+        const decorateRaw = fields[index + 3] ?? "";
+        if (
+          !sha ||
+          subject === undefined ||
+          !committedAt ||
+          !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(sha)
+        ) {
+          return yield* reviewCommitError(cwd, "Could not read branch commit metadata.");
+        }
+        const refs = parseGitDecorateRefs(decorateRaw);
+        commits.push({
+          sha,
+          subject: subject.slice(0, REVIEW_BRANCH_SUBJECT_LIMIT),
+          committedAt,
+          ...(refs.length > 0 ? { refs } : {}),
+        });
+      }
+      if (logResult.stdoutTruncated && commits.length === 0) {
+        return yield* reviewCommitError(cwd, "Branch commit metadata exceeds the response limit.");
+      }
+      const parsedCount =
+        countResult.exitCode === 0 ? Number.parseInt(countResult.stdout.trim(), 10) : Number.NaN;
+      const totalCount =
+        Number.isSafeInteger(parsedCount) && parsedCount >= 0 ? parsedCount : commits.length;
+      return {
+        commits: commits.slice(0, maxCommits),
+        truncated: logResult.stdoutTruncated || commits.length > maxCommits,
+        totalCount,
+      };
     }
     const { mergeBase } = yield* resolveReviewMergeBase(
       cwd,
@@ -4093,7 +4202,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
         "--no-notes",
         "--no-show-signature",
         "--format=%H%x00%s%x00%cI",
-        `--max-count=${REVIEW_BRANCH_COMMIT_LIMIT + 1}`,
+        `--max-count=${maxCommits + 1}`,
         `${mergeBase}..HEAD`,
       ],
       {
@@ -4109,7 +4218,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
     const commits: Array<{ sha: string; subject: string; committedAt: string }> = [];
     for (
       let index = 0;
-      index + 2 < completeFieldCount && commits.length <= REVIEW_BRANCH_COMMIT_LIMIT;
+      index + 2 < completeFieldCount && commits.length <= maxCommits;
       index += 3
     ) {
       const sha = fields[index];
@@ -4129,8 +4238,8 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
       return yield* reviewCommitError(cwd, "Branch commit metadata exceeds the response limit.");
     }
     return {
-      commits: commits.slice(0, REVIEW_BRANCH_COMMIT_LIMIT),
-      truncated: result.stdoutTruncated || commits.length > REVIEW_BRANCH_COMMIT_LIMIT,
+      commits: commits.slice(0, maxCommits),
+      truncated: result.stdoutTruncated || commits.length > maxCommits,
     };
   });
 

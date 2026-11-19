@@ -368,6 +368,7 @@ export function createWorkspaceFocusController(doc: Document) {
     },
     focus,
     request,
+    cancelRequest,
     dispose: () => {
       cancelRequest();
       unmarkKeyboardArea();
@@ -396,8 +397,16 @@ export function startWorkspaceFocus(router: AnyRouter): () => void {
       if (previous.userActionRevisionByThreadKey[threadKey] === revision) continue;
       const next = state.byThreadKey[threadKey];
       const before = previous.byThreadKey[threadKey];
-      if (next?.isOpen && (!before?.isOpen || next.activeSurfaceId !== before.activeSurfaceId))
-        requestWorkspaceFocus({ area: "panel" });
+      if (next?.isOpen && (!before?.isOpen || next.activeSurfaceId !== before.activeSurfaceId)) {
+        const selected = next.surfaces.find((surface) => surface.id === next.activeSurfaceId);
+        if (selected?.kind === "terminal") {
+          // The terminal owns a focus request for its exact viewport, including while it mounts.
+          focusRequestVersion++;
+          active.cancelRequest();
+        } else {
+          requestWorkspaceFocus({ area: "panel" });
+        }
+      }
     }
   });
   const stopRoute = router.subscribe("onResolved", ({ fromLocation, toLocation }) => {

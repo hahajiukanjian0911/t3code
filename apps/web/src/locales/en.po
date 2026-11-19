@@ -1213,6 +1213,7 @@ msgstr "Uncommitted"
 #: src/components/DiffPanel.tsx
 #: src/components/DiffPanel.tsx
 #: src/components/GitActionsControl.tsx
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
 msgid "Changes"
 msgstr "Changes"
 
@@ -1265,6 +1266,7 @@ msgid "No commits on this branch."
 msgstr "No commits on this branch."
 
 #: src/components/DiffPanel.tsx
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
 msgid "Commits"
 msgstr "Commits"
 
@@ -2416,11 +2418,6 @@ msgstr "{0}. Show details"
 #: src/components/contextChipParts.tsx
 msgid "Open {0} {1}: {2}"
 msgstr "Open {0} {1}: {2}"
-
-#. 0: name; 1: size
-#: src/components/contextChipParts.tsx
-msgid "Image attachment, {0}, {1}"
-msgstr "Image attachment, {0}, {1}"
 
 #. 0: props.label
 #: src/components/contextChipParts.tsx
@@ -4879,8 +4876,10 @@ msgstr "Subagent"
 #. 0: fileManagerName
 #. 0: primaryOption?.label ?? "editor"
 #. 0: primaryOption.label
+#. 0: option.label
 #. 0: fileManagerName
 #: src/components/CommandPalette.tsx
+#: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 #: src/components/settings/ProjectFaviconPickerDialog.tsx
@@ -4914,9 +4913,12 @@ msgstr "Open file in preferred editor"
 
 #: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
+#: src/components/chat/OpenInPicker.tsx
+#: src/components/chat/OpenInPicker.tsx
 msgid "Choose editor"
 msgstr "Choose editor"
 
+#: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 msgid "Open in editor"
 msgstr "Open in editor"
@@ -5417,6 +5419,7 @@ msgstr "Stop workflow {0}"
 msgid "Stop entire workflow"
 msgstr "Stop entire workflow"
 
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
 #: src/components/chat/ThreadLineageWorkflowRow.tsx
 #: src/components/chat/ThreadLineageWorkflowRow.tsx
 msgid "Collapse"
@@ -21208,10 +21211,6 @@ msgid "Right panel"
 msgstr "Right panel"
 
 #: src/components/workspace/WorkspaceDock.tsx
-msgid "Bottom panel"
-msgstr "Bottom panel"
-
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Floating panel"
 msgstr "Floating panel"
 
@@ -21823,10 +21822,6 @@ msgid "Focus Window Down"
 msgstr "Focus Window Down"
 
 #: src/components/workspace/WorkspaceDock.tsx
-msgid "Maximized window"
-msgstr "Maximized window"
-
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Peek left workspace column"
 msgstr "Peek left workspace column"
 
@@ -21840,7 +21835,6 @@ msgstr "Peek right workspace column"
 msgid "Restore from app maximize"
 msgstr "Restore from app maximize"
 
-#: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Maximize in app"
@@ -21948,10 +21942,6 @@ msgid "Focus Right Panel"
 msgstr "Focus Right Panel"
 
 #: src/components/CommandPalette.tsx
-msgid "Focus Bottom Panel"
-msgstr "Focus Bottom Panel"
-
-#: src/components/CommandPalette.tsx
 msgid "Move Window to Left Panel"
 msgstr "Move Window to Left Panel"
 
@@ -21960,22 +21950,12 @@ msgid "Move Window to Right Panel"
 msgstr "Move Window to Right Panel"
 
 #: src/components/CommandPalette.tsx
-msgid "Move Window to Bottom Panel"
-msgstr "Move Window to Bottom Panel"
-
-#: src/components/CommandPalette.tsx
 msgid "Move Window to Floating Panel"
 msgstr "Move Window to Floating Panel"
 
-#: src/components/chat/ThreadDetailsUsage.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Context usage"
 msgstr "Context usage"
-
-#. 0: formatContextWindowTokens(usage.usedTokens)
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "{0} tokens"
-msgstr "{0} tokens"
 
 #: src/components/chat/ThreadDetailsUsage.tsx
 msgid "Remaining tokens"
@@ -22033,3 +22013,52 @@ msgstr "Stop recording macro @{0}"
 #: src/components/chat/ComposerVimStatusCluster.tsx
 msgid "Recording macro @{0}. Click or press q to stop."
 msgstr "Recording macro @{0}. Click or press q to stop."
+
+#. 0: displayLabel ?? name; 1: size ? `, ${size}` \\: ""
+#: src/components/contextChipParts.tsx
+msgid "Image attachment, {0}{1}"
+msgstr "Image attachment, {0}{1}"
+
+#. 0: option.label; 1: isFavorite && openFavoriteEditorShortcutLabel ? ` (${openFavoriteEditorShortcutLabel})` \\: ""
+#: src/components/chat/OpenInPicker.tsx
+msgid "Open in {0} {1}"
+msgstr "Open in {0} {1}"
+
+#. 0: totalCommits.toLocaleString(locale)
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "{0} commits"
+msgstr "{0} commits"
+
+#. 0: dirtyFileCount
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "{0} files changed"
+msgstr "{0} files changed"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "Working tree clean"
+msgstr "Working tree clean"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "<0/> Clean"
+msgstr "<0/> Clean"
+
+#. 0: remainingFileCount
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "+{0} more files"
+msgstr "+{0} more files"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "Recent commits"
+msgstr "Recent commits"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "Open Diff"
+msgstr "Open Diff"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "1 commit"
+msgstr "1 commit"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "1 file changed"
+msgstr "1 file changed"

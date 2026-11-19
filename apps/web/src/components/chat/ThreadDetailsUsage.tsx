@@ -12,7 +12,7 @@ import {
 } from "@t3tools/shared/usageLimits";
 import { useNavigate } from "@tanstack/react-router";
 import { Fragment, useState, type ReactNode } from "react";
-import { ChartNoAxesColumnIcon, ChevronRightIcon } from "lucide-react";
+import { ChartNoAxesColumnIcon, ChevronRightIcon, GaugeIcon } from "lucide-react";
 
 import geminiMark from "../../assets/gemini-mark.png";
 import { ClaudeAI, OpenAI } from "../Icons";
@@ -72,7 +72,7 @@ export function ThreadDetailsUsage({
       title="Usage limits"
       showHeading={false}
     >
-      <div className="grid grid-cols-[fit-content(42%)_minmax(1.5rem,1fr)_4ch_auto] gap-x-1.5 text-xs">
+      <div className="grid grid-cols-[4.75rem_minmax(1.5rem,1fr)_4ch_auto] gap-x-1.5 text-xs">
         {pools.map((pool, index) => {
           const color =
             Object.values(PROVIDER_PRESENTATION).find((p) => p.driverKind === pool.driver)?.color ??
@@ -104,7 +104,7 @@ export function ThreadDetailsUsage({
                       rowLabel === label ? undefined : `${label} ${window.remainingPercent}%`
                     }
                     onClick={() => setOverride(open ? null : key)}
-                    className="col-span-full grid grid-cols-subgrid items-center rounded-md px-2.5 py-1 text-left hover:bg-accent"
+                    className="col-span-full grid grid-cols-subgrid items-center rounded-md px-2.5 py-1 text-left outline-none hover:bg-accent focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring focus-visible:bg-accent"
                   >
                     <span className={cn("flex min-w-0 items-center gap-1.5", first && "pl-5")}>
                       {!first && logo && <span className="shrink-0">{logo}</span>}
@@ -160,7 +160,7 @@ export function ThreadDetailsUsage({
           <Tooltip>
             <TooltipTrigger
               render={<div tabIndex={0} />}
-              className="col-span-full flex h-6 items-center justify-between rounded-md px-2.5 text-muted-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              className="col-span-full flex h-6 items-center justify-between rounded-md px-2.5 text-muted-foreground outline-none hover:bg-accent focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring focus-visible:bg-accent"
             >
               <span>Limits</span>
               <span>Unavailable</span>
@@ -201,8 +201,11 @@ export function ThreadDetailsContext({ usage }: { readonly usage: ContextWindowS
       showHeading={false}
     >
       <Collapsible>
-        <CollapsibleTrigger className="group flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-left text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring">
-          <span className="shrink-0">{CONTEXT_ROW_LABEL}</span>
+        <CollapsibleTrigger className="group flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-left text-xs outline-none hover:bg-accent focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring focus-visible:bg-accent">
+          <span className="flex w-[4.75rem] shrink-0 items-center gap-1.5">
+            <GaugeIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 truncate">{CONTEXT_ROW_LABEL}</span>
+          </span>
           {used !== null ? (
             <span
               aria-hidden

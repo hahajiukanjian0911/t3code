@@ -144,12 +144,13 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
     focusActiveDrawerTerminal(activeThreadRef);
   };
   const setTerminalOpenStable = useStableCallback(setTerminalOpen);
+  const placePanelTerminal = (terminalId: string) => {
+    if (!activeThreadRef) return;
+    useRightPanelStore.getState().openTerminal(activeThreadRef, terminalId);
+  };
   const addTerminalSurface = () => {
     if (!activeThreadRef) return;
-    const launched = terminalActions.launchTerminal({
-      place: (terminalId) =>
-        useRightPanelStore.getState().openTerminal(activeThreadRef, terminalId),
-    });
+    const launched = terminalActions.launchTerminal({ place: placePanelTerminal });
     if (!launched) return;
     focusTerminal(activeThreadRef, launched.terminalId);
     void launched.result;
@@ -167,16 +168,17 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
       null;
 
     if (existingTerminalSurface) {
-      const panelIsOpen = workspaceRightPanel ? workspaceRightPanel.visible : rightState.isOpen;
       const isActiveSurface = rightState.activeSurfaceId === existingTerminalSurface.id;
       const activeEl = typeof document !== "undefined" ? document.activeElement : null;
       const inPanelTerminal =
         activeEl instanceof Element &&
         activeEl.closest('[data-terminal-owner="right-panel"]') !== null;
 
-      if (panelIsOpen && isActiveSurface && inPanelTerminal) {
+      if ((workspaceRightPanel || rightState.isOpen) && isActiveSurface && inPanelTerminal) {
         if (workspaceRightPanel) {
-          workspaceRightPanel.focusOrToggle();
+          const windowId =
+            activeEl.closest<HTMLElement>("[data-workspace-window]")?.dataset.workspaceWindow;
+          workspaceRightPanel.focusOrToggle(windowId);
         } else {
           rightPanelStore.toggleVisibility(activeThreadRef);
           requestWorkspaceContentFocus();
@@ -185,7 +187,6 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
       }
 
       rightPanelStore.activateSurface(activeThreadRef, existingTerminalSurface.id);
-      workspaceRightPanel?.open();
       focusTerminal(activeThreadRef, existingTerminalSurface.activeTerminalId);
       focusActivePanelTerminal(activeThreadRef);
       return;
@@ -197,15 +198,13 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
       const existingTerminalId =
         runningTerminalIds.find(isReusable) ?? activeServerOrderedTerminalIds.find(isReusable);
       if (existingTerminalId !== undefined) {
-        rightPanelStore.openTerminal(activeThreadRef, existingTerminalId);
-        workspaceRightPanel?.open();
+        placePanelTerminal(existingTerminalId);
         focusTerminal(activeThreadRef, existingTerminalId);
         focusActivePanelTerminal(activeThreadRef);
         return;
       }
     }
     addTerminalSurface();
-    workspaceRightPanel?.open();
   };
   const toggleTerminalVisibilityStable = useStableCallback(toggleTerminalVisibility);
   const splitTerminal = (direction: "horizontal" | "vertical" = "horizontal") => {
@@ -285,10 +284,7 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
     }
 
     const launched = terminalActions.launchTerminal({
-      place: (terminalId) => {
-        useRightPanelStore.getState().openTerminal(activeThreadRef, terminalId);
-        workspaceRightPanel?.open();
-      },
+      place: placePanelTerminal,
       ...(reusableTerminalId === null
         ? { size: { cols: SCRIPT_TERMINAL_COLS, rows: SCRIPT_TERMINAL_ROWS } }
         : { terminalId: reusableTerminalId }),
@@ -440,13 +436,11 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
       if (!hasTerminalWriteAccess()) return false;
       if (activeRightPanelSurface?.kind === "terminal") return void splitPanelTerminal();
       addTerminalSurface();
-      workspaceRightPanel?.open();
     },
     "terminal.splitVertical": () => {
       if (!hasTerminalWriteAccess()) return false;
       if (activeRightPanelSurface?.kind === "terminal") return void splitPanelTerminal("vertical");
       addTerminalSurface();
-      workspaceRightPanel?.open();
     },
     "terminal.close": () => {
       if (!hasTerminalWriteAccess()) return false;
@@ -457,7 +451,6 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
     "terminal.new": () => {
       if (!hasTerminalWriteAccess()) return false;
       addTerminalSurface();
-      workspaceRightPanel?.open();
     },
   } satisfies ChatShortcutCommands;
   return {

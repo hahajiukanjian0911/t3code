@@ -67,10 +67,14 @@ vi.mock(import("~/state/vcs"), async (importOriginal) => {
         hasPrimaryRemote: false,
         isDefaultRef: false,
         refName: isRepo ? "main" : null,
-        hasWorkingTreeChanges: false,
-        workingTree: { files: [], insertions: 0, deletions: 0 },
+        hasWorkingTreeChanges: isRepo,
+        workingTree: {
+          files: isRepo ? [{ path: "apps/web/src/App.tsx", insertions: 12, deletions: 3 }] : [],
+          insertions: isRepo ? 12 : 0,
+          deletions: isRepo ? 3 : 0,
+        },
         hasUpstream: false,
-        aheadCount: 0,
+        aheadCount: isRepo ? 2 : 0,
         behindCount: 0,
         aheadOfDefaultCount: 0,
         pr: null,
@@ -86,6 +90,34 @@ vi.mock(import("~/state/vcs"), async (importOriginal) => {
     },
   };
 });
+vi.mock(import("~/state/review"), async (importOriginal) => {
+  const actual = await importOriginal();
+  const commitsAtom = Atom.make(
+    AsyncResult.success({
+      commits: [
+        {
+          sha: "c99ca5431a000000000000000000000000000000",
+          subject: "Refine details panel layout",
+          committedAt: new Date().toISOString(),
+          refs: ["main", "origin/main"],
+        },
+      ],
+      truncated: false,
+      totalCount: 215,
+    }),
+  );
+  return {
+    ...actual,
+    reviewEnvironment: {
+      ...actual.reviewEnvironment,
+      branchCommits: (() => commitsAtom) as never,
+    },
+  };
+});
+vi.mock(import("~/state/filesystem"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  useFilesystemReadAccess: (() => true) as never,
+}));
 
 import { render } from "../../../test/render";
 import { useRightPanelStore } from "../../rightPanelStore";
@@ -204,7 +236,7 @@ it("offers no git controls in a No project thread, but shows its linked pull req
     .not.toBeInTheDocument();
 });
 
-it("shows linked pull requests in a plain folder and git actions once it is a repository", async () => {
+it("shows linked pull requests in a plain folder and a collapsed git summary card once it is a repository", async () => {
   using fixture = setup({
     workspaceRoot: "/work/plain",
     folder: "/work/plain",
@@ -218,7 +250,19 @@ it("shows linked pull requests in a plain folder and git actions once it is a re
     .not.toBeInTheDocument();
   state.isRepo = true;
   await screen.rerender(<Panel fixture={fixture} isRepo />);
-  await expect.element(page.getByRole("group", { name: "Git actions" })).toBeVisible();
+  // Default collapsed state shows branch, commit count, and change summary without recent commits.
+  const commitsToggle = page.getByRole("button", { name: /215 commits/i });
+  await expect.element(commitsToggle).toBeVisible();
+  await expect.element(page.getByText("1 file changed")).toBeVisible();
+  await expect.element(page.getByText("+12")).toBeVisible();
+  await expect.element(page.getByText("-3")).toBeVisible();
+  await expect.element(page.getByText("Refine details panel layout")).not.toBeInTheDocument();
+  await expect.element(page.getByRole("group", { name: "Git actions" })).not.toBeInTheDocument();
+
+  // Clicking expands changed files and recent commits in place.
+  await commitsToggle.click();
+  await expect.element(page.getByText("App.tsx")).toBeVisible();
+  await expect.element(page.getByText("Refine details panel layout")).toBeVisible();
 });
 
 it("offers no Initialize Git before the server config says where No project lives", async () => {

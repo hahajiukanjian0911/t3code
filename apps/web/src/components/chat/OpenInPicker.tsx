@@ -19,7 +19,12 @@ import {
   useRemoteOpenState,
 } from "../../remoteOpen";
 import { useEnvironment } from "../../state/environments";
-import { ChevronDownIcon, FolderClosedIcon, SquareArrowOutUpRightIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  FolderClosedIcon,
+  MoreHorizontalIcon,
+  SquareArrowOutUpRightIcon,
+} from "lucide-react";
 
 import { Group, GroupSeparator } from "../ui/group";
 import {
@@ -200,6 +205,38 @@ const resolveOpenInOptions = (platform: string, availableEditors: ReadonlyArray<
     .map((option) => ({ ...option, label: editorLabelForPlatform(option.value, platform) }));
 };
 
+const QUICK_OPEN_PRIORITY: ReadonlyArray<EditorId> = [
+  "vscode",
+  "zed",
+  "cursor",
+  "antigravity",
+  "vscode-insiders",
+  "vscodium",
+];
+
+function resolvePanelQuickOpenOptions(
+  options: ReadonlyArray<OpenInOption>,
+  preferredEditor: EditorId | null,
+): ReadonlyArray<OpenInOption> {
+  const fileManager = options.find((option) => option.value === "file-manager") ?? null;
+  const codeEditors = options.filter((option) => option.value !== "file-manager");
+  const maxCodeEditors = fileManager ? 2 : 3;
+  const picked: OpenInOption[] = [];
+  const pushIfAvailable = (editorId: EditorId | null) => {
+    if (!editorId || picked.length >= maxCodeEditors) return;
+    if (picked.some((entry) => entry.value === editorId)) return;
+    const match = codeEditors.find((entry) => entry.value === editorId);
+    if (match) picked.push(match);
+  };
+  if (preferredEditor && preferredEditor !== "file-manager") {
+    pushIfAvailable(preferredEditor);
+  }
+  for (const id of QUICK_OPEN_PRIORITY) pushIfAvailable(id);
+  for (const entry of codeEditors) pushIfAvailable(entry.value);
+  if (fileManager) picked.push(fileManager);
+  return picked;
+}
+
 function getOpenInIconClass(kind: OpenInOption["kind"]) {
   return cn(kind === "brand" ? "text-foreground opacity-100" : "text-muted-foreground");
 }
@@ -261,7 +298,9 @@ export const OpenInPicker = memo(function OpenInPicker({
       const opened = await openRemoteEditorUrl(url);
       if (!opened) return false;
       markRemoteHintSeen();
-      setPreferredEditor(editor);
+      if (!isPanel || editor !== "file-manager") {
+        setPreferredEditor(editor);
+      }
       return true;
     }
     if (!readEnvironmentScope(environmentId, AuthOrchestrationOperateScope)) return false;
@@ -273,7 +312,9 @@ export const OpenInPicker = memo(function OpenInPicker({
         ...(revealFileManager && editor === "file-manager" ? { reveal: true } : {}),
       },
     });
-    setPreferredEditor(editor);
+    if (!isPanel || editor !== "file-manager") {
+      setPreferredEditor(editor);
+    }
     return (await result)._tag === "Success";
   };
 
@@ -313,8 +354,10 @@ export const OpenInPicker = memo(function OpenInPicker({
               disabled={!openInCwd || !canOpenEditor}
               key={value}
               onClick={() => {
-                if (presentation === "menu") {
-                  void openInEditor(value);
+                if (presentation === "menu" || isPanel) {
+                  void openInEditor(value).then((opened) => {
+                    if (opened) announce(`Opened in ${label}`);
+                  });
                 } else {
                   setPreferredEditor(value);
                 }
@@ -361,6 +404,100 @@ export const OpenInPicker = memo(function OpenInPicker({
           <MenuSubPopup>{editorItems}</MenuSubPopup>
         </MenuSub>
       </>
+    );
+  }
+
+  if (isPanel && unavailableReason === null && options.length > 0) {
+    const quickOptions = resolvePanelQuickOpenOptions(options, preferredEditor);
+    const hasMoreEditors = options.length > quickOptions.length;
+    const favoriteEditorId =
+      preferredEditor && quickOptions.some((option) => option.value === preferredEditor)
+        ? preferredEditor
+        : (quickOptions[0]?.value ?? null);
+    return (
+      <div
+        aria-label="Open in editor"
+        role="group"
+        ref={panelAnchorRef}
+        className="flex w-full items-center gap-1.5"
+      >
+        <div
+          className={cn(
+            "grid min-w-0 flex-1 gap-1.5",
+            quickOptions.length === 1
+              ? "grid-cols-1"
+              : quickOptions.length === 2
+                ? "grid-cols-2"
+                : "grid-cols-[1.16fr_0.86fr_0.98fr]",
+          )}
+        >
+          {quickOptions.map((option) => {
+            const isFavorite = option.value === favoriteEditorId;
+            return (
+              <Tooltip key={option.value}>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      aria-label={`Open in ${option.label}`}
+                      data-toolbar-control=""
+                      disabled={!openInCwd || !canOpenEditor}
+                      {...(enableShortcut && !backgroundThread && isFavorite
+                        ? { [OPEN_FAVORITE_EDITOR_ATTRIBUTE]: "" }
+                        : {})}
+                      onClick={() => {
+                        void openInEditor(option.value).then((opened) => {
+                          if (opened) announce(`Opened in ${option.label}`);
+                        });
+                      }}
+                      className="inline-flex h-7.5 min-w-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border/75 bg-background/85 px-1.5 text-xs font-medium text-foreground/85 outline-none transition-[background-color,border-color,scale] hover:border-foreground/15 hover:bg-black/[0.04] active:scale-[0.98] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-55 dark:bg-white/[0.04] dark:hover:border-white/15 dark:hover:bg-white/[0.08]"
+                    />
+                  }
+                >
+                  <option.Icon
+                    aria-hidden="true"
+                    className={cn("size-3.5 shrink-0", getOpenInIconClass(option.kind))}
+                  />
+                  <span className="min-w-0 truncate">{option.label}</span>
+                </TooltipTrigger>
+                <TooltipPopup side="top">
+                  Open in {option.label}
+                  {isFavorite && openFavoriteEditorShortcutLabel
+                    ? ` (${openFavoriteEditorShortcutLabel})`
+                    : ""}
+                </TooltipPopup>
+              </Tooltip>
+            );
+          })}
+        </div>
+        {hasMoreEditors ? (
+          <Menu open={menuOpen} onOpenChange={setMenuOpen}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <MenuTrigger
+                    disabled={isHostEditorDenied}
+                    render={
+                      <button
+                        type="button"
+                        aria-label="Choose editor"
+                        data-toolbar-control=""
+                        className="grid size-7.5 shrink-0 cursor-pointer place-items-center rounded-lg border border-border/75 bg-background/85 text-muted-foreground outline-none transition-[background-color,border-color,color,scale] hover:border-foreground/15 hover:bg-black/[0.04] hover:text-foreground active:scale-[0.98] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-55 dark:bg-white/[0.04] dark:hover:border-white/15 dark:hover:bg-white/[0.08]"
+                      />
+                    }
+                  />
+                }
+              >
+                <MoreHorizontalIcon aria-hidden="true" className="size-3.5" />
+              </TooltipTrigger>
+              <TooltipPopup side="top">Choose editor</TooltipPopup>
+            </Tooltip>
+            <MenuPopup align="end" anchor={panelAnchorRef} className="w-(--anchor-width)">
+              {editorItems}
+            </MenuPopup>
+          </Menu>
+        ) : null}
+      </div>
     );
   }
 

@@ -27,7 +27,10 @@ import { stackedThreadToast, toastManager } from "../ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { ThreadDetailsControl } from "./ThreadDetailsControl";
 import { ThreadDetailsSection } from "./ThreadDetailsSection";
-import { THREAD_DETAILS_PANEL_ICON_CLASS } from "./threadDetailsPanelStyles";
+import {
+  THREAD_DETAILS_PANEL_ICON_CLASS,
+  THREAD_DETAILS_PANEL_SURFACE_CARD_CLASS,
+} from "./threadDetailsPanelStyles";
 
 const SERVER_PAGE_COUNT = 4;
 
@@ -105,98 +108,118 @@ function ThreadServersList(props: ThreadServersPanelProps) {
   };
 
   return (
-    <ThreadDetailsSection headingId="thread-details-servers-heading" title="Servers">
-      <ul className="m-0 list-none p-0">
-        {servers.slice(0, visibleCount).map((server, index) => {
-          const key = serverKey(server);
-          const stoppable = canStop && supportsStop && server.pid !== null;
-          return (
-            <li
-              key={key}
-              data-thread-details-server-overflow={index >= SERVER_PAGE_COUNT || undefined}
-              className="group relative flex items-center rounded-lg"
-            >
-              <Tooltip>
-                <TooltipTrigger
-                  delay={200}
-                  render={
-                    <ThreadDetailsControl
-                      size="sm"
-                      variant="ghost"
-                      part="row"
-                      multiline
-                      disabled={!canOpen}
-                      onClick={(event) => void open(server, event)}
-                      onAuxClick={(event) => void open(server, event)}
-                    />
-                  }
-                >
-                  <GlobeIcon aria-hidden className={THREAD_DETAILS_PANEL_ICON_CLASS} />
-                  {/* The end padding keeps text clear of the stop button. */}
-                  <span className={cn("flex min-w-0 flex-1 flex-col gap-0.5", stoppable && "pe-6")}>
-                    <span className="truncate text-sm font-medium leading-4 text-foreground/85">
-                      localhost:{server.port}
+    <ThreadDetailsSection
+      headingId="thread-details-servers-heading"
+      title="Servers"
+      actions={
+        <span className="text-2xs font-medium tabular-nums text-muted-foreground/80">
+          {servers.length}
+        </span>
+      }
+    >
+      <div className={cn(THREAD_DETAILS_PANEL_SURFACE_CARD_CLASS, "p-1")}>
+        <ul className="m-0 list-none space-y-0.5 p-0">
+          {servers.slice(0, visibleCount).map((server, index) => {
+            const key = serverKey(server);
+            const stoppable = canStop && supportsStop && server.pid !== null;
+            return (
+              <li
+                key={key}
+                data-thread-details-server-overflow={index >= SERVER_PAGE_COUNT || undefined}
+                className="group relative flex items-center rounded-md"
+              >
+                <Tooltip>
+                  <TooltipTrigger
+                    delay={200}
+                    render={
+                      <ThreadDetailsControl
+                        size="sm"
+                        variant="ghost"
+                        part="row"
+                        multiline
+                        disabled={!canOpen}
+                        onClick={(event) => void open(server, event)}
+                        onAuxClick={(event) => void open(server, event)}
+                      />
+                    }
+                  >
+                    <span className="relative inline-flex shrink-0 items-center justify-center">
+                      <GlobeIcon aria-hidden className={THREAD_DETAILS_PANEL_ICON_CLASS} />
+                      <span
+                        aria-hidden
+                        className="absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full bg-success ring-1 ring-background"
+                      />
                     </span>
-                    <span className="truncate text-2xs font-normal leading-4 text-muted-foreground">
-                      {[server.terminal === null ? "Agent" : "Terminal", server.processName]
-                        .filter(Boolean)
-                        .join(" · ")}
+                    {/* The end padding keeps text clear of the stop button. */}
+                    <span className={cn("flex min-w-0 flex-1 flex-col", stoppable && "pe-6")}>
+                      <span className="truncate font-mono text-xs font-medium leading-4 tabular-nums text-foreground/90">
+                        localhost:{server.port}
+                      </span>
+                      <span className="truncate text-2xs font-normal leading-3.5 text-muted-foreground">
+                        {[server.terminal === null ? "Agent" : "Terminal", server.processName]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
                     </span>
-                  </span>
-                </TooltipTrigger>
-                <TooltipPopup side="left">
-                  Open in the browser panel. {externalClickLabel} for your browser.
-                </TooltipPopup>
-              </Tooltip>
-              {stoppable ? (
-                <div className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 pointer-coarse:pointer-events-auto pointer-coarse:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100">
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <ThreadDetailsControl
-                          size="icon-xs"
-                          variant="ghost"
-                          part="icon"
-                          tone="destructive"
-                          aria-label={`Stop localhost:${server.port}`}
-                          disabled={stoppingKey !== null}
-                          onClick={() => void stop(server)}
-                        />
-                      }
-                    >
-                      {stoppingKey === key ? (
-                        <Spinner aria-hidden size="xs" />
-                      ) : (
-                        <SquareIcon aria-hidden className="size-3 fill-current" />
-                      )}
-                    </TooltipTrigger>
-                    <TooltipPopup side="left">Stop server</TooltipPopup>
-                  </Tooltip>
-                </div>
-              ) : null}
-            </li>
-          );
-        })}
-      </ul>
-      {servers.length > SERVER_PAGE_COUNT ? (
-        <ThreadDetailsControl
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            setVisibleCount(hiddenCount > 0 ? visibleCount + SERVER_PAGE_COUNT : SERVER_PAGE_COUNT)
-          }
-          part="row"
-          tone="muted"
-          className="w-full active:scale-100"
-        >
-          {hiddenCount > 0 ? (
-            <ChevronDownIcon aria-hidden className="size-4 shrink-0" />
-          ) : (
-            <ChevronUpIcon aria-hidden className="size-4 shrink-0" />
-          )}
-          {hiddenCount > 0 ? `Show ${Math.min(hiddenCount, SERVER_PAGE_COUNT)} more` : "Show less"}
-        </ThreadDetailsControl>
-      ) : null}
+                  </TooltipTrigger>
+                  <TooltipPopup side="left">
+                    Open in the browser panel. {externalClickLabel} for your browser.
+                  </TooltipPopup>
+                </Tooltip>
+                {stoppable ? (
+                  <div className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 pointer-coarse:pointer-events-auto pointer-coarse:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100">
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <ThreadDetailsControl
+                            size="icon-xs"
+                            variant="ghost"
+                            part="icon"
+                            tone="destructive"
+                            aria-label={`Stop localhost:${server.port}`}
+                            disabled={stoppingKey !== null}
+                            onClick={() => void stop(server)}
+                          />
+                        }
+                      >
+                        {stoppingKey === key ? (
+                          <Spinner aria-hidden size="xs" />
+                        ) : (
+                          <SquareIcon aria-hidden className="size-2.5 fill-current" />
+                        )}
+                      </TooltipTrigger>
+                      <TooltipPopup side="left">Stop server</TooltipPopup>
+                    </Tooltip>
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+        {servers.length > SERVER_PAGE_COUNT ? (
+          <ThreadDetailsControl
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setVisibleCount(
+                hiddenCount > 0 ? visibleCount + SERVER_PAGE_COUNT : SERVER_PAGE_COUNT,
+              )
+            }
+            part="row"
+            tone="muted"
+            className="mt-0.5 w-full active:scale-100"
+          >
+            {hiddenCount > 0 ? (
+              <ChevronDownIcon aria-hidden className="size-3.5 shrink-0" />
+            ) : (
+              <ChevronUpIcon aria-hidden className="size-3.5 shrink-0" />
+            )}
+            {hiddenCount > 0
+              ? `Show ${Math.min(hiddenCount, SERVER_PAGE_COUNT)} more`
+              : "Show less"}
+          </ThreadDetailsControl>
+        ) : null}
+      </div>
     </ThreadDetailsSection>
   );
 }

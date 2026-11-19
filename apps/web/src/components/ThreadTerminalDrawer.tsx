@@ -799,6 +799,7 @@ function TerminalSessionViewport({
       ) {
         terminal.focus();
       }
+      consumePendingTerminalFocus({ environmentId, threadId }, terminalId);
 
       const clearSelectionAction = () => {
         selectionActionRequestIdRef.current += 1;

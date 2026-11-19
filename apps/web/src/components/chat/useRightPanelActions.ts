@@ -6,7 +6,7 @@ import { resolvePathLinkTarget } from "@t3tools/shared/fileLinks";
 import { useStableCallback } from "../../hooks/useStableCallback";
 import { type ScopedThreadRef, type RunId } from "@t3tools/contracts";
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
@@ -103,6 +103,30 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
     activeProjectCwd,
     onDiffPanelOpen,
   } = input;
+
+  const revealWindow = workspacePanel?.revealWindow;
+  const threadKey = activeThreadRef && scopedThreadKey(activeThreadRef);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Reveal the requested surface when its portal registers, including a reopened tab with a saved placement.
+  useLayoutEffect(() => {
+    if (!revealWindow || !threadKey || embedded) return;
+    return useRightPanelStore.subscribe((state, previous) => {
+      if (
+        state.userActionRevisionByThreadKey[threadKey] ===
+          previous.userActionRevisionByThreadKey[threadKey] ||
+        state.closeRevisionByThreadKey[threadKey] !== previous.closeRevisionByThreadKey[threadKey]
+      )
+        return;
+      const next = state.byThreadKey[threadKey];
+      const before = previous.byThreadKey[threadKey];
+      if (
+        next?.isOpen &&
+        next.activeSurfaceId &&
+        (!before?.isOpen || next.activeSurfaceId !== before.activeSurfaceId)
+      ) {
+        revealWindow(`surface:${threadKey}:${next.activeSurfaceId}`);
+      }
+    });
+  }, [embedded, revealWindow, threadKey]);
 
   const openPreview = useAtomCommand(previewEnvironment.open, { reportFailure: false });
   const onToggleDiff = () => {

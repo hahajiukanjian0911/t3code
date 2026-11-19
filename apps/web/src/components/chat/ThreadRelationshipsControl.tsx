@@ -96,6 +96,7 @@ import {
   THREAD_DETAILS_PANEL_SPLIT_GROUP_CLASS,
   THREAD_DETAILS_PANEL_ROW_CONTENT_CLASS,
   THREAD_DETAILS_PANEL_SPLIT_SEPARATOR_CLASS,
+  THREAD_DETAILS_PANEL_SURFACE_CARD_CLASS,
 } from "./threadDetailsPanelStyles";
 
 const THREAD_LINEAGE_INITIAL_COUNT = 6;
@@ -119,7 +120,7 @@ function ThreadLineageRowList(props: {
       {/* ScrollArea's max-height viewport measures badly inside this scrolling panel. */}
       <ul
         aria-label="Related threads"
-        className="m-0 max-h-[13.5rem] list-none overflow-y-auto p-0 has-data-workflow-expanded:max-h-[min(28rem,55dvh)]"
+        className="m-0 max-h-[13.5rem] list-none space-y-0.5 overflow-y-auto p-0 has-data-workflow-expanded:max-h-[min(28rem,55dvh)]"
       >
         {props.children}
       </ul>
@@ -127,9 +128,9 @@ function ThreadLineageRowList(props: {
         <button
           type="button"
           onClick={props.onShowMore}
-          className={`flex h-8 w-full cursor-pointer items-center rounded-lg ${THREAD_DETAILS_PANEL_ROW_CONTENT_CLASS} text-sm font-medium text-muted-foreground/70 hover:bg-black/[0.055] hover:text-foreground/80 dark:hover:bg-white/[0.075]`}
+          className={`flex h-7 w-full cursor-pointer items-center rounded-md ${THREAD_DETAILS_PANEL_ROW_CONTENT_CLASS} text-xs font-medium text-muted-foreground/80 outline-none hover:bg-black/[0.04] hover:text-foreground focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring dark:hover:bg-white/[0.07]`}
         >
-          <PlusIcon aria-hidden className="size-4 shrink-0" />
+          <PlusIcon aria-hidden className="size-3.5 shrink-0" />
           Show {Math.min(props.hiddenCount, THREAD_LINEAGE_PAGE_COUNT)} more
         </button>
       ) : null}
@@ -276,7 +277,7 @@ function RemoteSubagentRow(props: {
     isSubagent: true,
   });
   return (
-    <li className="group relative flex h-8 items-center rounded-lg">
+    <li className="group relative flex h-7 items-center rounded-md">
       <Tooltip>
         <TooltipTrigger
           delay={200}
@@ -307,7 +308,7 @@ function RemoteSubagentRow(props: {
             status={status}
           />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-left text-sm font-medium leading-4 text-foreground/85">
+            <span className="block truncate text-left text-xs font-medium leading-4 text-foreground/90">
               {title}
             </span>
           </span>
@@ -381,7 +382,7 @@ function DelegatedFromRow(props: {
     });
   };
   return (
-    <li className="group relative flex h-8 items-center rounded-lg">
+    <li className="group relative flex h-7 items-center rounded-md">
       <Tooltip>
         <TooltipTrigger
           delay={200}
@@ -404,7 +405,7 @@ function DelegatedFromRow(props: {
             status={null}
           />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-left text-sm font-medium leading-4 text-foreground/85">
+            <span className="block truncate text-left text-xs font-medium leading-4 text-foreground/90">
               {title}
             </span>
           </span>
@@ -827,7 +828,7 @@ export function ThreadRelationshipsPanel(props: {
           status={rowStatus}
         />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-left text-sm font-medium leading-4 text-foreground/85">
+          <span className="block truncate text-left text-xs font-medium leading-4 text-foreground/90">
             {threadTitle}
           </span>
         </span>
@@ -890,7 +891,7 @@ export function ThreadRelationshipsPanel(props: {
       );
     }
     return (
-      <li key={threadId} className="group relative flex h-8 items-center rounded-lg">
+      <li key={threadId} className="group relative flex h-7 items-center rounded-md">
         {isMergeTarget ? (
           <div className={THREAD_DETAILS_PANEL_SPLIT_GROUP_CLASS}>
             <Tooltip>
@@ -1021,36 +1022,38 @@ export function ThreadRelationshipsPanel(props: {
             ) : null
           }
         >
-          {delegatedFrom === undefined ? null : (
-            <ThreadLineageRowList hiddenCount={0} onShowMore={() => {}}>
-              <DelegatedFromRow
-                delegatedFrom={delegatedFrom}
-                fallbackLabel={currentThread?.linkOrigin?.label}
-                anyInstanceBadge={hasInstanceBadge(providerEntries)}
-              />
-            </ThreadLineageRowList>
-          )}
-          {groups.map((group) => (
-            <ThreadLineageGroup key={`${scopedThreadKey(ref)}:${group.id}`} {...group}>
-              {(visibleRows) =>
-                visibleRows.map((row) =>
-                  "remote" in row ? (
-                    <RemoteSubagentRow
-                      key={row.remote.id}
-                      agent={row.remote}
-                      // Its provider instance belongs to the environment it runs in.
-                      provider={providersByEnvironment
-                        .get(row.remote.remoteChild.environmentId)
-                        ?.find((entry) => entry.instanceId === row.remote.providerInstanceId)}
-                      anyInstanceBadge={hasInstanceBadge(providerEntries)}
-                    />
-                  ) : (
-                    renderRelationshipRow(row)
-                  ),
-                )
-              }
-            </ThreadLineageGroup>
-          ))}
+          <div className={cn(THREAD_DETAILS_PANEL_SURFACE_CARD_CLASS, "p-1")}>
+            {delegatedFrom === undefined ? null : (
+              <ThreadLineageRowList hiddenCount={0} onShowMore={() => {}}>
+                <DelegatedFromRow
+                  delegatedFrom={delegatedFrom}
+                  fallbackLabel={currentThread?.linkOrigin?.label}
+                  anyInstanceBadge={hasInstanceBadge(providerEntries)}
+                />
+              </ThreadLineageRowList>
+            )}
+            {groups.map((group) => (
+              <ThreadLineageGroup key={`${scopedThreadKey(ref)}:${group.id}`} {...group}>
+                {(visibleRows) =>
+                  visibleRows.map((row) =>
+                    "remote" in row ? (
+                      <RemoteSubagentRow
+                        key={row.remote.id}
+                        agent={row.remote}
+                        // Its provider instance belongs to the environment it runs in.
+                        provider={providersByEnvironment
+                          .get(row.remote.remoteChild.environmentId)
+                          ?.find((entry) => entry.instanceId === row.remote.providerInstanceId)}
+                        anyInstanceBadge={hasInstanceBadge(providerEntries)}
+                      />
+                    ) : (
+                      renderRelationshipRow(row)
+                    ),
+                  )
+                }
+              </ThreadLineageGroup>
+            ))}
+          </div>
         </ThreadDetailsSection>
       ) : null}
       {sideChatsVisible ? (
@@ -1059,14 +1062,16 @@ export function ThreadRelationshipsPanel(props: {
           title={runningSideChats > 0 ? `Side chats · ${runningSideChats} running` : "Side chats"}
           data-thread-side-chats-panel
         >
-          <ThreadLineageGroup
-            key={`${scopedThreadKey(ref)}:side-chats`}
-            label={null}
-            rows={sideChats}
-            expanded
-          >
-            {(visibleRows) => visibleRows.map(renderRelationshipRow)}
-          </ThreadLineageGroup>
+          <div className={cn(THREAD_DETAILS_PANEL_SURFACE_CARD_CLASS, "p-1")}>
+            <ThreadLineageGroup
+              key={`${scopedThreadKey(ref)}:side-chats`}
+              label={null}
+              rows={sideChats}
+              expanded
+            >
+              {(visibleRows) => visibleRows.map(renderRelationshipRow)}
+            </ThreadLineageGroup>
+          </div>
         </ThreadDetailsSection>
       ) : null}
     </>

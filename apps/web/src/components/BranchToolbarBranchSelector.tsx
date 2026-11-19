@@ -83,7 +83,8 @@ interface BranchToolbarBranchSelectorProps {
   forceNewWorktree?: boolean;
   ref?: Ref<BranchToolbarBranchSelectorHandle>;
   className?: string;
-  displayMode?: "toolbar" | "panel";
+  displayMode?: "toolbar" | "panel" | "summary";
+  summaryTrailing?: ReactNode;
   environmentId: EnvironmentId;
   threadId: ThreadId;
   draftId?: DraftId;
@@ -109,6 +110,7 @@ export function BranchToolbarBranchSelector({
   ref,
   className,
   displayMode = "toolbar",
+  summaryTrailing,
   environmentId,
   threadId,
   draftId,
@@ -823,9 +825,16 @@ export function BranchToolbarBranchSelector({
           : undefined
       }
       popupProps={{
-        align: displayMode === "panel" ? "start" : "end",
-        side: displayMode === "panel" ? "bottom" : "top",
-        className: cn("flex flex-col", displayMode === "panel" ? "w-(--anchor-width)" : "w-80"),
+        align: displayMode === "toolbar" ? "end" : "start",
+        side: displayMode === "toolbar" ? "top" : "bottom",
+        className: cn(
+          "flex flex-col",
+          displayMode === "panel"
+            ? "w-(--anchor-width)"
+            : displayMode === "summary"
+              ? "w-64"
+              : "w-80",
+        ),
         ...(displayMode === "toolbar" ? composerFloatingLayerProps : {}),
       }}
     >
@@ -836,7 +845,7 @@ export function BranchToolbarBranchSelector({
           className,
         )}
       >
-        {displayMode !== "panel" ? (
+        {displayMode === "toolbar" ? (
           <ThreadPullRequestBadgeControl
             render={<ComposerControl size="xs" />}
             badge={prBadge}
@@ -863,6 +872,11 @@ export function BranchToolbarBranchSelector({
             render={
               displayMode === "panel" ? (
                 <ThreadDetailsControl part="select" />
+              ) : displayMode === "summary" ? (
+                <button
+                  type="button"
+                  className="-mx-1 inline-flex h-6 min-w-0 max-w-full cursor-pointer items-center gap-1.5 rounded-md px-1 text-left outline-none transition-colors hover:bg-black/[0.045] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-60 dark:hover:bg-white/[0.07]"
+                />
               ) : (
                 <ComposerControl size="xs" />
               )
@@ -877,17 +891,26 @@ export function BranchToolbarBranchSelector({
             <GitBranchIcon
               className={cn(
                 "size-3 shrink-0",
-                displayMode === "panel" && THREAD_DETAILS_PANEL_ICON_CLASS,
+                displayMode !== "toolbar" && THREAD_DETAILS_PANEL_ICON_CLASS,
               )}
             />
-            <ComposerContextLabel displayMode={displayMode}>
-              <MiddleTruncate
-                value={triggerLabel}
-                variant="cap-aligned"
-                className="w-full"
-                aria-hidden
-              />
-            </ComposerContextLabel>
+            {displayMode === "summary" ? (
+              <>
+                <span className="min-w-0 truncate text-xs font-semibold text-foreground">
+                  <MiddleTruncate value={triggerLabel} className="w-full" aria-hidden />
+                </span>
+                {summaryTrailing}
+              </>
+            ) : (
+              <ComposerContextLabel displayMode={displayMode}>
+                <MiddleTruncate
+                  value={triggerLabel}
+                  variant="cap-aligned"
+                  className="w-full"
+                  aria-hidden
+                />
+              </ComposerContextLabel>
+            )}
           </ComboboxTrigger>
         </span>
         {displayMode === "panel" ? (

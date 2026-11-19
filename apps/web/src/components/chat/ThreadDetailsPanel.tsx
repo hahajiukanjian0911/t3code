@@ -23,6 +23,7 @@ import { memo, useState, type ComponentProps } from "react";
 import { ThreadDetailsCard } from "./ThreadDetailsCard";
 import { OpenInPicker } from "./OpenInPicker";
 import { ThreadDetailsSection } from "./ThreadDetailsSection";
+import { ThreadDetailsGitSummaryCard } from "./ThreadDetailsGitSummaryCard";
 import { ThreadAutomationsPanel } from "./ThreadAutomationsPanel";
 import { ThreadRelationshipsPanel } from "./ThreadRelationshipsControl";
 import { ThreadServersPanel } from "./ThreadServersPanel";
@@ -95,6 +96,9 @@ interface ThreadDetailsPanelProps extends Pick<
 
 export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
   const visible = useClientSettings(resolveThreadDetailsVisibility);
+  const explicitEnvironmentSetting = useClientSettings(
+    (settings) => settings.threadDetailsItems.environment,
+  );
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const fileScripts = useT3ProjectFileScripts(
     props.environmentId,
@@ -166,17 +170,28 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
     >
       {(density) => {
         // Section flags follow the rows that will render, so no empty section steals the divider rule.
+        const showEnvironmentRow =
+          density === "full" &&
+          visible.environment &&
+          (explicitEnvironmentSetting === true ||
+            !props.envLocked ||
+            props.availableEnvironments.length > 1 ||
+            props.worktreePath !== null ||
+            props.envMode === "worktree");
+        const showGitSummary =
+          hasProjectRepository && props.gitCwd !== null && (visible.branch || visible.changes);
         const show = {
-          environment: density === "full" && visible.environment,
+          environment: showEnvironmentRow,
           openIn: density !== "essential" && visible.openIn && props.showOpenInPicker,
           scripts: visible.scripts && props.activeProjectScripts !== undefined,
-          branch: hasProjectRepository && visible.branch,
+          gitSummary: showGitSummary,
           // Without a branch selector, linked pull requests still need somewhere to show.
           pullRequests: !hasProjectRepository && visible.branch,
-          git:
+          gitActions:
             hasProjectRepository &&
             props.activeProjectName !== undefined &&
-            (visible.gitActions || visible.changes),
+            props.gitCwd !== null &&
+            visible.gitActions,
         };
         return (
           <>
@@ -188,7 +203,7 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
                   separated={false}
                   showHeading={false}
                 >
-                  <div className="flex flex-col">
+                  <div className="flex flex-col gap-1.5">
                     {show.environment ? (
                       <BranchToolbar
                         layout="panel"
@@ -231,16 +246,48 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
                 </ThreadDetailsSection>
               ) : null}
 
-              {show.branch || show.pullRequests || show.git ? (
+              {show.gitSummary || show.pullRequests || show.gitActions ? (
                 <ThreadDetailsSection
                   headingId="thread-details-version-control-heading"
                   title="Version Control"
                   showHeading={false}
-                  separated={density === "full"}
+                  separated={
+                    density === "full" && (show.environment || show.openIn || show.scripts)
+                  }
                 >
-                  <div className="flex flex-col">
-                    {show.branch ? (
-                      <BranchToolbar layout="panel" panelSection="branch" {...branchToolbarProps} />
+                  <div className="flex flex-col gap-1.5">
+                    {show.gitSummary && props.gitCwd ? (
+                      <ThreadDetailsGitSummaryCard
+                        environmentId={props.environmentId}
+                        threadId={props.threadId}
+                        projectId={props.projectId}
+                        worktreePath={props.worktreePath}
+                        isServerThread={props.isServerThread}
+                        {...(props.draftId ? { draftId: props.draftId } : {})}
+                        gitCwd={props.gitCwd}
+                        workspaceMutationId={props.workspaceMutationId}
+                        envLocked={props.envLocked}
+                        envMode={props.envMode}
+                        forceNewWorktree={props.forceNewWorktree ?? false}
+                        {...(props.activeThreadBranchOverride !== undefined
+                          ? { activeThreadBranchOverride: props.activeThreadBranchOverride }
+                          : {})}
+                        {...(props.onActiveThreadBranchOverrideChange
+                          ? {
+                              onActiveThreadBranchOverrideChange:
+                                props.onActiveThreadBranchOverrideChange,
+                            }
+                          : {})}
+                        startFromOrigin={props.startFromOrigin}
+                        onStartFromOriginChange={props.onStartFromOriginChange}
+                        {...(props.onCheckoutPullRequestRequest
+                          ? { onCheckoutPullRequestRequest: props.onCheckoutPullRequestRequest }
+                          : {})}
+                        onComposerFocusRequest={props.onComposerFocusRequest}
+                        {...(props.onOpenChanges ? { onOpenChanges: props.onOpenChanges } : {})}
+                        showBranch={visible.branch}
+                        showChanges={visible.changes}
+                      />
                     ) : null}
                     {show.pullRequests ? (
                       <ThreadDetailsThreadPrRows
@@ -249,11 +296,11 @@ export function ThreadDetailsPanel(props: ThreadDetailsPanelProps) {
                         composerTarget={props.composerDraftTarget}
                       />
                     ) : null}
-                    {show.git && props.gitCwd ? (
+                    {show.gitActions && props.gitCwd ? (
                       <GitActionsControl
                         compact={density !== "full"}
                         showActions={visible.gitActions}
-                        showChanges={visible.changes}
+                        showChanges={false}
                         gitCwd={props.gitCwd}
                         workspaceMutationId={props.workspaceMutationId}
                         activeThreadRef={activeThreadRef}

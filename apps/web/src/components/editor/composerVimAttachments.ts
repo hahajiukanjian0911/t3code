@@ -1,11 +1,20 @@
 import { Annotation, MapMode } from "@codemirror/state";
 import type { EditorView, ViewUpdate } from "@codemirror/view";
 import type { ComposerAttachmentInsertion } from "../composerAttachmentInsertion";
-import { inlineContextReferenceReplacement } from "~/lib/composerContextReferences";
+import {
+  inlineContextReferenceReplacement,
+  type ComposerContextReference,
+} from "~/lib/composerContextReferences";
 
 const insertedAttachment = Annotation.define<{ order: number; start: number; end: number }>();
 
-export function composerVimAttachments() {
+function isBoundaryWhitespace(char: string | undefined): boolean {
+  return char === undefined || char === " " || char === "\n" || char === "\t" || char === "\r";
+}
+
+export function composerVimAttachments(
+  formatReference?: (reference: ComposerContextReference) => string,
+) {
   let sequence = 0;
   const captures = new Set<(update: ViewUpdate) => void>();
   return {
@@ -44,11 +53,19 @@ export function composerVimAttachments() {
         insert(references) {
           dispose();
           if (lost || !isCurrent() || references.length === 0) return false;
-          const edit = inlineContextReferenceReplacement(
-            view.state.doc.toString(),
-            { start: from, end: to },
-            references,
-          );
+          const doc = view.state.doc.toString();
+          const edit = formatReference
+            ? (() => {
+                const start = Math.max(0, Math.min(doc.length, Math.floor(from)));
+                const end = Math.max(start, Math.min(doc.length, Math.floor(to)));
+                const needsLeadingSpace = !isBoundaryWhitespace(doc[start - 1]);
+                return {
+                  start,
+                  end: doc[end] === " " ? end + 1 : end,
+                  text: `${needsLeadingSpace ? " " : ""}${references.map(formatReference).join(" ")} `,
+                };
+              })()
+            : inlineContextReferenceReplacement(doc, { start: from, end: to }, references);
           const insertedEnd = edit.start + edit.text.length;
           const mainSelection = view.state.selection.main;
           const moveCaretAfterInsert = mainSelection.from === from && mainSelection.to === to;

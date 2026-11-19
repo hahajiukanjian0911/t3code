@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema";
-import { TrimmedNonEmptyString } from "./baseSchemas.ts";
+import { NonNegativeInt, PositiveInt, TrimmedNonEmptyString } from "./baseSchemas.ts";
 import { GitCommandError } from "./git.ts";
 import { VcsError } from "./vcs.ts";
 
@@ -24,6 +24,9 @@ export type ReviewDiffPreviewInput = typeof ReviewDiffPreviewInput.Type;
 export const ReviewBranchCommitsInput = Schema.Struct({
   cwd: TrimmedNonEmptyString,
   baseRef: Schema.optional(TrimmedNonEmptyString),
+  /** Read recent HEAD history and total commit count instead of only commits since merge-base. */
+  includeHistory: Schema.optionalKey(Schema.Boolean),
+  limit: Schema.optionalKey(PositiveInt),
 });
 export type ReviewBranchCommitsInput = typeof ReviewBranchCommitsInput.Type;
 
@@ -33,9 +36,11 @@ export const ReviewBranchCommitsResult = Schema.Struct({
       sha: Schema.String,
       subject: Schema.String,
       committedAt: Schema.String,
+      refs: Schema.optionalKey(Schema.Array(Schema.String)),
     }),
   ),
   truncated: Schema.Boolean,
+  totalCount: Schema.optionalKey(NonNegativeInt),
 });
 export type ReviewBranchCommitsResult = typeof ReviewBranchCommitsResult.Type;
 

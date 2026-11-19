@@ -22,7 +22,27 @@ export const vimEditing = [
   EditorView.editorAttributes.of((view) => {
     const head = view.state.selection.main.head;
     const line = view.state.doc.lineAt(head);
-    return head === line.to ? { "data-vim-cursor-eol": "true" } : null;
+    const attrs: Record<string, string> = {};
+    if (head === line.to) attrs["data-vim-cursor-eol"] = "true";
+    if (view.state.doc.length === 0) attrs["data-vim-empty"] = "true";
+    return Object.keys(attrs).length > 0 ? attrs : null;
+  }),
+  EditorState.transactionFilter.of((tr) => {
+    if (
+      tr.docChanged ||
+      !tr.selection ||
+      !tr.isUserEvent("select.pointer") ||
+      tr.startState.facet(EditorView.editable)
+    ) {
+      return tr;
+    }
+    const main = tr.selection.main;
+    if (!main.empty) return tr;
+    const line = tr.startState.doc.lineAt(main.head);
+    if (line.length > 0 && main.head === line.to) {
+      return [tr, { selection: { anchor: line.to - 1 }, scrollIntoView: tr.scrollIntoView }];
+    }
+    return tr;
   }),
   Prec.highest(
     EditorView.domEventHandlers({
@@ -102,6 +122,12 @@ export const codeEditing = [
     },
     "&[data-vim-cursor-eol='true'] .cm-fat-cursor": {
       minWidth: "0.55em",
+    },
+    "&[data-vim-empty='true'] .cm-fat-cursor": {
+      background: "color-mix(in srgb, var(--foreground) 12%, transparent) !important",
+      color: "transparent !important",
+      outline: "1px solid color-mix(in srgb, var(--foreground) 34%, transparent) !important",
+      outlineOffset: "-1px",
     },
     "&:not(.cm-focused) .cm-fat-cursor": {
       background: "none !important",

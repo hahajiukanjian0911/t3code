@@ -1213,6 +1213,7 @@ msgstr "未提交"
 #: src/components/DiffPanel.tsx
 #: src/components/DiffPanel.tsx
 #: src/components/GitActionsControl.tsx
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
 msgid "Changes"
 msgstr "更改"
 
@@ -1265,6 +1266,7 @@ msgid "No commits on this branch."
 msgstr "此分支尚无提交。"
 
 #: src/components/DiffPanel.tsx
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
 msgid "Commits"
 msgstr "提交"
 
@@ -2416,11 +2418,6 @@ msgstr "{0}。显示详情"
 #: src/components/contextChipParts.tsx
 msgid "Open {0} {1}: {2}"
 msgstr "打开 {0} {1}：{2}"
-
-#. 0: name; 1: size
-#: src/components/contextChipParts.tsx
-msgid "Image attachment, {0}, {1}"
-msgstr "图片附件，{0}，{1}"
 
 #. 0: props.label
 #: src/components/contextChipParts.tsx
@@ -4879,8 +4876,10 @@ msgstr "子 Agent"
 #. 0: fileManagerName
 #. 0: primaryOption?.label ?? "editor"
 #. 0: primaryOption.label
+#. 0: option.label
 #. 0: fileManagerName
 #: src/components/CommandPalette.tsx
+#: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 #: src/components/settings/ProjectFaviconPickerDialog.tsx
@@ -4914,9 +4913,12 @@ msgstr "在首选编辑器中打开文件"
 
 #: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
+#: src/components/chat/OpenInPicker.tsx
+#: src/components/chat/OpenInPicker.tsx
 msgid "Choose editor"
 msgstr "选择编辑器"
 
+#: src/components/chat/OpenInPicker.tsx
 #: src/components/chat/OpenInPicker.tsx
 msgid "Open in editor"
 msgstr "在编辑器中打开"
@@ -5417,6 +5419,7 @@ msgstr "停止工作流 {0}"
 msgid "Stop entire workflow"
 msgstr "停止整个工作流"
 
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
 #: src/components/chat/ThreadLineageWorkflowRow.tsx
 #: src/components/chat/ThreadLineageWorkflowRow.tsx
 msgid "Collapse"
@@ -21208,10 +21211,6 @@ msgid "Right panel"
 msgstr "右面板"
 
 #: src/components/workspace/WorkspaceDock.tsx
-msgid "Bottom panel"
-msgstr "下面板"
-
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Floating panel"
 msgstr "浮动面板"
 
@@ -21823,10 +21822,6 @@ msgid "Focus Window Down"
 msgstr "聚焦下方窗口"
 
 #: src/components/workspace/WorkspaceDock.tsx
-msgid "Maximized window"
-msgstr "已最大化的窗口"
-
-#: src/components/workspace/WorkspaceDock.tsx
 msgid "Peek left workspace column"
 msgstr "查看左侧面板"
 
@@ -21840,7 +21835,6 @@ msgstr "查看右侧面板"
 msgid "Restore from app maximize"
 msgstr "恢复原布局"
 
-#: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 #: src/components/workspace/WorkspaceDock.tsx
 msgid "Maximize in app"
@@ -21948,10 +21942,6 @@ msgid "Focus Right Panel"
 msgstr "聚焦右面板"
 
 #: src/components/CommandPalette.tsx
-msgid "Focus Bottom Panel"
-msgstr "聚焦下面板"
-
-#: src/components/CommandPalette.tsx
 msgid "Move Window to Left Panel"
 msgstr "将窗口移到左面板"
 
@@ -21960,22 +21950,12 @@ msgid "Move Window to Right Panel"
 msgstr "将窗口移到右面板"
 
 #: src/components/CommandPalette.tsx
-msgid "Move Window to Bottom Panel"
-msgstr "将窗口移到下面板"
-
-#: src/components/CommandPalette.tsx
 msgid "Move Window to Floating Panel"
 msgstr "将窗口移到浮动面板"
 
-#: src/components/chat/ThreadDetailsUsage.tsx
 #: src/i18n/staticUiLabels.ts
 msgid "Context usage"
 msgstr "上下文用量"
-
-#. 0: formatContextWindowTokens(usage.usedTokens)
-#: src/components/chat/ThreadDetailsUsage.tsx
-msgid "{0} tokens"
-msgstr "{0} 个 token"
 
 #: src/components/chat/ThreadDetailsUsage.tsx
 msgid "Remaining tokens"
@@ -22033,3 +22013,52 @@ msgstr "停止录制宏 @{0}"
 #: src/components/chat/ComposerVimStatusCluster.tsx
 msgid "Recording macro @{0}. Click or press q to stop."
 msgstr "正在录制宏 @{0}。点击或按 q 停止。"
+
+#. 0: displayLabel ?? name; 1: size ? `, ${size}` \\: ""
+#: src/components/contextChipParts.tsx
+msgid "Image attachment, {0}{1}"
+msgstr "图片附件，{0}{1}"
+
+#. 0: option.label; 1: isFavorite && openFavoriteEditorShortcutLabel ? ` (${openFavoriteEditorShortcutLabel})` \\: ""
+#: src/components/chat/OpenInPicker.tsx
+msgid "Open in {0} {1}"
+msgstr "在 {0} 中打开{1}"
+
+#. 0: totalCommits.toLocaleString(locale)
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "{0} commits"
+msgstr "{0} 次提交"
+
+#. 0: dirtyFileCount
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "{0} files changed"
+msgstr "{0} 个文件已更改"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "Working tree clean"
+msgstr "工作区干净"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "<0/> Clean"
+msgstr "<0/> 干净"
+
+#. 0: remainingFileCount
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "+{0} more files"
+msgstr "还有 {0} 个文件"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "Recent commits"
+msgstr "最近提交"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "Open Diff"
+msgstr "打开差异"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "1 commit"
+msgstr "1 次提交"
+
+#: src/components/chat/ThreadDetailsGitSummaryCard.tsx
+msgid "1 file changed"
+msgstr "1 个文件已更改"

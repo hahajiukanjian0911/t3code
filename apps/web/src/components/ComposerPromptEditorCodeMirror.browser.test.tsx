@@ -4,7 +4,11 @@ import { userEvent } from "vite-plus/test/browser";
 
 import { act, render } from "../../test/render";
 import "../index.css";
-import { EMPTY_COMPOSER_CONTEXT_RECORDS } from "./composerContextPresentation";
+import {
+  composerContextRecordsFromDraft,
+  EMPTY_COMPOSER_CONTEXT_RECORDS,
+  type ComposerDraftContextRecords,
+} from "./composerContextPresentation";
 import {
   ComposerPromptEditorTiptap as ComposerPromptEditor,
   type ComposerPromptEditorHandle,
@@ -13,6 +17,8 @@ import type { VimTelemetrySnapshot } from "./editor/vimKeymapsAndIme";
 
 function VimHarness(props: {
   initialValue?: string;
+  initialCursor?: number;
+  contextRecords?: ComposerDraftContextRecords;
   editorRef?: React.RefObject<ComposerPromptEditorHandle | null>;
   onEscapeBubble?: () => void;
   onShiftEscapeBubble?: () => void;
@@ -25,7 +31,7 @@ function VimHarness(props: {
   ) => boolean;
 }) {
   const [value, setValue] = useState(props.initialValue ?? "hello world");
-  const [cursor, setCursor] = useState(0);
+  const [cursor, setCursor] = useState(props.initialCursor ?? 0);
   const fallback = useRef<ComposerPromptEditorHandle>(null);
 
   return (
@@ -39,7 +45,7 @@ function VimHarness(props: {
         vimMode
         value={value}
         cursor={cursor}
-        contextRecords={EMPTY_COMPOSER_CONTEXT_RECORDS}
+        contextRecords={props.contextRecords ?? EMPTY_COMPOSER_CONTEXT_RECORDS}
         skills={[]}
         disabled={false}
         placeholder="Ask anything"
@@ -375,7 +381,7 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
     expect(submitted).toEqual(["normal:plain"]);
   });
 
-  it("offsets empty placeholder past the Normal-mode block cursor and marks EOL cursor width cleanly", async () => {
+  it("keeps empty placeholder fixed without shifting between Normal and Insert mode", async () => {
     await using screen = await render(<VimHarness initialValue="" />);
     const editor = screen.getByTestId("composer-editor");
     await expect.element(editor).toBeVisible();
@@ -383,7 +389,8 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
     const placeholder = screen.container.querySelector<HTMLElement>("[data-composer-placeholder]")!;
 
     expect(cmEditor.getAttribute("data-vim-cursor-eol")).toBe("true");
-    expect(Number.parseFloat(getComputedStyle(placeholder).paddingLeft)).toBeGreaterThan(0);
+    expect(cmEditor.getAttribute("data-vim-empty")).toBe("true");
+    expect(Number.parseFloat(getComputedStyle(placeholder).paddingLeft)).toBe(0);
 
     await userEvent.click(editor);
     await userEvent.keyboard("i");
@@ -394,6 +401,7 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
     await userEvent.keyboard("ab{Escape}0");
     await vi.waitFor(() => {
       expect(cmEditor.getAttribute("data-vim-cursor-eol")).toBeNull();
+      expect(cmEditor.getAttribute("data-vim-empty")).toBeNull();
     });
   });
 
@@ -484,5 +492,174 @@ describe("ComposerPromptEditorCodeMirror (Vim Mode)", () => {
       expect(screen.getByTestId("prompt-output").element().textContent).toBe("first\nsecond");
     });
     expect(container.getBoundingClientRect().height).toBeGreaterThan(emptyHeight);
+  });
+
+  it("represents inline images as literal atomic [image x] tokens, supports Normal i/a before/after chars and chips, and renumbers after x", async () => {
+    const img1Url = "![first.png](t3-context://v1/image/image_first)";
+    const img2Url = "![second.png](t3-context://v1/image/image_second)";
+    const initialDraft = `ab ${img1Url} ${img2Url} cd`;
+    const images = [
+      {
+        type: "image" as const,
+        id: "first",
+        name: "first.png",
+        mimeType: "image/png",
+        sizeBytes: 1200,
+        previewUrl: "data:image/png;base64,iVBORw0KGgo=",
+        file: new File(["png"], "first.png", { type: "image/png" }),
+      },
+      {
+        type: "image" as const,
+        id: "second",
+        name: "second.png",
+        mimeType: "image/png",
+        sizeBytes: 1400,
+        previewUrl: "data:image/png;base64,iVBORw0KGgo=",
+        file: new File(["png"], "second.png", { type: "image/png" }),
+      },
+    ];
+
+    const editorRef = createRef<ComposerPromptEditorHandle>();
+
+    function ImageChipHarness() {
+      const [value, setValue] = useState(initialDraft);
+      const [cursor, setCursor] = useState(0);
+      const contextRecords = composerContextRecordsFromDraft({
+        terminalContexts: [],
+        images,
+        prompt: value,
+      });
+      return (
+        <div>
+          <ComposerPromptEditor
+            vimMode
+            value={value}
+            cursor={cursor}
+            contextRecords={contextRecords}
+            skills={[]}
+            disabled={false}
+            placeholder="Ask"
+            editorRef={editorRef}
+            onPaste={() => {}}
+            onChange={(nextValue, nextCursor) => {
+              setValue(nextValue);
+              setCursor(nextCursor);
+            }}
+          />
+          <output data-testid="prompt-output">{value}</output>
+        </div>
+      );
+    }
+
+    await using screen = await render(<ImageChipHarness />);
+    const editor = screen.getByTestId("composer-editor");
+    await expect.element(editor).toBeVisible();
+    await expect.element(screen.getByText("[image 1]")).toBeVisible();
+    await expect.element(screen.getByText("[image 2]")).toBeVisible();
+
+    // Underlying DOM must NOT expose raw t3-context:// paths
+    expect(editor.element().textContent).not.toContain("t3-context://");
+
+    await act(() => editorRef.current!.focusAt(0));
+    // On 'b' (index 1), `i` inserts BEFORE 'b' -> "aXb", then `a` on 'b' inserts AFTER 'b' -> "aXbY"
+    await userEvent.keyboard("{Escape}0liX{Escape}laY{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe(
+        `aXbY ${img1Url} ${img2Url} cd`,
+      );
+    });
+
+    // Step right onto [image 1] (past space): `i` inserts BEFORE chip, `l` steps back onto chip, `a` inserts AFTER chip
+    await userEvent.keyboard("lli<{Escape}la>{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe(
+        `aXbY <${img1Url}> ${img2Url} cd`,
+      );
+    });
+
+    // Stepping back onto [image 1] and pressing `x` deletes the entire chip atomically and visually renumbers [image 2] -> [image 1]
+    await userEvent.keyboard("hx");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe(
+        `aXbY <> ${img2Url} cd`,
+      );
+    });
+    await expect.element(screen.getByText("[image 1]")).toBeVisible();
+    expect(screen.container.textContent).not.toContain("[image 2]");
+
+    // Pressing `u` (Vim undo) restores image 1 cleanly alongside image 2 without corrupting bindings
+    await userEvent.keyboard("u");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe(
+        `aXbY <${img1Url}> ${img2Url} cd`,
+      );
+    });
+    await expect.element(screen.getByText("[image 1]")).toBeVisible();
+    await expect.element(screen.getByText("[image 2]")).toBeVisible();
+
+    // Deleting image 1 (`x`) and putting it back (`P`) preserves image 1's binding instead of duplicating image 2
+    await userEvent.keyboard("xP");
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("prompt-output").element().textContent).toBe(
+        `aXbY <${img1Url}> ${img2Url} cd`,
+      );
+    });
+  });
+
+  it("scrolls to the saved cursor line when switching back to a multi-line draft", async () => {
+    const tenLines = Array.from(
+      { length: 10 },
+      (_, index) => `Line ${index + 1}: draft content`,
+    ).join("\n");
+
+    function ThreadSwitchHarness() {
+      const [thread, setThread] = useState<"short" | "long">("short");
+      const [value, setValue] = useState("short draft");
+      const [cursor, setCursor] = useState(0);
+      const threadEditorRef = useRef<ComposerPromptEditorHandle>(null);
+      return (
+        <div>
+          <button
+            type="button"
+            data-testid="switch-long"
+            onClick={() => {
+              setThread("long");
+              setValue(tenLines);
+              setCursor(tenLines.length);
+            }}
+          >
+            Long
+          </button>
+          <span data-testid="active-thread">{thread}</span>
+          <ComposerPromptEditor
+            vimMode
+            value={value}
+            cursor={cursor}
+            contextRecords={EMPTY_COMPOSER_CONTEXT_RECORDS}
+            skills={[]}
+            disabled={false}
+            placeholder="Ask"
+            editorRef={threadEditorRef}
+            onPaste={() => {}}
+            onChange={(nextValue, nextCursor) => {
+              setValue(nextValue);
+              setCursor(nextCursor);
+            }}
+          />
+        </div>
+      );
+    }
+
+    await using screen = await render(<ThreadSwitchHarness />);
+    await expect.element(screen.getByTestId("composer-editor")).toBeVisible();
+    const scroller = screen.container.querySelector<HTMLElement>(".cm-scroller")!;
+    expect(scroller.scrollTop).toBe(0);
+
+    // Click switch button (composer is NOT focused) -> should scroll down to line 10
+    await userEvent.click(screen.getByTestId("switch-long"));
+    await vi.waitFor(() => {
+      expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight);
+      expect(scroller.scrollTop).toBeGreaterThan(0);
+    });
   });
 });

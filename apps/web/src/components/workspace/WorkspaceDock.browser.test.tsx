@@ -937,9 +937,10 @@ it("keeps text at a fixed width during a right-tab resize and can reverse it mid
   animation.currentTime = 75;
   const firstClip = getComputedStyle(surface).clipPath;
   await vi.waitFor(() => {
-    const guest = useBrowserSurfaceStore.getState().byTabId["right-tab-resize"]?.rect;
-    expect(guest?.width).toBe(fileWidth);
-    expect(guest?.clipPath).toMatch(/^inset\(0px [1-9]/);
+    const guest = useBrowserSurfaceStore.getState().byTabId["right-tab-resize"];
+    expect(guest?.visible).toBe(true);
+    expect(guest?.rect?.width).toBe(fileWidth);
+    expect(guest?.rect?.clipPath).toMatch(/^inset\(0px [1-9]/);
   });
   animation.currentTime = 200;
   expect(getComputedStyle(surface).clipPath).not.toBe(firstClip);
@@ -957,6 +958,116 @@ it("keeps text at a fixed width during a right-tab resize and can reverse it mid
   }
   await vi.waitFor(() => expect(surface.style.width).toBe(""));
   expect(panel.offsetWidth).toBe(inspectorWidth);
+});
+
+it("opens a cold and a warm half panel from the same edge and can reverse a close without reflowing its contents", async () => {
+  await page.viewport(1280, 800);
+  using _layout = isolatedLayout();
+  localStorage.setItem(
+    "t3code:workspace-layout:v1",
+    JSON.stringify({
+      placements: { "surface:terminal": { panel: "right", group: "right" } },
+      active: { right: "details:test" },
+      hidden: { right: true },
+    }),
+  );
+  const settings = getClientSettings();
+  using _settings = { [Symbol.dispose]: () => __setClientSettingsForTests(settings) };
+  __setClientSettingsForTests({ ...settings, panelAnimationDurationMs: 375 });
+
+  function Windows() {
+    const [terminal, setTerminal] = useState(false);
+    const panel = useWorkspacePanel("right");
+    return (
+      <>
+        <WorkspaceWindow id="chat:test" title="Chat" panel="main">
+          <button
+            onClick={() => {
+              setTerminal(true);
+              panel?.revealWindow("surface:terminal");
+            }}
+          >
+            Open terminal
+          </button>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="details:test" title="Details" panel="right">
+          <p>Thread details</p>
+        </WorkspaceWindow>
+        {terminal && (
+          <WorkspaceWindow id="surface:terminal" title="Terminal" panel="right" selected>
+            <input aria-label="Terminal input" />
+          </WorkspaceWindow>
+        )}
+      </>
+    );
+  }
+  await using screen = await render(
+    <div className="h-screen">
+      <WorkspaceRoot>
+        <Windows />
+      </WorkspaceRoot>
+    </div>,
+  );
+  const main = screen.container.querySelector<HTMLElement>('[data-workspace-panel="main"]')!;
+  const right = screen.container.querySelector<HTMLElement>('[data-workspace-panel="right"]')!;
+  const chat = main.querySelector<HTMLElement>("[data-workspace-panel-surface]")!;
+  const surface = right.querySelector<HTMLElement>("[data-workspace-panel-surface]")!;
+  const toggle = screen
+    .getByRole("button", { name: "Toggle Right panel" })
+    .element() as HTMLButtonElement;
+  const open = screen.getByRole("button", { name: "Open terminal" }).element() as HTMLButtonElement;
+  const outerEdge = main.getBoundingClientRect().right;
+  const fullWidth = chat.offsetWidth;
+  const sample = (time: number) => {
+    for (const animation of [chat, surface].flatMap((el) => el.getAnimations())) {
+      animation.pause();
+      animation.currentTime = time;
+    }
+    return surface.getBoundingClientRect().left;
+  };
+  const settle = async () => {
+    for (const panel of [main, right]) {
+      for (const animation of panel.getAnimations({ subtree: true })) animation.finish();
+    }
+    await vi.waitFor(() => expect(surface.style.width).toBe(""));
+  };
+  await act(() => open.click());
+  expect(surface.getAnimations()).toHaveLength(1);
+  expect(sample(0)).toBeCloseTo(outerEdge, 0);
+  const firstMid = sample(150);
+  const firstClip = getComputedStyle(surface).clipPath;
+  expect(chat.offsetWidth).toBe(fullWidth);
+  const terminalWidth = surface.offsetWidth;
+  expect(terminalWidth).toBeGreaterThan(fullWidth * 0.48);
+  await settle();
+  const end = right.getBoundingClientRect();
+  expect(end.left - main.getBoundingClientRect().right).toBe(6);
+  const saved = JSON.parse(localStorage.getItem("t3code:workspace-layout:v1")!);
+  expect(saved.hidden.right).toBe(false);
+  expect(saved.active.right).toBe("surface:terminal");
+
+  await act(() => toggle.click());
+  expect(right.inert).toBe(true);
+  const closingLeft = sample(100);
+  const closingClip = getComputedStyle(surface).clipPath;
+  expect(closingLeft).toBeGreaterThan(end.left);
+  expect(surface.offsetWidth).toBe(terminalWidth);
+  await act(() => toggle.click());
+  expect(sample(0)).toBeCloseTo(closingLeft, 0);
+  expect(getComputedStyle(surface).clipPath).toBe(closingClip);
+  expect(surface.offsetWidth).toBe(terminalWidth);
+  await settle();
+  await act(() => toggle.click());
+  await settle();
+  expect(surface.checkVisibility()).toBe(false);
+  expect(main.getBoundingClientRect().right).toBe(outerEdge);
+  await act(() => toggle.click());
+  expect(sample(0)).toBeCloseTo(outerEdge, 0);
+  expect(sample(150)).toBeCloseTo(firstMid, 0);
+  expect(getComputedStyle(surface).clipPath).toBe(firstClip);
+  expect(chat.offsetWidth).toBe(fullWidth);
+  await settle();
+  expect(right.getBoundingClientRect().left).toBe(end.left);
 });
 
 it("renders a 6px board seam between intra-panel split groups, resizes weights, and toggles monocle zoom in panel", async () => {
@@ -1136,4 +1247,151 @@ it("toggles main focus between composer and conversation on focusPanel.main and 
   // Third call reopens right panel and focuses it.
   await act(async () => handlers.right?.());
   await vi.waitFor(() => expect(document.activeElement).toBe(rightInput));
+});
+
+it("closes right panel immediately via focusOrToggle when only Details is open and aligns header controls vertically", async () => {
+  localStorage.clear();
+  const handlers: { right?: () => void } = {};
+
+  function DetailsOnlyHarness({ onReady }: { onReady: (next: { right: () => void }) => void }) {
+    const rightPanel = useWorkspacePanel("right");
+    useEffect(() => {
+      onReady({
+        right: () => {
+          rightPanel?.focusOrToggle();
+        },
+      });
+    }, [onReady, rightPanel]);
+    return null;
+  }
+
+  await using screen = await render(
+    <div className="h-[640px] w-[1100px]">
+      <WorkspaceRoot>
+        <DetailsOnlyHarness
+          onReady={(next) => {
+            Object.assign(handlers, next);
+          }}
+        />
+        <WorkspaceWindow id="chat:main" title="Conversation" panel="main" fixed>
+          <div data-workspace-area="composer" tabIndex={-1}>
+            <div
+              contentEditable
+              suppressContentEditableWarning
+              data-testid="composer-editor"
+              tabIndex={0}
+            >
+              Draft
+            </div>
+          </div>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="details:thread-1" title="Details" panel="right">
+          <button type="button">Branch</button>
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    </div>,
+    { router: false },
+  );
+
+  const composer = screen.container.querySelector<HTMLElement>('[data-testid="composer-editor"]')!;
+  const rightPanel = screen.container.querySelector<HTMLElement>('[data-workspace-panel="right"]')!;
+  const detailsTab = rightPanel.querySelector<HTMLElement>('[role="tab"]')!;
+  const rightToggle = screen.container.querySelector<HTMLElement>(
+    '[data-workspace-controls] button[aria-label="Toggle Right panel"]',
+  )!;
+  const tabCenterY =
+    detailsTab.getBoundingClientRect().top + detailsTab.getBoundingClientRect().height / 2;
+  const toggleCenterY =
+    rightToggle.getBoundingClientRect().top + rightToggle.getBoundingClientRect().height / 2;
+  expect(Math.abs(tabCenterY - toggleCenterY)).toBeLessThanOrEqual(1);
+
+  // Only Details is open -> focusOrToggle closes immediately without focusing Details first.
+  composer.focus();
+  expect(rightPanel.hasAttribute("inert")).toBe(false);
+  await act(async () => handlers.right?.());
+  await vi.waitFor(() => expect(rightPanel.hasAttribute("inert")).toBe(true));
+  expect(document.activeElement).toBe(composer);
+
+  // Reopening Details-only right panel keeps focus on composer instead of focusing Details.
+  await act(async () => handlers.right?.());
+  await vi.waitFor(() => expect(rightPanel.hasAttribute("inert")).toBe(false));
+  expect(document.activeElement).toBe(composer);
+});
+
+it("switches right panel tabs with Mod+1..9 only while focus is inside a multi-tab right panel", async () => {
+  using _layout = isolatedLayout();
+  const mac = /Mac|iPhone|iPad|iPod/i.test(navigator.platform);
+  await using screen = await render(
+    <div className="h-[640px] w-[1100px]">
+      <WorkspaceRoot>
+        <WorkspaceWindow id="chat:main" title="Conversation" panel="main" fixed>
+          <div data-workspace-area="composer" tabIndex={-1}>
+            <div
+              contentEditable
+              suppressContentEditableWarning
+              data-testid="composer-editor"
+              tabIndex={0}
+            >
+              Draft
+            </div>
+          </div>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="details:thread-1" title="Details" panel="right">
+          <div data-workspace-focus-default="" tabIndex={-1} data-testid="details-focus-host">
+            <button type="button">Branch</button>
+          </div>
+        </WorkspaceWindow>
+        <WorkspaceWindow id="terminal:1" title="Terminal 1" panel="right" selected>
+          <input aria-label="Right terminal input" />
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    </div>,
+    { router: false },
+  );
+
+  const composer = screen.container.querySelector<HTMLElement>('[data-testid="composer-editor"]')!;
+  const rightPanel = screen.container.querySelector<HTMLElement>('[data-workspace-panel="right"]')!;
+  const terminalInput = screen.container.querySelector<HTMLInputElement>(
+    'input[aria-label="Right terminal input"]',
+  )!;
+  const dispatchModDigit = (digit: string, target: EventTarget) => {
+    const event = new KeyboardEvent("keydown", {
+      key: digit,
+      code: `Digit${digit}`,
+      metaKey: mac,
+      ctrlKey: !mac,
+      bubbles: true,
+      cancelable: true,
+    });
+    target.dispatchEvent(event);
+    return event;
+  };
+
+  // Focus inside right panel (Terminal is tab 2, Details is tab 1) -> Mod+1 switches to Details.
+  terminalInput.focus();
+  const switchToDetails = dispatchModDigit("1", terminalInput);
+  expect(switchToDetails.defaultPrevented).toBe(true);
+  await vi.waitFor(() => {
+    const tabs = [...rightPanel.querySelectorAll<HTMLElement>('[role="tab"]')];
+    expect(tabs[0]?.getAttribute("aria-selected")).toBe("true");
+    expect(tabs[1]?.getAttribute("aria-selected")).toBe("false");
+  });
+  const detailsHost = rightPanel.querySelector<HTMLElement>('[data-testid="details-focus-host"]')!;
+  expect(document.activeElement).toBe(detailsHost);
+
+  // Focus stayed inside right panel -> Mod+2 switches back to Terminal and focuses its input.
+  const switchToTerminal = dispatchModDigit("2", detailsHost);
+  expect(switchToTerminal.defaultPrevented).toBe(true);
+  await vi.waitFor(() => {
+    const tabs = [...rightPanel.querySelectorAll<HTMLElement>('[role="tab"]')];
+    expect(tabs[1]?.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(terminalInput);
+  });
+
+  // Focus in main composer -> Mod+1 must not be intercepted by right panel tabs.
+  composer.focus();
+  const fromComposer = dispatchModDigit("1", composer);
+  expect(fromComposer.defaultPrevented).toBe(false);
+  const tabsAfterComposer = [...rightPanel.querySelectorAll<HTMLElement>('[role="tab"]')];
+  expect(tabsAfterComposer[1]?.getAttribute("aria-selected")).toBe("true");
 });

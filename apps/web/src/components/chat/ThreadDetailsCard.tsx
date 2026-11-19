@@ -47,8 +47,10 @@ export function ThreadDetailsCard(props: ThreadDetailsCardProps) {
       <div
         {...workspaceAreaProps("details", 3, "Thread details")}
         data-workspace-focus-key={id}
+        data-workspace-focus-default=""
         data-thread-details-panel="right"
-        className="flex h-full min-h-0 flex-col"
+        tabIndex={-1}
+        className="flex h-full min-h-0 flex-col outline-none"
         onContextMenu={props.onContextMenu}
       >
         <ScrollArea scrollFade className="min-h-0 flex-1">

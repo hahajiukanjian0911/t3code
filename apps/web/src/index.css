@@ -532,18 +532,15 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   }
 }
 
-/* Each track reserves the visible part of the panel plus its inner resize seam. */
-@property --workspace-right-track {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
 .workspace-docked-right {
-  justify-self: start;
   margin-left: var(--workspace-seam);
 }
-.workspace-docked-right[inert]:not([data-dock-moving], [data-workspace-covered]) {
-  display: none;
+.workspace-docked-right[inert]:not([data-workspace-covered]) {
+  margin-left: 0;
+
+  &:not([data-workspace-moving]) > * {
+    display: none;
+  }
 }
 
 [data-workspace-panel][data-workspace-maximized-stage]:not([data-workspace-panel="floating"]) {
@@ -1465,7 +1462,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --destructive: var(--error);
   --border: var(--color-zinc-200);
   --input: var(--color-zinc-300);
-  --ring: var(--primary);
+  --ring: color-mix(in srgb, var(--foreground) 22%, transparent);
   --destructive-foreground: var(--error-foreground);
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-700);
@@ -1525,6 +1522,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     --error-surface: color-mix(in srgb, var(--error) 16%, transparent);
     --border: --alpha(var(--color-white) / 8%);
     --input: --alpha(var(--color-white) / 11%);
+    --ring: rgb(255 255 255 / 24%);
     --info-foreground: var(--color-blue-400);
     --guest-foreground: var(--color-fuchsia-300);
     --success-foreground: var(--color-emerald-400);
@@ -1684,7 +1682,7 @@ html[data-theme-id]:not([data-theme-id=""]) {
   --update-foreground: var(--app-theme-update-foreground);
   --border: var(--app-theme-border);
   --input: var(--app-theme-input);
-  --ring: var(--app-theme-focus);
+  --ring: color-mix(in srgb, var(--foreground) 22%, transparent);
   --sidebar: var(--app-theme-sidebar);
   --sidebar-foreground: var(--app-theme-sidebar-foreground);
   --sidebar-muted-foreground: var(--app-theme-sidebar-muted-foreground);

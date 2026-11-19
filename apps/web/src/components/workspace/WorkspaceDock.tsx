@@ -11,8 +11,11 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useAtomValue } from "@effect/atom-react";
+import { THREAD_JUMP_KEYBINDING_COMMANDS } from "@t3tools/contracts";
 import { primaryServerKeybindingsAtom } from "../../state/server";
 import { shortcutLabelForCommand } from "../../keybindings";
+import { isCommandPaletteOpen } from "../../commandPaletteBus";
+import { isModelPickerOpen } from "../../modelPickerVisibility";
 import {
   Columns2Icon,
   EllipsisIcon,
@@ -94,6 +97,16 @@ function activateInLayout(layout: WorkspaceLayout, id: string): WorkspaceLayout 
     dismissed: layout.dismissed.filter((value) => value !== id),
   };
 }
+function orderedRightPanelTabIds(
+  groups: ReadonlyArray<{ readonly windows: readonly string[] }>,
+): string[] {
+  const ids = groups.flatMap((group) => group.windows);
+  return [
+    ...ids.filter((id) => isInspectorWorkspaceWindowId(id)),
+    ...ids.filter((id) => !isInspectorWorkspaceWindowId(id)),
+  ];
+}
+
 function createDockStore(
   captureResize: ReturnType<typeof useWorkspaceResizeTransition>["capture"],
 ) {
@@ -104,6 +117,7 @@ function createDockStore(
     /* Storage is optional. */
   }
   let snapshot: DockSnapshot = { windows: {}, layout, focused: null };
+  let revealOnRegistration: string | null = null;
   const listeners = new Set<() => void>();
   let body: HTMLDivElement | null = null;
   let parking: HTMLDivElement | null = null;
@@ -128,12 +142,12 @@ function createDockStore(
         after = dockView(next);
       if (body && before.fullPanel !== after.fullPanel) {
         captureResize(body, [before.fullPanel, after.fullPanel]);
-      } else if (
+      }
+      if (
         body &&
         !after.full &&
-        before.panelVisible("right") &&
-        after.panelVisible("right") &&
-        before.rightContentMode !== after.rightContentMode
+        (before.panelOpen("right") !== after.panelOpen("right") ||
+          (after.panelVisible("right") && before.rightContentMode !== after.rightContentMode))
       ) {
         captureResize(body, ["main", "right"]);
       }
@@ -224,7 +238,7 @@ function createDockStore(
       container.querySelector<HTMLElement>("[data-workspace-window]");
     if (!preferred) return false;
     preferred.focus({ preventScroll: true });
-    return true;
+    return document.activeElement === preferred || container.contains(document.activeElement);
   };
   const focusWindowContainerNow = (id: string, composer = false): boolean => {
     if (typeof document === "undefined") return false;
@@ -244,7 +258,7 @@ function createDockStore(
       container.querySelector<HTMLElement>("[data-workspace-window]");
     if (!preferred) return false;
     preferred.focus({ preventScroll: true });
-    return true;
+    return document.activeElement === preferred || container.contains(document.activeElement);
   };
   const focusWindowContainer = (id: string, composer = false) => {
     if (typeof document === "undefined" || typeof requestAnimationFrame === "undefined") return;
@@ -317,8 +331,14 @@ function createDockStore(
       const isFullOnPanel = Boolean(view.full && sourcePanel === panel);
       const visible = view.panelVisible(panel) || isFullOnPanel;
       const activeId = isFullOnPanel ? view.full!.windowId : view.groups[panel][0]?.active;
+      const panelWindows = view.groups[panel].flatMap((group) => group.windows);
+      const onlyInspectorWindow =
+        panel === "right" &&
+        !isFullOnPanel &&
+        panelWindows.length === 1 &&
+        isInspectorWorkspaceWindowId(panelWindows[0]!);
       if (visible && activeId) {
-        if (isPanelFocused(panel, activeId)) {
+        if (isPanelFocused(panel, activeId) || onlyInspectorWindow) {
           const keepStage = panel === "floating" && !view.maximizedFloating;
           updateLayout({
             ...snapshot.layout,
@@ -328,11 +348,13 @@ function createDockStore(
               [panel]: true,
             },
           });
-          const mainId =
-            Object.values(snapshot.windows).find(
-              (win) => win.available && win.id.startsWith("chat:"),
-            )?.id ?? view.groups.main[0]?.active;
-          if (mainId) focusWindowContainer(mainId, true);
+          if (isPanelFocused(panel, activeId)) {
+            const mainId =
+              Object.values(snapshot.windows).find(
+                (win) => win.available && win.id.startsWith("chat:"),
+              )?.id ?? view.groups.main[0]?.active;
+            if (mainId) focusWindowContainer(mainId, true);
+          }
           return "closed";
         }
         activate(activeId);
@@ -354,7 +376,7 @@ function createDockStore(
           members[0]?.active ?? (sourcePanel === panel ? view.max?.windowId : undefined);
         if (targetId) {
           activate(targetId);
-          focusWindowContainer(targetId);
+          if (!onlyInspectorWindow) focusWindowContainer(targetId);
         }
         return "opened";
       }
@@ -384,6 +406,14 @@ function createDockStore(
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
+    revealWindow(id: string) {
+      if (!snapshot.windows[id]?.available) {
+        revealOnRegistration = id;
+        return;
+      }
+      revealOnRegistration = null;
+      if (!visibleWindow(snapshot, id)) publishLayout(activateInLayout(snapshot.layout, id));
+    },
     register(window: DockWindow, panel: WorkspacePanel) {
       const previous = snapshot.windows[window.id];
       const restored = !previous && snapshot.layout.placements[window.id] !== undefined;
@@ -403,15 +433,21 @@ function createDockStore(
           };
         }
       }
+      const selected = window.available && window.selected;
+      const requested = selected && revealOnRegistration === window.id;
       if (
-        window.available &&
-        window.selected &&
-        !restored &&
-        (!previous?.selected || previous.activation !== window.activation)
+        requested ||
+        (selected &&
+          !restored &&
+          (!previous?.selected || previous.activation !== window.activation))
       ) {
+        if (requested) revealOnRegistration = null;
         next = activateInLayout(next, window.id);
       }
-      publish({ ...snapshot, windows: { ...snapshot.windows, [window.id]: window }, layout: next });
+      publish(
+        { ...snapshot, windows: { ...snapshot.windows, [window.id]: window }, layout: next },
+        requested,
+      );
     },
     unregister(id: string) {
       actionContainers.delete(id);
@@ -419,6 +455,22 @@ function createDockStore(
       publish({ ...snapshot, windows });
     },
     activate,
+    activateRightPanelTabByIndex(index: number): boolean {
+      if (isCommandPaletteOpen() || isModelPickerOpen()) return false;
+      const view = dockView(snapshot);
+      const isFullOnRight = Boolean(view.full && view.fullPanel === "right");
+      const visible = view.panelVisible("right") || isFullOnRight;
+      if (!visible) return false;
+      const activeId = isFullOnRight ? view.full!.windowId : view.groups.right[0]?.active;
+      if (!isPanelFocused("right", activeId)) return false;
+      const orderedIds = orderedRightPanelTabIds(view.groups.right);
+      if (orderedIds.length < 2) return false;
+      const targetId = orderedIds[index];
+      if (!targetId) return true;
+      activate(targetId);
+      if (!focusWindowContainerNow(targetId)) focusWindowContainer(targetId);
+      return true;
+    },
     toggleWindow(id: string, panel?: WorkspacePanel) {
       const window = snapshot.windows[id];
       const placement = snapshot.layout.placements[id];
@@ -965,11 +1017,12 @@ export function useWorkspacePanel(panel: WorkspacePanel) {
   return store
     ? {
         visible,
-        open: () => {
-          if (!dockView(store.getSnapshot()).panelVisible(panel)) store.togglePanel(panel);
-        },
+        revealWindow: store.revealWindow,
         toggle: () => store.togglePanel(panel),
-        focusOrToggle: () => store.focusOrTogglePanel(panel),
+        focusOrToggle: (windowId?: string) =>
+          windowId && store.getSnapshot().layout.placements[windowId]?.panel !== panel
+            ? store.focusOrToggleWindow(windowId)
+            : store.focusOrTogglePanel(panel),
       }
     : null;
 }
@@ -1073,18 +1126,30 @@ function DockFrame({
       "workspace.moveRight": () => store.moveFocused("right"),
       "workspace.moveFloat": () => store.moveFocused("floating"),
     };
+    const jumpActions = Object.fromEntries(
+      THREAD_JUMP_KEYBINDING_COMMANDS.map((command, index) => [
+        command,
+        (event: KeyboardEvent) => {
+          if (event.repeat || store.activateRightPanelTabByIndex(index) === false) return false;
+          consume(event);
+        },
+      ]),
+    );
     const disposers = [
       registerCommands(
-        Object.fromEntries(
-          Object.entries(actions).map(([command, run]) => [
-            command,
-            (event: KeyboardEvent) => {
-              if ((event.repeat && !command.startsWith("workspace.focus")) || run() === false)
-                return false;
-              consume(event);
-            },
-          ]),
-        ),
+        {
+          ...Object.fromEntries(
+            Object.entries(actions).map(([command, run]) => [
+              command,
+              (event: KeyboardEvent) => {
+                if ((event.repeat && !command.startsWith("workspace.focus")) || run() === false)
+                  return false;
+                consume(event);
+              },
+            ]),
+          ),
+          ...jumpActions,
+        },
         {
           capture: true,
           keybindings: () => keybindings,
@@ -1123,13 +1188,7 @@ function DockFrame({
         ),
       )
     : layout.sizes.right;
-  useDockedPanelMotion(
-    store.getBody,
-    "left",
-    dockedThreads ? panelOpen("left") : null,
-    layout.sizes.left,
-  );
-  useDockedPanelMotion(store.getBody, "right", panelOpen("right"), effectiveRightWidth);
+  useDockedPanelMotion(store.getBody, dockedThreads ? panelOpen("left") : null, layout.sizes.left);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync, react/exhaustive-effect-dependencies -- Play from the captured bounds after React and the dock tracks commit their final geometry.
   useLayoutEffect(() => playResize(), [snapshot, playResize]);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync, react/exhaustive-effect-dependencies -- repositions native browser layers after docking changes that do not resize their content
@@ -1463,11 +1522,7 @@ function DockFrame({
             ? undefined
             : {
                 gridArea: threadSidebar ? undefined : key,
-                width: threadSidebar
-                  ? layout.sizes.left
-                  : key === "right"
-                    ? effectiveRightWidth
-                    : undefined,
+                width: threadSidebar ? layout.sizes.left : undefined,
               }
         }
       >
@@ -1508,7 +1563,7 @@ function DockFrame({
           render={
             <button
               type="button"
-              className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
+              className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring focus-visible:bg-accent motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
               aria-label={`Toggle ${panelLabels[key]}`}
               aria-pressed={panelVisible(key)}
               onClick={() => store.togglePanel(key)}
@@ -1532,7 +1587,7 @@ function DockFrame({
   const panelControls = (
     <div
       data-workspace-controls=""
-      className="pointer-events-none absolute inset-x-0 z-30 flex h-8 items-center justify-between"
+      className="pointer-events-none absolute inset-x-0 z-30 flex h-[var(--workspace-topbar-height)] items-center justify-between"
     >
       <div className="pointer-events-auto flex" data-workspace-controls-leading="">
         {renderPanelToggle("left")}
@@ -1544,7 +1599,7 @@ function DockFrame({
               render={
                 <button
                   type="button"
-                  className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
+                  className="group/panel-toggle relative grid size-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-(--ease-drawer) hover:bg-accent hover:text-foreground aria-pressed:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring focus-visible:bg-accent motion-reduce:duration-0 in-data-[panel-animations=false]:duration-0 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [-webkit-app-region:no-drag]"
                   aria-label={`Toggle ${panelLabels.floating}`}
                   aria-pressed={floatingVisible}
                   onClick={() => store.togglePanel("floating")}
@@ -1744,7 +1799,7 @@ function DockFrame({
         className="relative grid min-h-0 flex-1 gap-(--workspace-seam) overflow-clip p-(--workspace-seam)"
         style={{
           gap: 0,
-          gridTemplateColumns: `${leftGridColumn ? `${layout.sizes.left}px var(--workspace-seam) ` : ""}minmax(0,1fr) var(--workspace-right-track)`,
+          gridTemplateColumns: `${leftGridColumn ? `${layout.sizes.left}px var(--workspace-seam) ` : ""}minmax(0,1fr) ${panelOpen("right") ? `calc(${effectiveRightWidth}px + var(--workspace-seam))` : "0px"}`,
           gridTemplateRows: "minmax(0,1fr)",
           gridTemplateAreas: leftGridColumn ? '"left . main right"' : '"main right"',
         }}

@@ -8,6 +8,22 @@ import {
 import { usePanelAnimationSettings } from "../../panelAnimations";
 import type { WorkspacePanel } from "./workspaceLayout";
 
+function canAnimatePanel(panel: HTMLElement) {
+  const hidden = panel.closest("[hidden], [inert]");
+  return (
+    !hidden ||
+    (hidden === panel &&
+      panel.matches(".workspace-docked-right[inert]:not([hidden], [data-workspace-covered])"))
+  );
+}
+
+interface PanelStart {
+  from: DOMRect;
+  width: number;
+  height: number;
+  wasStage: boolean;
+}
+
 function frame(rect: DOMRect, destination: DOMRect, width: number, height: number): Keyframe {
   return {
     transform: `translate3d(${rect.x - destination.x}px, ${rect.y - destination.y}px, 0)`,
@@ -17,7 +33,7 @@ function frame(rect: DOMRect, destination: DOMRect, width: number, height: numbe
 
 export function useWorkspaceResizeTransition() {
   const { active, durationMs } = usePanelAnimationSettings();
-  const pending = useRef(new Map<HTMLElement, { from: DOMRect; wasStage: boolean }>());
+  const pending = useRef(new Map<HTMLElement, PanelStart>());
   const running = useRef<((notify?: boolean) => void) | null>(null);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Release pinned surfaces when motion preferences change or the workspace unmounts.
   useLayoutEffect(() => {
@@ -34,13 +50,19 @@ export function useWorkspaceResizeTransition() {
     for (const key of new Set(panels)) {
       if (!key) continue;
       const panel = dock.querySelector<HTMLElement>(`[data-workspace-panel="${key}"]`);
-      if (!panel || panel.closest("[hidden], [inert]") || pending.current.has(panel)) continue;
+      if (!panel || !canAnimatePanel(panel) || pending.current.has(panel)) continue;
       notifyWorkspaceResizeStart(panel);
       if (!active) continue;
-      const rect = workspacePanelClip.get(panel)?.() ?? panel.getBoundingClientRect();
-      if (!rect.width || !rect.height) continue;
+      const clip = workspacePanelClip.get(panel);
+      const from = clip?.() ?? panel.getBoundingClientRect();
+      if (!from.height) continue;
+      const pinned =
+        clip &&
+        panel.querySelector(":scope > [data-workspace-panel-surface]")?.getBoundingClientRect();
       pending.current.set(panel, {
-        from: rect,
+        from,
+        width: pinned?.width ?? from.width,
+        height: pinned?.height ?? from.height,
         wasStage: panel.hasAttribute("data-workspace-maximized-stage"),
       });
     }
@@ -53,18 +75,17 @@ export function useWorkspaceResizeTransition() {
     running.current?.(false);
     const dock = before.keys().next().value?.closest<HTMLElement>("[data-workspace-dock]");
     if (!dock || !active) return;
-    const targets: { panel: HTMLElement; surface: HTMLElement; from: DOMRect }[] = [];
-    for (const entry of before) {
-      const panel = entry[0];
-      const { from, wasStage } = entry[1];
+    const targets: { panel: HTMLElement; surface: HTMLElement; start: PanelStart }[] = [];
+    for (const [panel, start] of before) {
       const surface = panel.querySelector<HTMLElement>(":scope > [data-workspace-panel-surface]");
-      if (!surface || !panel.isConnected || panel.closest("[hidden], [inert]")) continue;
-      const stage = wasStage || panel.hasAttribute("data-workspace-maximized-stage");
+      if (!surface || !panel.isConnected || !canAnimatePanel(panel)) continue;
+      if (panel.inert && !surface.querySelector("[data-workspace-window]")) continue;
+      const stage = start.wasStage || panel.hasAttribute("data-workspace-maximized-stage");
       // Pin before measuring the grid so the browser lays out text only at the larger endpoint.
-      surface.style.width = `max(100%, ${from.width}px)`;
-      surface.style.height = `max(100%, ${from.height}px)`;
+      surface.style.width = `max(100%, ${start.width}px)`;
+      surface.style.height = `max(100%, ${start.height}px)`;
       panel.setAttribute("data-workspace-moving", stage ? "stage" : "panel");
-      targets.push({ panel, surface, from });
+      targets.push({ panel, surface, start });
     }
     if (!targets.length) return;
     dock.setAttribute("data-workspace-resizing", "");
@@ -76,16 +97,16 @@ export function useWorkspaceResizeTransition() {
     const animations: Animation[] = [];
     const bounds = targets.map(({ panel }) => panel.getBoundingClientRect());
     for (let index = 0; index < targets.length; index++) {
-      const { panel, surface, from } = targets[index]!;
+      const { panel, surface, start } = targets[index]!;
+      const { from } = start;
       const to = bounds[index]!;
       if (
-        !to.width ||
         !to.height ||
         (from.x === to.x && from.y === to.y && from.width === to.width && from.height === to.height)
       )
         continue;
-      const width = Math.max(from.width, to.width);
-      const height = Math.max(from.height, to.height);
+      const width = Math.max(start.width, to.width);
+      const height = Math.max(start.height, to.height);
       const animation = surface.animate(
         [frame(from, to, width, height), frame(to, to, width, height)],
         timing,

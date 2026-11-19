@@ -11,25 +11,6 @@ interface Spring {
 // launches briskly, never overshoots, and converges smoothly before durationMs elapses.
 const POSITION_FREQUENCY = (2 * Math.PI) / 0.23;
 const OPACITY_FREQUENCY = (2 * Math.PI) / 0.18;
-const activeDockAnimations = new WeakMap<HTMLElement, number>();
-
-function beginDockAnimation(body: HTMLElement) {
-  const next = (activeDockAnimations.get(body) ?? 0) + 1;
-  activeDockAnimations.set(body, next);
-  if (next === 1) {
-    body.setAttribute("data-dock-animating", "true");
-  }
-}
-
-function endDockAnimation(body: HTMLElement) {
-  const current = activeDockAnimations.get(body) ?? 0;
-  if (current <= 1) {
-    activeDockAnimations.delete(body);
-    body.removeAttribute("data-dock-animating");
-  } else {
-    activeDockAnimations.set(body, current - 1);
-  }
-}
 
 function step(spring: Spring, target: number, dt: number, frequency: number, damping: number) {
   const acceleration =
@@ -40,7 +21,6 @@ function step(spring: Spring, target: number, dt: number, frequency: number, dam
 
 export function useDockedPanelMotion(
   getBody: () => HTMLDivElement | null,
-  edge: "left" | "right",
   open: boolean | null,
   size: number,
 ) {
@@ -50,7 +30,7 @@ export function useDockedPanelMotion(
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Synchronize the panel and its live layout before paint, retaining both spring velocities on reversal.
   useLayoutEffect(() => {
     const body = getBody();
-    const panel = body?.querySelector<HTMLElement>(`:scope > [data-workspace-panel="${edge}"]`);
+    const panel = body?.querySelector<HTMLElement>(':scope > [data-workspace-panel="left"]');
     if (open === null || !body || !panel) {
       motion.current = null;
       return;
@@ -65,29 +45,13 @@ export function useDockedPanelMotion(
     }
     const { position, opacity } = motion.current;
     let frame = 0;
-    let markedAnimating = false;
-    const releaseAnimating = () => {
-      if (!markedAnimating) return;
-      markedAnimating = false;
-      endDockAnimation(body);
-    };
-    const track = `--workspace-${edge}-track`;
     const reserve = (p: number) => {
-      if (edge === "left") {
-        body.style.paddingLeft = p ? `calc(${size * p}px + ${1 + p} * var(--workspace-seam))` : "";
-      } else {
-        const space = p ? `calc(${size * p}px + ${p} * var(--workspace-seam))` : "";
-        body.style.setProperty(track, space);
-      }
+      body.style.paddingLeft = p ? `calc(${size * p}px + ${1 + p} * var(--workspace-seam))` : "";
     };
     const paint = () => {
       const clamped = Math.max(0, Math.min(1, position.value));
       reserve(clamped);
-      if (edge === "left") {
-        panel.style.transform = `translate3d(calc(${clamped - 1} * (100% + 2 * var(--workspace-seam))), 0, 0)`;
-      } else {
-        panel.style.transform = `translate3d(${((1 - clamped) * 18).toFixed(2)}px, 0, 0)`;
-      }
+      panel.style.transform = `translate3d(calc(${clamped - 1} * (100% + 2 * var(--workspace-seam))), 0, 0)`;
       panel.style.opacity = String(Math.max(0, Math.min(1, opacity.value)));
       notifyWorkspaceLayout();
     };
@@ -95,19 +59,16 @@ export function useDockedPanelMotion(
       position.value = opacity.value = target;
       position.velocity = opacity.velocity = 0;
       reserve(target);
-      panel.removeAttribute("data-dock-moving");
       panel.style.transform = "";
       panel.style.opacity = "";
-      releaseAnimating();
+      body.removeAttribute("data-dock-animating");
       notifyWorkspaceLayout();
     };
 
     const needsMotion = position.value !== target || position.velocity !== 0;
 
     if (active && needsMotion) {
-      panel.setAttribute("data-dock-moving", "");
-      markedAnimating = true;
-      beginDockAnimation(body);
+      body.setAttribute("data-dock-animating", "true");
       const start = performance.now();
       let previous = start;
       const tick = (now: number) => {
@@ -139,10 +100,9 @@ export function useDockedPanelMotion(
     return () => {
       cancelAnimationFrame(frame);
       reserve(0);
-      panel.removeAttribute("data-dock-moving");
       panel.style.transform = "";
       panel.style.opacity = "";
-      releaseAnimating();
+      body.removeAttribute("data-dock-animating");
     };
-  }, [getBody, edge, open, size, active, durationMs]);
+  }, [getBody, open, size, active, durationMs]);
 }

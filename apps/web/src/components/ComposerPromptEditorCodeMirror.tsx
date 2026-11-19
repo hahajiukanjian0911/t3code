@@ -23,12 +23,23 @@ import {
 } from "~/composer-logic";
 import { useClientSettings } from "~/hooks/useSettings";
 import { useStableCallback } from "~/hooks/useStableCallback";
-import { collectInlineContextIds } from "~/lib/composerContextReferences";
+import {
+  collectInlineContextIds,
+  formatInlineContextReference,
+  type ComposerContextReference,
+} from "~/lib/composerContextReferences";
+import { collectComposerPromptInlineTokens } from "~/composer-editor-mentions";
 import { cn } from "~/lib/utils";
 import { getTimelinePageScrollKey } from "./chat/pageScrollController";
 import { importPastedComposerText, readPastedComposerContext } from "./composerInlineTokenPaste";
 import { didComposerSelectionChangeVisibly } from "./composerSelection";
 import { ComposerContextRecordsContext } from "./composerContextPresentation";
+import {
+  decodeEditorImageTokens,
+  encodeEditorImageTokens,
+  nextAvailableImageAlias,
+  type EditorImageAliasBinding,
+} from "./editor/composerImageTokens";
 import { composerVimAttachments } from "./editor/composerVimAttachments";
 import { composerCodeNodes, inComposerNode, useComposerVimChips } from "./editor/composerVimChips";
 import { codeEditing, vimEditing } from "./editor/codeMirrorExtensions";
@@ -99,11 +110,55 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
   const host = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView>(null);
   const lastTelemetryRef = useRef<VimTelemetrySnapshot | null>(null);
+  const knownAliasesRef = useRef<Map<string, EditorImageAliasBinding>>(new Map());
   const current = useStableCallback(() => props);
-  const chips = useComposerVimChips(props, viewRef);
-  const [attachments] = useState(composerVimAttachments);
+  const formatAttachmentReference = useStableCallback((reference: ComposerContextReference) => {
+    const canonicalSource = formatInlineContextReference(reference);
+    if (current().literalText || reference.kind !== "image") {
+      return canonicalSource;
+    }
+    for (const [existingAlias, binding] of knownAliasesRef.current) {
+      if (binding.contextId === reference.contextId) {
+        return existingAlias;
+      }
+    }
+    const currentDoc = viewRef.current?.state.doc.toString() ?? "";
+    const alias = nextAvailableImageAlias(knownAliasesRef.current, currentDoc);
+    knownAliasesRef.current.set(alias, {
+      alias,
+      contextId: reference.contextId,
+      canonicalSource,
+    });
+    return alias;
+  });
+  const encodePastedCanonicalText = useStableCallback((canonical: string) => {
+    if (current().literalText) return canonical;
+    const imageTokens = collectComposerPromptInlineTokens(canonical).filter(
+      (
+        token,
+      ): token is Extract<
+        ReturnType<typeof collectComposerPromptInlineTokens>[number],
+        { type: "context-reference" }
+      > => token.type === "context-reference" && token.kind === "image",
+    );
+    if (imageTokens.length === 0) return canonical;
+    let cursorPos = 0;
+    let output = "";
+    for (const token of imageTokens) {
+      output += canonical.slice(cursorPos, token.start);
+      output += formatAttachmentReference({
+        kind: "image",
+        contextId: token.contextId,
+        label: token.label,
+      });
+      cursorPos = token.end;
+    }
+    output += canonical.slice(cursorPos);
+    return output;
+  });
+  const chips = useComposerVimChips(props, viewRef, knownAliasesRef);
+  const [attachments] = useState(() => composerVimAttachments(formatAttachmentReference));
   const [attributes] = useState(() => new Compartment());
-  const [isInsertMode, setIsInsertMode] = useState(false);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- keep global CodeMirror-Vim keymap synchronized with user custom rules.
   useLayoutEffect(() => {
@@ -114,12 +169,10 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
     const cb = current().onVimTelemetryChange;
     if (!view) {
       lastTelemetryRef.current = null;
-      setIsInsertMode(false);
       cb?.(null);
       return;
     }
     const next = readVimTelemetry(view);
-    setIsInsertMode(next.mode === "insert");
     const prev = lastTelemetryRef.current;
     if (
       prev &&
@@ -280,11 +333,21 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
   useLayoutEffect(() => {
     if (!host.current) return;
     const initial = current();
+    const initialEncoded = literalText ? null : encodeEditorImageTokens(initial.value);
+    knownAliasesRef.current = new Map(initialEncoded?.aliasToBinding ?? []);
+    const initialDisplayDoc = initialEncoded ? initialEncoded.displayText : initial.value;
+    const clampedInitialCanonicalHead = Math.min(
+      initial.value.length,
+      initial.initialExpandedCursor,
+    );
+    const initialDisplayHead = initialEncoded
+      ? initialEncoded.mapCanonicalToDisplay(clampedInitialCanonicalHead)
+      : clampedInitialCanonicalHead;
     const view = new EditorView({
       parent: host.current,
       state: EditorState.create({
-        doc: initial.value,
-        selection: { anchor: Math.min(initial.value.length, initial.initialExpandedCursor) },
+        doc: initialDisplayDoc,
+        selection: { anchor: Math.min(initialDisplayDoc.length, initialDisplayHead) },
         extensions: [
           Prec.highest(
             EditorView.domEventHandlers({
@@ -311,7 +374,8 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
                   event.clipboardData,
                   current().importContextFragment,
                 );
-                target.dispatch(target.state.replaceSelection(text), {
+                const displayPasted = encodePastedCanonicalText(text);
+                target.dispatch(target.state.replaceSelection(displayPasted), {
                   userEvent: "input.paste",
                   scrollIntoView: true,
                 });
@@ -332,8 +396,18 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
             }
             if (!update.docChanged && !update.selectionSet) return;
             const previous = snapshot.current;
-            const text = update.docChanged ? update.state.doc.toString() : previous.value;
-            const { from, to } = update.state.selection.main;
+            const displayText = update.state.doc.toString();
+            const decoded = literalText
+              ? null
+              : decodeEditorImageTokens(displayText, knownAliasesRef.current);
+            const text = update.docChanged
+              ? decoded
+                ? decoded.canonicalText
+                : displayText
+              : previous.value;
+            const { from: displayFrom, to: displayTo } = update.state.selection.main;
+            const from = decoded ? decoded.mapDisplayToCanonical(displayFrom) : displayFrom;
+            const to = decoded ? decoded.mapDisplayToCanonical(displayTo) : displayTo;
             const next = {
               value: text,
               cursor: collapseExpandedComposerCursor(text, from, literalText),
@@ -347,19 +421,22 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
             const visible = didComposerSelectionChangeVisibly(range.current, nextRange);
             range.current = nextRange;
             snapshot.current = next;
-            if (update.transactions.some((tr) => tr.annotation(Transaction.remote))) return;
+            const isRemote = update.transactions.some((tr) => tr.annotation(Transaction.remote));
+            if (isRemote) return;
             if (!update.docChanged && text !== current().value) return;
             if (previous.value !== text || previous.expandedCursor !== from) {
               const before = update.state.field(chips.extension, false);
               let adjacent = false;
-              before?.between(from, from, (_from, end) => {
-                if (end === from) adjacent = true;
+              before?.between(displayFrom, displayFrom, (_from, end) => {
+                if (end === displayFrom) adjacent = true;
               });
               current().onChange(
                 text,
                 next.cursor,
                 from,
-                literalText || adjacent || inComposerNode(update.state, from, composerCodeNodes),
+                literalText ||
+                  adjacent ||
+                  inComposerNode(update.state, displayFrom, composerCodeNodes),
                 next.contextIds,
               );
             } else if (visible) current().onVisibleSelectionChange?.();
@@ -376,11 +453,31 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
     cm?.on("dialog", onVimEvent);
     emitTelemetry(view);
 
+    let mountScrollFrameId: number | null = null;
+    if (initialDisplayHead > 0) {
+      view.dispatch({
+        effects: EditorView.scrollIntoView(Math.min(initialDisplayDoc.length, initialDisplayHead), {
+          y: "nearest",
+        }),
+        annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(false)],
+      });
+      mountScrollFrameId = requestAnimationFrame(() => {
+        mountScrollFrameId = null;
+        if (viewRef.current === view && view.dom.isConnected) {
+          view.dispatch({
+            effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: "nearest" }),
+            annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(false)],
+          });
+        }
+      });
+    }
+
     if (restoreFocusRef.current) {
       restoreFocusRef.current = false;
       view.focus();
     }
     return () => {
+      if (mountScrollFrameId !== null) cancelAnimationFrame(mountScrollFrameId);
       cm?.off("vim-mode-change", onVimEvent);
       cm?.off("vim-keypress", onVimEvent);
       cm?.off("vim-command-done", onVimEvent);
@@ -397,6 +494,7 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
     configuration,
     current,
     emitTelemetry,
+    encodePastedCanonicalText,
     literalText,
     restoreFocusRef,
   ]);
@@ -414,26 +512,55 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
     const before = snapshot.current;
     if (before.value === value && before.cursor === cursor) return;
     if (before.value !== value) saveDraftBeforeReplace(before.value, value);
-    const head = expandCollapsedComposerCursor(value, cursor, literalText);
+    const canonicalHead = expandCollapsedComposerCursor(value, cursor, literalText);
+    const encoded = literalText ? null : encodeEditorImageTokens(value, knownAliasesRef.current);
+    if (encoded && before.value !== value) {
+      knownAliasesRef.current = new Map(encoded.aliasToBinding);
+    }
+    const nextDisplayDoc = encoded ? encoded.displayText : value;
+    const nextDisplayHead = Math.min(
+      nextDisplayDoc.length,
+      encoded ? encoded.mapCanonicalToDisplay(canonicalHead) : canonicalHead,
+    );
+    const currentDisplayDoc = view.state.doc.toString();
     view.dispatch({
-      ...(before.value !== value
-        ? { changes: { from: 0, to: view.state.doc.length, insert: value } }
+      ...(currentDisplayDoc !== nextDisplayDoc
+        ? { changes: { from: 0, to: currentDisplayDoc.length, insert: nextDisplayDoc } }
         : {}),
-      selection: { anchor: head },
-      scrollIntoView: view.hasFocus,
+      selection: { anchor: nextDisplayHead },
+      effects: EditorView.scrollIntoView(nextDisplayHead, { y: "nearest" }),
       annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(false)],
     });
+    if (before.value !== value && nextDisplayHead > 0) {
+      const frameId = requestAnimationFrame(() => {
+        if (viewRef.current === view && view.dom.isConnected) {
+          view.dispatch({
+            effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: "nearest" }),
+            annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(false)],
+          });
+        }
+      });
+      return () => cancelAnimationFrame(frameId);
+    }
+    return undefined;
   }, [cursor, value, literalText, saveDraftBeforeReplace]);
 
   const focusAt = (head: number) => {
     const view = viewRef.current;
     if (!view) return;
     view.focus();
-    if (snapshot.current.value === current().value)
+    if (snapshot.current.value === current().value) {
+      const displayHead = literalText
+        ? head
+        : encodeEditorImageTokens(
+            snapshot.current.value,
+            knownAliasesRef.current,
+          ).mapCanonicalToDisplay(head);
       view.dispatch({
-        selection: { anchor: Math.min(head, view.state.doc.length) },
+        selection: { anchor: Math.min(displayHead, view.state.doc.length) },
         scrollIntoView: true,
       });
+    }
   };
   useImperativeHandle(editorRef, () => ({
     focus: () => focusAt(snapshot.current.expandedCursor),
@@ -470,9 +597,10 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
   const copy = (event: ClipboardEvent, cut: boolean) => {
     const view = viewRef.current;
     if (literalText || !view || (cut && view.state.readOnly)) return;
-    const text = view.state.selection.ranges
+    const displayText = view.state.selection.ranges
       .map((r) => view.state.sliceDoc(r.from, r.to))
       .join("\n");
+    const text = decodeEditorImageTokens(displayText, knownAliasesRef.current).canonicalText;
     const ids = collectInlineContextIds(text);
     const fragment = ids.length ? props.buildContextClipboardFragment?.(ids) : null;
     if (!fragment) return;
@@ -501,7 +629,6 @@ export default function ComposerPromptEditorCodeMirror(props: Props) {
           <div
             data-composer-codemirror=""
             data-composer-placeholder=""
-            style={isInsertMode ? undefined : { paddingInlineStart: "calc(0.55em + 4px)" }}
             className={cn(
               textClass,
               "pointer-events-none absolute inset-0 truncate text-placeholder",

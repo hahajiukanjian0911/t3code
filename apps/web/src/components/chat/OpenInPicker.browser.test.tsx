@@ -187,6 +187,38 @@ describe("host editor access", () => {
     expect(byLabel("Choose editor").disabled).toBe(true);
     expect((await pressOpenFavorite()).defaultPrevented).toBe(false);
   });
+
+  it("opens Finder from panel quick-actions without overwriting the preferred editor shortcut", async () => {
+    await using fixture = await setup();
+    const { renderPicker, click, pressOpenFavorite } = fixture;
+    state.allowed.add(selected);
+    await renderPicker(["vscode", "zed", "file-manager"], true, { revealFileManager: true });
+    using _timers = fakeTimers();
+
+    const finderButton = [...document.querySelectorAll<HTMLButtonElement>("button")].find((btn) =>
+      btn.textContent?.includes("Files"),
+    );
+    expect(finderButton).not.toBeUndefined();
+    await click(finderButton!);
+
+    expect(state.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({ editor: "file-manager" }),
+      }),
+    );
+    expect(state.setPreferred).not.toHaveBeenCalled();
+
+    await pressOpenFavorite();
+    expect(state.run).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({ editor: "vscode" }),
+      }),
+    );
+    await act(async () => vi.runAllTimers());
+    for (const region of document.querySelectorAll('body > [aria-live="polite"]')) {
+      region.textContent = "";
+    }
+  });
 });
 
 describe("remote editor links", () => {

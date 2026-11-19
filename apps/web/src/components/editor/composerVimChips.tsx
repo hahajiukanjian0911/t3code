@@ -1,7 +1,8 @@
 import { syntaxTree } from "@codemirror/language";
-import { StateEffect, StateField, Transaction, type EditorState } from "@codemirror/state";
+import { EditorState, StateEffect, StateField, Transaction } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType, type DecorationSet } from "@codemirror/view";
-import type { ServerProviderSkill } from "@t3tools/contracts";
+import { Vim, getCM } from "@replit/codemirror-vim";
+import type { ComposerContextId, ServerProviderSkill } from "@t3tools/contracts";
 import { formatProviderSkillDisplayName } from "@t3tools/shared/inlineSkills";
 import {
   serializeAssistantCitation,
@@ -14,6 +15,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { collectComposerPromptInlineTokens } from "~/composer-editor-mentions";
 import { useStableCallback } from "~/hooks/useStableCallback";
 import { randomUUID } from "~/lib/utils";
+import { collectEditorImageAliases, type EditorImageAliasBinding } from "./composerImageTokens";
 import { ComposerFileMentionChip } from "../ComposerFileMentionChip";
 import type {
   ComposerCitationCommentRequest,
@@ -52,7 +54,13 @@ class ChipWidget extends WidgetType {
     super();
   }
   override eq(other: ChipWidget) {
-    return other.token.source === this.token.source && other.token.type === this.token.type;
+    if (other.token.source !== this.token.source || other.token.type !== this.token.type) {
+      return false;
+    }
+    if (this.token.type === "context-reference" && other.token.type === "context-reference") {
+      return other.token.contextId === this.token.contextId;
+    }
+    return true;
   }
   toDOM() {
     return this.mount(this.token);
@@ -67,9 +75,12 @@ function skillFor(skills: ReadonlyArray<ServerProviderSkill>, name: string) {
   return skills.find((s) => s.name === name && isProviderSkillUserInvocable(s));
 }
 
+const EMPTY_IMAGE_ALIASES: ReadonlyMap<string, EditorImageAliasBinding> = new Map();
+
 export function useComposerVimChips(
   props: ComposerPromptEditorProps,
   viewRef: RefObject<EditorView | null>,
+  imageAliasesRef?: RefObject<ReadonlyMap<string, EditorImageAliasBinding>>,
 ) {
   const actions = use(ComposerContextActionsContext);
   const modelKeys = useAtomValue(modelMentionKeysAtom(actions.environmentId ?? ""));
@@ -79,6 +90,16 @@ export function useComposerVimChips(
     return true;
   };
   const known = useStableCallback(accepts);
+  const readImageAliases = useStableCallback(() => imageAliasesRef?.current ?? EMPTY_IMAGE_ALIASES);
+  const isVimInsertMode = useStableCallback((state: EditorState) =>
+    Boolean(
+      (viewRef.current && getCM(viewRef.current)?.state.vim?.insertMode) ||
+      state.facet(EditorView.editable),
+    ),
+  );
+  const readActiveVimRegisterName = useStableCallback(() =>
+    viewRef.current ? getCM(viewRef.current)?.state.vim?.inputState?.registerName : undefined,
+  );
   const [portals, setPortals] = useState<Portal[]>([]);
   const [open, setOpen] = useState<OpenCitation | null>(null);
   const draft = useRef<string | null>(null);
@@ -93,20 +114,44 @@ export function useComposerVimChips(
     };
     const unmount = (host: HTMLElement) =>
       setPortals((current) => current.filter((p) => p.host !== host));
-    const build = (state: EditorState, accept = known) =>
-      Decoration.set(
-        collectComposerPromptInlineTokens(state.doc.toString())
-          .filter(
-            (token) => accept(token) && !inComposerNode(state, token.start + 1, composerCodeNodes),
-          )
-          .map((token) =>
-            Decoration.replace({ widget: new ChipWidget(token, mount, unmount) }).range(
-              token.start,
-              token.end,
-            ),
+    const build = (state: EditorState, accept = known) => {
+      const text = state.doc.toString();
+      const baseTokens = collectComposerPromptInlineTokens(text).filter(
+        (token) => accept(token) && !inComposerNode(state, token.start + 1, composerCodeNodes),
+      );
+      const aliases = readImageAliases();
+      const aliasTokens: Token[] =
+        aliases.size > 0
+          ? collectEditorImageAliases(text, aliases)
+              .filter(
+                (match) =>
+                  !inComposerNode(state, match.start + 1, composerCodeNodes) &&
+                  !baseTokens.some((token) => match.start < token.end && match.end > token.start),
+              )
+              .map((match) => ({
+                type: "context-reference" as const,
+                kind: "image" as const,
+                contextId: match.binding.contextId as ComposerContextId,
+                label: match.alias,
+                image: true,
+                start: match.start,
+                end: match.end,
+                source: match.alias,
+              }))
+          : [];
+      const allTokens = [...baseTokens, ...aliasTokens].toSorted(
+        (left, right) => left.start - right.start,
+      );
+      return Decoration.set(
+        allTokens.map((token) =>
+          Decoration.replace({ widget: new ChipWidget(token, mount, unmount) }).range(
+            token.start,
+            token.end,
           ),
+        ),
         true,
       );
+    };
     return StateField.define<DecorationSet>({
       create: build,
       update(value, tr) {
@@ -116,6 +161,129 @@ export function useComposerVimChips(
       provide: (field) => [
         EditorView.decorations.from(field),
         EditorView.atomicRanges.of((view) => view.state.field(field)),
+        EditorState.transactionFilter.of((tr) => {
+          if (tr.annotation(Transaction.remote)) return tr;
+          const startChips = tr.startState.field(field, false);
+          if (!startChips) return tr;
+
+          // Expand partial edits touching an inline chip (e.g. Vim `x`, `s`, `r`, Backspace)
+          // so a chip is always deleted/replaced atomically instead of leaking raw token text.
+          if (tr.docChanged) {
+            let expanded = false;
+            const adjusted: Array<{ from: number; to: number; insert: string }> = [];
+            tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+              let nextFrom = fromA;
+              let nextTo = toA;
+              startChips.between(Math.max(0, fromA - 1), toA + 1, (chipFrom, chipTo) => {
+                const startsInside = fromA > chipFrom && fromA < chipTo;
+                const endsInside = toA > chipFrom && toA < chipTo;
+                const deletesPartOfChip =
+                  fromA === chipFrom && toA > chipFrom && toA < chipTo && inserted.length === 0;
+                const backspacesPartOfChip =
+                  toA === chipTo && fromA > chipFrom && fromA < chipTo && inserted.length === 0;
+                if (startsInside || endsInside || deletesPartOfChip || backspacesPartOfChip) {
+                  nextFrom = Math.min(nextFrom, chipFrom);
+                  nextTo = Math.max(nextTo, chipTo);
+                  expanded = true;
+                }
+              });
+              adjusted.push({ from: nextFrom, to: nextTo, insert: inserted.toString() });
+            });
+            if (expanded) {
+              const originalDeletedParts: string[] = [];
+              tr.changes.iterChanges((fromA, toA) => {
+                if (toA > fromA) {
+                  originalDeletedParts.push(tr.startState.sliceDoc(fromA, toA));
+                }
+              });
+              adjusted.sort((left, right) => left.from - right.from);
+              const merged: Array<{ from: number; to: number; insert: string }> = [];
+              for (const change of adjusted) {
+                const prev = merged[merged.length - 1];
+                if (prev && change.from <= prev.to) {
+                  prev.to = Math.max(prev.to, change.to);
+                  prev.insert += change.insert;
+                } else {
+                  merged.push({ ...change });
+                }
+              }
+              if (merged.length === 1 && merged[0]!.insert === "") {
+                const originalDeleted = originalDeletedParts.join("");
+                const expandedDeleted = tr.startState.sliceDoc(merged[0]!.from, merged[0]!.to);
+                if (originalDeleted.length > 0 && expandedDeleted !== originalDeleted) {
+                  const activeRegisterName = readActiveVimRegisterName();
+                  queueMicrotask(() => {
+                    const registerController = Vim.getRegisterController();
+                    const syncRegister = (
+                      register:
+                        | {
+                            linewise: boolean;
+                            blockwise: boolean;
+                            toString(): string;
+                            setText(text?: string, linewise?: boolean, blockwise?: boolean): void;
+                          }
+                        | undefined,
+                    ) => {
+                      if (register && register.toString() === originalDeleted) {
+                        register.setText(expandedDeleted, register.linewise, register.blockwise);
+                      }
+                    };
+                    syncRegister(registerController.unnamedRegister);
+                    for (const name of [activeRegisterName, "-", "1"]) {
+                      if (name) {
+                        syncRegister(registerController.registers[name]);
+                      }
+                    }
+                  });
+                }
+              }
+              const nextChanges = tr.startState.changes(merged);
+              const mappedAnchor = nextChanges.mapPos(tr.startState.selection.main.from, -1);
+              return {
+                changes: nextChanges,
+                selection: { anchor: mappedAnchor },
+                scrollIntoView: tr.scrollIntoView,
+                effects: tr.effects,
+              };
+            }
+          }
+
+          // Snap collapsed cursor movements that land inside an atomic chip (`@replit/codemirror-vim`
+          // dispatches motions directly without consulting `EditorView.atomicRanges`).
+          if (tr.selection && !tr.docChanged) {
+            const main = tr.selection.main;
+            if (main.empty) {
+              const prevHead = tr.startState.selection.main.head;
+              const line = tr.startState.doc.lineAt(main.head);
+              const isInsertMode = isVimInsertMode(tr.startState);
+              let snapped: number | null = null;
+              startChips.between(main.head, main.head, (chipFrom, chipTo) => {
+                if (main.head > chipFrom && main.head < chipTo) {
+                  if (isInsertMode) {
+                    if (main.head > prevHead) {
+                      snapped = chipTo;
+                    } else if (main.head < prevHead) {
+                      snapped = chipFrom;
+                    } else {
+                      snapped = main.head - chipFrom <= chipTo - main.head ? chipFrom : chipTo;
+                    }
+                  } else if (chipTo === line.to) {
+                    snapped = chipFrom;
+                  } else if (main.head > prevHead && prevHead >= chipFrom) {
+                    snapped = chipTo;
+                  } else {
+                    snapped = chipFrom;
+                  }
+                }
+              });
+              if (snapped !== null) {
+                return [tr, { selection: { anchor: snapped }, scrollIntoView: tr.scrollIntoView }];
+              }
+            }
+          }
+
+          return tr;
+        }),
       ],
     });
   });
@@ -258,6 +426,9 @@ export function useComposerVimChips(
   };
   return {
     extension,
+    refreshChips: () => {
+      viewRef.current?.dispatch({ effects: refresh.of(known) });
+    },
     requestCitationComment,
     saveDraftBeforeReplace,
     portals: portals.map((p) => createPortal(render(p), p.host, p.id)),

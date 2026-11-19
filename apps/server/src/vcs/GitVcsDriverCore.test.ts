@@ -3081,6 +3081,23 @@ it.layer(layerTest)("GitVcsDriver core integration", (it) => {
           [result.commits[0]?.subject, result.commits[99]?.subject],
           ["feature 101", "feature 2"],
         );
+
+        yield* writeTextFile(cwd, "HEAD", "ambiguous pathspec file\n");
+        yield* git(cwd, ["config", "log.decorate", "full"]);
+        yield* git(cwd, ["branch", "rel/1,2"]);
+
+        const history = yield* driver.getReviewBranchCommits({
+          cwd,
+          includeHistory: true,
+          limit: 5,
+        });
+        assert.strictEqual(history.truncated, true);
+        assert.strictEqual(history.totalCount, 103);
+        assert.strictEqual(history.commits.length, 5);
+        assert.strictEqual(history.commits[0]?.subject, "feature 101");
+        assert.include(history.commits[0]?.refs ?? [], "feature/commits");
+        assert.include(history.commits[0]?.refs ?? [], "rel/1,2");
+        assert.notInclude(history.commits[0]?.refs ?? [], "refs/heads/feature/commits");
       }),
     );
 
