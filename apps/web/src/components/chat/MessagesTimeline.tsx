@@ -1155,7 +1155,8 @@ const ConversationTimeline = memo(function ConversationTimeline({
         return;
       }
       stableFrames = applyReadingResize() ? 0 : stableFrames + 1;
-      if (++frames < 8 && stableFrames < 2) {
+      frames += 1;
+      if (frames < 8 && stableFrames < 2) {
         resize.frame = requestAnimationFrame(reconcile);
       } else if (!isDockAnimating(listRef.current?.getScrollableNode() ?? null)) {
         stopReadingResize();
