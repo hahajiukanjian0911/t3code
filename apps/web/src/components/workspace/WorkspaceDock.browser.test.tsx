@@ -11,6 +11,10 @@ import {
   persistClientSettingsPatch,
 } from "../../hooks/useSettings";
 import { syncDocumentElectronPlatformClasses } from "../../lib/windowControlsOverlay";
+import {
+  PanelAnimationSuppressionProvider,
+  usePanelNavigationSuppression,
+} from "../../panelAnimations";
 import { EnvironmentId, ThreadId } from "@t3tools/contracts";
 import { ThreadDetailsCard } from "../chat/ThreadDetailsCard";
 import { PopoverCreateHandle } from "../ui/popover";
@@ -339,7 +343,8 @@ it.each(["panel", "window"])(
         ? screen.getByRole("button", { name: "Toggle Right panel" })
         : screen.getByRole("button", { name: "Toggle terminal window" });
     await userEvent.click(control());
-    expect(input.closest('[data-workspace-panel="right"]')?.hasAttribute("inert")).toBe(true);
+    expect(input.checkVisibility()).toBe(false);
+    expect(input.closest("[inert]")).not.toBeNull();
     await screen.rerender(ui(false));
     await screen.rerender(ui(true));
     expect(input.checkVisibility()).toBe(false);
@@ -350,6 +355,89 @@ it.each(["panel", "window"])(
     await expect.element(screen.getByRole("textbox", { name: "terminal draft" })).toBeVisible();
   },
 );
+
+function RevealFile({ id }: { id: string }) {
+  const panel = useWorkspacePanel("right");
+  return <button onClick={() => panel?.revealWindow(id)}>Reveal file</button>;
+}
+
+it("restores each scoped conversation's right panel after switching threads", async () => {
+  await page.viewport(1280, 800);
+  using _layout = isolatedLayout();
+  const settings = getClientSettings();
+  using _settings = { [Symbol.dispose]: () => __setClientSettingsForTests(settings) };
+  __setClientSettingsForTests({ ...settings, panelAnimationDurationMs: 0 });
+  const ui = (chat: string, fileReady = true, root = "initial") => (
+    <div className="h-screen w-screen">
+      <WorkspaceRoot key={root}>
+        <WorkspaceWindow id={`details:${chat}`} title="Details" panel="right">
+          <p>Thread details</p>
+        </WorkspaceWindow>
+        {fileReady && (
+          <WorkspaceWindow
+            id={`surface:${chat}:file:README.md`}
+            title="File"
+            panel="right"
+            selected
+          >
+            <p>Thread file</p>
+          </WorkspaceWindow>
+        )}
+        <WorkspaceWindow id={`chat:${chat}`} title="Conversation" panel="main" selected>
+          <p>Conversation body</p>
+          <RevealFile id={`surface:${chat}:file:README.md`} />
+        </WorkspaceWindow>
+      </WorkspaceRoot>
+    </div>
+  );
+  await using screen = await render(ui("env-a:thread"));
+  using _capture = vi
+    .spyOn(HTMLElement.prototype, "setPointerCapture")
+    .mockImplementation(() => {});
+  const right = () =>
+    screen.container.querySelector<HTMLElement>('[data-workspace-panel="right"]')!;
+  const rightToggle = () => screen.getByRole("button", { name: "Toggle Right panel" });
+  const resize = async (delta: number) => {
+    const grip = screen.getByRole("separator", { name: "Resize Right panel" }).element();
+    await act(() => {
+      for (const [type, clientX] of [
+        ["pointerdown", 800],
+        ["pointermove", 800 - delta],
+        ["pointerup", 800 - delta],
+      ] as const) {
+        grip.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, clientX }));
+      }
+    });
+  };
+  await expect.element(screen.getByText("Thread file")).toBeVisible();
+  const defaultContentWidth = right().offsetWidth;
+  await resize(92);
+  const adjustedContentWidth = right().offsetWidth;
+  expect(adjustedContentWidth).toBeGreaterThan(defaultContentWidth);
+  await userEvent.click(screen.getByRole("tab", { name: "Details" }));
+  expect(right().offsetWidth).toBe(280);
+  await resize(55);
+  expect(right().offsetWidth).toBe(335);
+  await userEvent.click(rightToggle());
+
+  await screen.rerender(ui("env-b:thread"));
+  await expect.element(screen.getByText("Thread file")).toBeVisible();
+  expect(right().offsetWidth).toBe(defaultContentWidth);
+  await screen.rerender(ui("env-a:thread"));
+  await expect.element(rightToggle()).toHaveAttribute("aria-pressed", "false");
+  await screen.rerender(ui("env-a:thread", false, "reopened"));
+  await screen.rerender(ui("env-a:thread", true, "reopened"));
+  await expect.element(rightToggle()).toHaveAttribute("aria-pressed", "false");
+  await userEvent.click(rightToggle());
+  await expect.element(screen.getByText("Thread details")).toBeVisible();
+  expect(right().offsetWidth).toBe(335);
+  await userEvent.click(rightToggle());
+  await screen.rerender(ui("env-a:thread", false, "reopened"));
+  await userEvent.click(screen.getByRole("button", { name: "Reveal file" }));
+  await screen.rerender(ui("env-a:thread", true, "reopened"));
+  await expect.element(screen.getByText("Thread file")).toBeVisible();
+  expect(right().offsetWidth).toBe(adjustedContentWidth);
+});
 
 function ActiveTerminal({ initiallyOpen = false }: { initiallyOpen?: boolean }) {
   const [open, setOpen] = useState(initiallyOpen);
@@ -903,7 +991,69 @@ it("automatically half-splits right content tabs while keeping the left sidebar 
   await vi.waitFor(() => expect(fileInput.checkVisibility()).toBe(false));
 });
 
-it("keeps the conversation inside the moving divider and the native guest at its layout width when reversing a tab resize", async () => {
+it("keeps focus and commits the destination width directly across thread navigation", async () => {
+  await page.viewport(1280, 800);
+  using _layout = isolatedLayout();
+  const settings = getClientSettings();
+  using _settings = { [Symbol.dispose]: () => __setClientSettingsForTests(settings) };
+  __setClientSettingsForTests({ ...settings, panelAnimationDurationMs: 375 });
+
+  function Conversation({ thread }: { thread: string }) {
+    const suppression = usePanelNavigationSuppression(thread, true);
+    const file = thread === "b";
+    return (
+      <PanelAnimationSuppressionProvider value={suppression}>
+        <div className="h-screen" data-route-ready={suppression === null}>
+          <WorkspaceRoot>
+            <WorkspaceWindow id={`chat:${thread}`} title="Conversation" panel="main">
+              <input aria-label="Conversation input" />
+            </WorkspaceWindow>
+            <WorkspaceWindow
+              id={`${file ? "file" : "details"}:${thread}`}
+              title={file ? "File" : "Details"}
+              panel="right"
+              selected
+            >
+              <p>Pane {thread}</p>
+            </WorkspaceWindow>
+          </WorkspaceRoot>
+        </div>
+      </PanelAnimationSuppressionProvider>
+    );
+  }
+  await using screen = await render(<Conversation thread="a" />);
+  await vi.waitFor(() =>
+    expect(screen.container.querySelector('[data-route-ready="true"]')).not.toBeNull(),
+  );
+  const right = screen.container.querySelector<HTMLElement>('[data-workspace-panel="right"]')!;
+  const grid = right.parentElement!;
+  const narrow = right.getBoundingClientRect().width;
+  const editor = screen
+    .getByRole("textbox", { name: "Conversation input" })
+    .element() as HTMLInputElement;
+  await act(() => editor.focus());
+  await screen.rerender(<Conversation thread="c" />);
+  expect(document.activeElement).toBe(editor);
+  expect(right.getBoundingClientRect().width).toBe(narrow);
+  expect(grid.getAnimations()).toHaveLength(0);
+
+  await screen.rerender(<Conversation thread="b" />);
+  expect(grid.getAnimations()).toHaveLength(0);
+  expect(right.getBoundingClientRect().width).toBeGreaterThan(narrow);
+  const main = editor.closest<HTMLElement>("[data-workspace-panel]")!;
+  expect(right.getBoundingClientRect().left - main.getBoundingClientRect().right).toBe(6);
+  await screen.rerender(<Conversation thread="a" />);
+  expect(grid.getAnimations()).toHaveLength(0);
+  expect(right.getBoundingClientRect().width).toBe(narrow);
+  expect(document.activeElement).toBe(editor);
+
+  await act(() => __setClientSettingsForTests({ ...settings, panelAnimationDurationMs: 0 }));
+  await screen.rerender(<Conversation thread="b" />);
+  expect(grid.getAnimations()).toHaveLength(0);
+  expect(right.getBoundingClientRect().width).toBeGreaterThan(narrow);
+});
+
+it("lays out the chat and native guest at their final widths on a tab change", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   const settings = getClientSettings();
@@ -936,40 +1086,27 @@ it("keeps the conversation inside the moving divider and the native guest at its
   const fileWidth = file.offsetWidth;
   expect(fileWidth).toBeGreaterThan(inspectorWidth);
   const grid = panel.parentElement!;
-  const animation = grid.getAnimations()[0]!;
-  expect(animation).toBeDefined();
-  animation.pause();
-  animation.currentTime = 75;
-  const firstRight = chat.getBoundingClientRect().right;
-  expect(firstRight).toBeLessThan(surface.getBoundingClientRect().left);
-  await vi.waitFor(() => {
-    const guest = useBrowserSurfaceStore.getState().byTabId["right-tab-resize"];
-    expect(guest?.visible).toBe(true);
-    expect(guest?.rect?.width).toBe(fileWidth);
-    expect(guest?.rect?.clipPath).toMatch(/^inset\(0px [1-9]/);
-  });
-  animation.currentTime = 200;
-  expect(chat.getBoundingClientRect().right).toBeLessThan(firstRight);
+  expect(grid.getAnimations()).toHaveLength(0);
   const main = chat.closest<HTMLElement>("[data-workspace-panel]")!;
   expect(surface.getBoundingClientRect().left - main.getBoundingClientRect().right).toBe(6);
   expect(chat.getBoundingClientRect().right).toBeLessThanOrEqual(
     main.getBoundingClientRect().right,
   );
-  expect(file.offsetWidth).toBe(fileWidth);
-  const lastLeft = surface.getBoundingClientRect().left;
+  await vi.waitFor(() => {
+    const guest = useBrowserSurfaceStore.getState().byTabId["right-tab-resize"];
+    expect(guest?.visible).toBe(true);
+    expect(guest?.rect?.width).toBe(fileWidth);
+    expect(guest?.rect?.clipPath).toBeUndefined();
+  });
   await act(() => inspector.click());
-  const reverse = grid.getAnimations()[0]!;
-  reverse.pause();
-  reverse.currentTime = 0;
-  expect(Math.abs(surface.getBoundingClientRect().left - lastLeft)).toBeLessThan(1);
-  const details = screen.getByText("Inspector body").element();
-  expect(details.getBoundingClientRect().right).toBeCloseTo(panel.getBoundingClientRect().right, 0);
-  reverse.finish();
-  await vi.waitFor(() => expect(panel.hasAttribute("data-workspace-moving")).toBe(false));
+  expect(grid.getAnimations()).toHaveLength(0);
   expect(panel.offsetWidth).toBe(inspectorWidth);
+  await vi.waitFor(() =>
+    expect(useBrowserSurfaceStore.getState().byTabId["right-tab-resize"]?.visible).toBe(false),
+  );
 });
 
-it("moves one divider for cold and warm half panels, including when a close reverses", async () => {
+it("opens cold and warm half panels at the same width and previews a drag until release", async () => {
   await page.viewport(1280, 800);
   using _layout = isolatedLayout();
   localStorage.setItem(
@@ -1028,61 +1165,53 @@ it("moves one divider for cold and warm half panels, including when a close reve
   const outerEdge = main.getBoundingClientRect().right;
   const fullWidth = chat.offsetWidth;
   const grid = right.parentElement!;
-  const sample = (time: number) => {
-    for (const animation of grid.getAnimations()) {
-      animation.pause();
-      animation.currentTime = time;
-    }
-    return surface.getBoundingClientRect().left;
-  };
-  const settle = async () => {
-    for (const animation of grid.getAnimations()) animation.finish();
-    await vi.waitFor(() => expect(right.hasAttribute("data-workspace-moving")).toBe(false));
-  };
   await act(() => open.click());
-  expect(grid.getAnimations()).toHaveLength(1);
-  expect(sample(0)).toBeCloseTo(outerEdge, 0);
-  const firstMid = sample(150);
-  expect(chat.getBoundingClientRect().right).toBeCloseTo(firstMid - 6, 0);
-  expect(document.elementFromPoint(firstMid - 12, 100)?.closest("[data-workspace-panel]")).toBe(
+  expect(grid.getAnimations()).toHaveLength(0);
+  const split = right.getBoundingClientRect();
+  expect(split.left - chat.getBoundingClientRect().right).toBe(6);
+  expect(Math.abs(chat.offsetWidth - split.width)).toBeLessThanOrEqual(1);
+  expect(document.elementFromPoint(split.left - 12, 100)?.closest("[data-workspace-panel]")).toBe(
     main,
   );
-  expect(document.elementFromPoint(firstMid + 12, 100)?.closest("[data-workspace-panel]")).toBe(
+  expect(document.elementFromPoint(split.left + 12, 100)?.closest("[data-workspace-panel]")).toBe(
     right,
   );
-  expect(chat.offsetWidth).toBeLessThan(fullWidth);
-  const terminal = right.querySelector<HTMLElement>('[data-workspace-window="surface:terminal"]')!;
-  const terminalWidth = terminal.offsetWidth;
-  expect(terminalWidth).toBeGreaterThan(fullWidth * 0.48);
-  await settle();
-  const end = right.getBoundingClientRect();
-  expect(end.left - main.getBoundingClientRect().right).toBe(6);
-  const saved = JSON.parse(localStorage.getItem("t3code:workspace-layout:v1")!);
-  expect(saved.hidden.right).toBe(false);
-  expect(saved.active.right).toBe("surface:terminal");
+  const terminal = screen.getByRole("textbox", { name: "Terminal input" }).element();
+  const handle = right.querySelector<HTMLElement>(':scope > [role="separator"]')!;
+  using _capture = vi
+    .spyOn(HTMLElement.prototype, "setPointerCapture")
+    .mockImplementation(() => {});
+  const pointer = (type: string, x: number) =>
+    act(() => {
+      handle.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, clientX: x }));
+    });
+  await pointer("pointerdown", split.left);
+  await pointer("pointermove", split.left + 80);
+  await vi.waitFor(() => {
+    expect(handle.style.getPropertyValue("--workspace-divider-offset")).toBe("80px");
+  });
+  expect(right.getBoundingClientRect().width).toBe(split.width);
+  await act(() => {
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  });
+  expect(right.getBoundingClientRect().width).toBe(split.width);
+  expect(handle.style.getPropertyValue("--workspace-divider-offset")).toBe("");
 
+  await pointer("pointerdown", split.left);
+  await pointer("pointermove", split.left + 40);
+  expect(chat.getBoundingClientRect().right).toBe(split.left - 6);
+  await pointer("pointerup", split.left + 100);
+  const resized = right.getBoundingClientRect();
+  expect(Math.abs(resized.width - (split.width - 100))).toBeLessThanOrEqual(1);
+  expect(resized.left - chat.getBoundingClientRect().right).toBe(6);
   await act(() => toggle.click());
   expect(right.inert).toBe(true);
-  const closingLeft = sample(100);
-  const closingChatRight = chat.getBoundingClientRect().right;
-  expect(closingLeft).toBeGreaterThan(end.left);
-  expect(closingLeft - closingChatRight).toBeCloseTo(6, 0);
-  expect(terminal.offsetWidth).toBe(terminalWidth);
-  await act(() => toggle.click());
-  expect(sample(0)).toBeCloseTo(closingLeft, 0);
-  expect(chat.getBoundingClientRect().right).toBeCloseTo(closingChatRight, 0);
-  expect(terminal.offsetWidth).toBe(terminalWidth);
-  await settle();
-  await act(() => toggle.click());
-  await settle();
   expect(surface.checkVisibility()).toBe(false);
   expect(main.getBoundingClientRect().right).toBe(outerEdge);
   await act(() => toggle.click());
-  expect(sample(0)).toBeCloseTo(outerEdge, 0);
-  expect(sample(150)).toBeCloseTo(firstMid, 0);
-  expect(chat.getBoundingClientRect().right).toBeCloseTo(firstMid - 6, 0);
-  await settle();
-  expect(right.getBoundingClientRect().left).toBe(end.left);
+  expect(grid.getAnimations()).toHaveLength(0);
+  expect(right.getBoundingClientRect().width).toBe(resized.width);
+  expect(screen.getByRole("textbox", { name: "Terminal input" }).element()).toBe(terminal);
   await act(() => persistClientSettingsPatch({ panelAnimationDurationMs: 0 }, async () => {}));
   await act(() => toggle.click());
   expect(grid.getAnimations()).toHaveLength(0);

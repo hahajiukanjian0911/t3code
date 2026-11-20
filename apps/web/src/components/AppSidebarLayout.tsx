@@ -8,7 +8,7 @@ import {
   type ComponentProps,
   type ReactNode,
 } from "react";
-import { useLocation, useRouter, type AnyRouter } from "@tanstack/react-router";
+import { useLocation, useMatches, useRouter, type AnyRouter } from "@tanstack/react-router";
 
 import { useStableCallback } from "../hooks/useStableCallback";
 import { moveWorkspaceFocus, workspaceAreaProps } from "../lib/workspaceFocus";
@@ -445,7 +445,15 @@ export function AppSidebarLayout({
   }));
   const { active: panelAnimationsActive, durationMs: panelAnimationDurationMs } =
     usePanelAnimationSettings();
-  const pathname = useLocation({ select: (location) => location.pathname });
+  const { pathname, thread } = useMatches({
+    select: (matches) => {
+      const leaf = matches.at(-1);
+      return {
+        pathname: leaf?.pathname ?? "/",
+        thread: leaf?.routeId === "/_chat/$environmentId/$threadId",
+      };
+    },
+  });
   const routeTitle = pathname.startsWith("/settings")
     ? "Settings"
     : pathname === "/usage"
@@ -453,7 +461,7 @@ export function AppSidebarLayout({
       : pathname === "/pull-requests"
         ? "Pull requests"
         : "T3 Code";
-  const panelAnimationsSuppressed = usePanelNavigationSuppression(pathname);
+  const panelAnimationsSuppressed = usePanelNavigationSuppression(pathname, thread);
   const routePanelAnimationsActive = panelAnimationsActive && !panelAnimationsSuppressed;
   const isMacosDesktop = isElectron && isMacPlatform(navigator.platform);
   const [sidebarWidth, setSidebarWidth] = useState(readInitialThreadSidebarWidth);

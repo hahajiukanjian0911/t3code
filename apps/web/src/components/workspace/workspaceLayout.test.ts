@@ -3,12 +3,50 @@ import {
   advanceWorkspaceMaximizeInApp,
   createWorkspaceLayout,
   moveWorkspaceWindow,
+  readWorkspaceRightPanel,
+  rememberWorkspaceChatRightPanel,
+  restoreWorkspaceChatRightPanel,
   restoreWorkspaceLayout,
   toggleWorkspaceMaximizeInPanel,
   workspaceGroups,
 } from "./workspaceLayout";
 
 describe("workspace window ownership", () => {
+  it("carries forward legacy right panel state only for its identified conversation", () => {
+    const legacy = restoreWorkspaceLayout({
+      placements: {
+        "surface:env-a:thread:file:same": { panel: "right", group: "right" },
+        "surface:env-b:thread:file:same": { panel: "right", group: "right" },
+      },
+      active: { right: "surface:env-a:thread:file:same", main: "route" },
+      hidden: { right: true, left: true },
+      sizes: { left: 300, right: 390, rightContentShare: 0.62 },
+      chatRightPanels: {
+        "chat:env-b:thread": { width: "invalid", contentShare: 0.8 },
+      },
+    });
+    const fallback = readWorkspaceRightPanel(legacy);
+    const a = restoreWorkspaceChatRightPanel(legacy, "chat:env-a:thread", fallback);
+    expect(a.sizes).toEqual({ left: 300, right: 390, rightContentShare: 0.62 });
+    expect(a.hidden.right).toBe(true);
+    const b = restoreWorkspaceChatRightPanel(a, "chat:env-b:thread", fallback);
+    expect(b.sizes).toEqual({ left: 300, right: 280, rightContentShare: 0.75 });
+    expect(b.hidden).toEqual({ left: true });
+    expect(b.active).toEqual({ main: "route" });
+    const adjusted = rememberWorkspaceChatRightPanel(
+      b,
+      { ...b, sizes: { ...b.sizes, right: 335 } },
+      "chat:env-b:thread",
+    );
+    const saved = restoreWorkspaceLayout(JSON.parse(JSON.stringify(adjusted)));
+    expect(restoreWorkspaceChatRightPanel(saved, "chat:env-b:thread", fallback).sizes.right).toBe(
+      335,
+    );
+    expect(restoreWorkspaceChatRightPanel(saved, "chat:env-a:thread", fallback).sizes.right).toBe(
+      390,
+    );
+  });
+
   it("moves and splits windows without duplicating ownership, then merges them back", () => {
     let layout = createWorkspaceLayout();
     layout = moveWorkspaceWindow(layout, "chat", { panel: "main", group: "main" });

@@ -2,6 +2,7 @@ import type { LegendListRef } from "@legendapp/list/react";
 import type { MessagesTimelineRow } from "./MessagesTimeline.logic";
 import type { RememberedTimelinePosition } from "./timelineScrollAnchoring";
 import type { TimelineViewport } from "./timelineViewport";
+import { timelineReadingTextTop } from "./timelineReadingText";
 
 // A streaming reply moves the end every frame, so the target may never hold
 // still. Past this many frames the list's own end maintenance takes over.
@@ -17,15 +18,19 @@ export function settleListScroll(
   list: Pick<LegendListRef, "getScrollableNode" | "scrollToOffset">,
   target: (element: HTMLElement) => number | undefined,
   isCancelled: () => boolean,
+  restore?: { onAligned: () => void; isResizing: () => boolean },
 ): Promise<void> {
   return new Promise((resolve) => {
+    let onAligned = restore?.onAligned;
     let stableFrames = 0;
     let frames = 0;
     const reconcile = () => {
       if (isCancelled()) return resolve();
       const element = list.getScrollableNode();
       const offset = element ? target(element) : undefined;
-      frames += 1;
+      // Rewrapping can move the saved row again even after two aligned frames.
+      const resizing = restore?.isResizing() ?? false;
+      frames = resizing ? 0 : frames + 1;
       if (!element || offset === undefined || frames > SETTLE_MAX_FRAMES) return resolve();
       if (Math.abs(element.scrollTop - offset) > 1) {
         stableFrames = 0;
@@ -35,15 +40,46 @@ export function settleListScroll(
         return;
       }
       stableFrames += 1;
-      if (stableFrames >= 2) resolve();
-      else requestAnimationFrame(reconcile);
+      if (stableFrames >= 2) {
+        if (element.clientHeight > 0 && onAligned) {
+          onAligned();
+          onAligned = undefined;
+        }
+        if (!resizing) return resolve();
+      }
+      requestAnimationFrame(reconcile);
     };
-    requestAnimationFrame(reconcile);
+    if (restore) reconcile();
+    else requestAnimationFrame(reconcile);
   });
 }
 
 export const measuredEndOffset = (element: HTMLElement) =>
   element.scrollHeight - element.clientHeight;
+
+export function timelineReadingOffset(
+  list: LegendListRef,
+  element: HTMLElement,
+  position: RememberedTimelinePosition,
+): number | undefined {
+  const state = list.getState();
+  const index = state.indexByKey(position.rowId);
+  const row = index === undefined ? undefined : state.elementAtIndex(index);
+  if (!row) return undefined;
+  const text = position.text;
+  const textTop = text ? timelineReadingTextTop(row, text) : undefined;
+  const target =
+    text && textTop !== undefined
+      ? textTop - text.viewportOffset
+      : row.getBoundingClientRect().top + position.offsetWithinRow;
+  return Math.max(
+    0,
+    Math.min(
+      element.scrollTop + target - element.getBoundingClientRect().top,
+      measuredEndOffset(element),
+    ),
+  );
+}
 
 /**
  * Scrolls a newly shown thread back to where the user left it, or to its end,
@@ -59,6 +95,8 @@ export function startTimelinePositionRestore({
   rememberedPosition: position,
   citationPending,
   releaseForFind,
+  onAligned,
+  isResizing,
   onPositioned,
 }: {
   readonly list: LegendListRef;
@@ -74,34 +112,76 @@ export function startTimelinePositionRestore({
    * and MessagesTimeline holds find's reveal until this reports it positioned.
    */
   readonly releaseForFind: boolean;
-  readonly onPositioned: (identity: string) => void;
+  readonly onAligned: () => void;
+  readonly isResizing: () => boolean;
+  readonly onPositioned: () => void;
 }): () => void {
   if (citationPending) {
     // The citation scroll owns positioning once the list has mounted.
-    onPositioned(listIdentityKey);
+    onPositioned();
     return () => {};
   }
   let cancelled = false;
-  const rows = list.getState().data as ReadonlyArray<MessagesTimelineRow>;
+  let checkFitFrame = 0;
+  const state = list.getState();
+  const rows = state.data as ReadonlyArray<MessagesTimelineRow>;
   const index = position ? rows.findIndex((row) => row.id === position.rowId) : -1;
   // Reading history or finding: follow lets go before the restore claims the viewport.
   if (position?.atEnd === false || releaseForFind) viewport.navigate({ releasesFollow: true });
   const releaseScrollHold = viewport.holdProgrammaticScroll();
   const stop = () => {
     cancelled = true;
+    if (checkFitFrame) cancelAnimationFrame(checkFitFrame);
     releaseScrollHold();
     unsubscribe();
   };
-  const unsubscribe = viewport.subscribe(() => {
-    if (cancelled) return;
+  const unsubscribe = viewport.subscribe((navigation) => {
+    if (cancelled || (navigation.source === "pointer" && !navigation.onScrollbar)) return;
     stop();
     void list.scrollToOffset({ offset: viewport.scrollNode.scrollTop, animated: false });
-    onPositioned(listIdentityKey);
+    onPositioned();
   });
   const finish = () => {
     stop();
-    onPositioned(listIdentityKey);
+    onPositioned();
   };
+  let revealed = false;
+  const reveal = () => {
+    if (revealed || cancelled) return;
+    revealed = true;
+    onAligned();
+  };
+  // A short thread can be painted before LegendList resolves its queued end scroll.
+  const revealIfItFits = () => {
+    const node = viewport.scrollNode;
+    if (!rows.length || !node.clientHeight || node.scrollHeight > node.clientHeight || isResizing())
+      return;
+    if (rows.every((row) => state.sizes.has(row.id))) {
+      reveal();
+      return;
+    }
+    const mounted = node.querySelectorAll<HTMLElement>("[data-timeline-row-id]");
+    if (mounted.length !== rows.length) return;
+    const ids = new Set(rows.map((row) => row.id));
+    const bounds = node.getBoundingClientRect();
+    for (const item of mounted) {
+      const rect = item.getBoundingClientRect();
+      if (
+        !ids.delete(item.dataset.timelineRowId!) ||
+        !rect.height ||
+        rect.top < bounds.top - 1 ||
+        rect.bottom > bounds.bottom + 1
+      )
+        return;
+    }
+    reveal();
+  };
+  if (!releaseForFind) {
+    revealIfItFits();
+    if (!revealed && viewport.scrollNode.scrollHeight === viewport.scrollNode.clientHeight) {
+      checkFitFrame = requestAnimationFrame(revealIfItFits);
+    }
+  }
   const scrolling =
     position?.atEnd === false
       ? index >= 0
@@ -120,34 +200,25 @@ export function startTimelinePositionRestore({
   // or delayed hydration can leave scrollTop short of the real end; verify and settle
   // against measuredEndOffset before marking positioned so handleScroll never records atEnd=false.
   const settlesAtEnd = position?.atEnd !== false;
+  const handoff = { onAligned: reveal, isResizing };
   void Promise.resolve(scrolling).then(async () => {
     if (cancelled) return;
     if (settlesAtEnd) {
-      await settleListScroll(list, measuredEndOffset, () => cancelled);
+      await settleListScroll(list, measuredEndOffset, () => cancelled, handoff);
     } else if (position?.atEnd === false && index >= 0) {
       // Keep the saved row mounted until its measured position and the DOM agree.
       await settleListScroll(
         list,
-        (element) => {
-          const state = list.getState();
-          const rowIndex = state.indexByKey(position.rowId);
-          const row = rowIndex === undefined ? undefined : state.elementAtIndex(rowIndex);
-          if (!row) return undefined;
-          return Math.max(
-            0,
-            Math.min(
-              element.scrollTop +
-                row.getBoundingClientRect().top -
-                element.getBoundingClientRect().top +
-                position.offsetWithinRow,
-              measuredEndOffset(element),
-            ),
-          );
-        },
+        (element) => timelineReadingOffset(list, element, position),
         () => cancelled,
+        handoff,
       );
     }
     if (!cancelled) finish();
   });
-  return stop;
+  return () => {
+    if (cancelled) return;
+    stop();
+    list.cancelScroll();
+  };
 }

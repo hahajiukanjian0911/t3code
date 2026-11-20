@@ -1,10 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { useStableCallback } from "../../hooks/useStableCallback";
-import {
-  notifyWorkspaceLayout,
-  notifyWorkspaceResizeStart,
-  workspacePanelClip,
-} from "../../lib/workspaceLayoutEvents";
+import { notifyWorkspaceLayout, workspacePanelClip } from "../../lib/workspaceLayoutEvents";
 import { usePanelAnimationSettings } from "../../panelAnimations";
 import type { WorkspacePanel } from "./workspaceLayout";
 
@@ -84,26 +80,11 @@ function animateStage(targets: PanelTarget[], timing: KeyframeAnimationOptions) 
   return animations;
 }
 
-function animateSplit(main: PanelTarget, right: PanelTarget, timing: KeyframeAnimationOptions) {
-  const grid = right.panel.parentElement!;
-  const from = right.start.from.right - main.start.from.right;
-  const to = grid.style.getPropertyValue("--workspace-right-track");
-  main.panel.setAttribute("data-workspace-moving", "split");
-  right.panel.setAttribute("data-workspace-moving", "split");
-  workspacePanelClip.set(right.panel, () => right.panel.getBoundingClientRect());
-  return [
-    grid.animate(
-      [{ "--workspace-right-track": `${from}px` }, { "--workspace-right-track": to }],
-      timing,
-    ),
-  ];
-}
-
 export function useWorkspaceResizeTransition() {
   const { active, durationMs } = usePanelAnimationSettings();
   const pending = useRef(new Map<HTMLElement, PanelStart>());
   const running = useRef<((notify?: boolean) => void) | null>(null);
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Release pinned surfaces when motion preferences change or the workspace unmounts.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Release pinned stages before a route or motion preference change paints.
   useLayoutEffect(() => {
     if (active)
       return () => {
@@ -114,13 +95,11 @@ export function useWorkspaceResizeTransition() {
 
   const capture = useStableCallback((body: HTMLElement, panels: (WorkspacePanel | null)[]) => {
     const dock = body.parentElement;
-    if (!dock) return;
+    if (!dock || !active) return;
     for (const key of new Set(panels)) {
       if (!key) continue;
       const panel = dock.querySelector<HTMLElement>(`[data-workspace-panel="${key}"]`);
       if (!panel || !canAnimatePanel(panel) || pending.current.has(panel)) continue;
-      notifyWorkspaceResizeStart(panel);
-      if (!active) continue;
       const clip = workspacePanelClip.get(panel);
       const from = clip?.() ?? panel.getBoundingClientRect();
       if (!from.height) continue;
@@ -150,19 +129,13 @@ export function useWorkspaceResizeTransition() {
       targets.push({ panel, surface, start });
     }
     if (!targets.length) return;
-    dock.setAttribute("data-workspace-resizing", "");
     const timing = {
       duration: durationMs,
       easing: getComputedStyle(dock).getPropertyValue("--ease-drawer").trim() || "ease-out",
       fill: "both",
     } as const;
-    const main = targets.find(({ panel }) => panel.dataset.workspacePanel === "main");
-    const right = targets.find(({ panel }) => panel.dataset.workspacePanel === "right");
-    const staging = targets.some(
-      ({ panel, start }) => start.wasStage || panel.hasAttribute("data-workspace-maximized-stage"),
-    );
-    const split = main && right && !staging;
-    const animations = split ? animateSplit(main, right, timing) : animateStage(targets, timing);
+    const animations = animateStage(targets, timing);
+    dock.setAttribute("data-workspace-resizing", "");
     const finish = (notify = true) => {
       if (running.current !== finish) return;
       running.current = null;
@@ -181,7 +154,7 @@ export function useWorkspaceResizeTransition() {
     const settle = () => finish();
     const onPointerDown = (event: PointerEvent) => {
       const handle = event.target instanceof Element && event.target.closest('[role="separator"]');
-      if (handle && !(split && handle.parentElement === right.panel)) finish();
+      if (handle) finish();
     };
     running.current = finish;
     window.addEventListener("resize", settle);

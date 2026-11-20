@@ -10,6 +10,12 @@ export interface WindowPlacement {
   panel: WorkspacePanel;
   group: string;
 }
+interface WorkspaceRightPanelLayout {
+  width?: number;
+  contentShare?: number;
+  hidden?: boolean;
+  active?: Record<string, string>;
+}
 export interface WorkspaceLayout {
   placements: Record<string, WindowPlacement>;
   active: Record<string, string>;
@@ -18,12 +24,14 @@ export interface WorkspaceLayout {
   hidden: Partial<Record<WorkspacePanel, boolean>>;
   dismissed: string[];
   sizes: { left: number; right: number; rightContentShare: number };
+  chatRightPanels: Record<string, WorkspaceRightPanelLayout>;
   groupWeights: Record<string, number>;
   panelZoomedGroup: Partial<Record<WorkspacePanel, string>>;
   maximized: WorkspaceMaximizeState | null;
   floating: { x: number; y: number; width: number; height: number };
 }
 export const workspaceLeftMinWidth = 246;
+const workspaceRightDefaultWidth = 280;
 const workspaceRightContentDefaultShare = 0.5;
 
 export function createWorkspaceLayout(): WorkspaceLayout {
@@ -36,14 +44,105 @@ export function createWorkspaceLayout(): WorkspaceLayout {
     dismissed: [],
     sizes: {
       left: 256,
-      right: 280,
+      right: workspaceRightDefaultWidth,
       rightContentShare: workspaceRightContentDefaultShare,
     },
+    chatRightPanels: {},
     groupWeights: {},
     panelZoomedGroup: {},
     maximized: null,
     floating: { x: 280, y: 140, width: 560, height: 440 },
   };
+}
+export function isScopedChatWorkspaceWindowId(id: string): boolean {
+  return /^chat:[^:]+:.+$/.test(id);
+}
+export function isScopedRightWorkspaceWindowId(id: string): boolean {
+  return /^(?:details|drawer):[^:]+:.+$|^surface:[^:]+:[^:]+:.+$/.test(id);
+}
+export function isRightWorkspaceWindowForChat(id: string, chatId: string): boolean {
+  const key = chatId.slice("chat:".length);
+  return id === `details:${key}` || id === `drawer:${key}` || id.startsWith(`surface:${key}:`);
+}
+function rightPanelSelections(layout: WorkspaceLayout) {
+  return Object.entries(layout.active).filter(
+    ([group, id]) => group === "right" || layout.placements[id]?.panel === "right",
+  );
+}
+export function readWorkspaceRightPanel(layout: WorkspaceLayout) {
+  return {
+    width: layout.sizes.right,
+    contentShare: layout.sizes.rightContentShare,
+    ...(layout.hidden.right === undefined ? {} : { hidden: layout.hidden.right }),
+    active: Object.fromEntries(rightPanelSelections(layout)),
+  };
+}
+export function applyWorkspaceRightPanel(
+  layout: WorkspaceLayout,
+  right: WorkspaceRightPanelLayout,
+): WorkspaceLayout {
+  const hidden = { ...layout.hidden };
+  if (right.hidden === undefined) delete hidden.right;
+  else hidden.right = right.hidden;
+  const active = { ...layout.active };
+  for (const [group] of rightPanelSelections(layout)) delete active[group];
+  return {
+    ...layout,
+    hidden,
+    active: { ...active, ...right.active },
+    sizes: {
+      ...layout.sizes,
+      right: right.width ?? workspaceRightDefaultWidth,
+      rightContentShare: right.contentShare ?? workspaceRightContentDefaultShare,
+    },
+  };
+}
+export function restoreWorkspaceChatRightPanel(
+  layout: WorkspaceLayout,
+  chatId: string,
+  unscopedRight: WorkspaceRightPanelLayout,
+): WorkspaceLayout {
+  const legacyActive = Object.fromEntries(
+    Object.entries(unscopedRight.active ?? {}).filter(([, id]) =>
+      isRightWorkspaceWindowForChat(id, chatId),
+    ),
+  );
+  const legacy = legacyActive.right ? unscopedRight : {};
+  const saved = layout.chatRightPanels[chatId];
+  return applyWorkspaceRightPanel(layout, {
+    ...legacy,
+    ...saved,
+    active: { ...legacyActive, ...saved?.active },
+  });
+}
+export function rememberWorkspaceChatRightPanel(
+  previous: WorkspaceLayout,
+  next: WorkspaceLayout,
+  chatId: string,
+): WorkspaceLayout {
+  const panel = { ...previous.chatRightPanels[chatId] };
+  let changed = false;
+  if (next.sizes.right !== previous.sizes.right) {
+    panel.width = next.sizes.right;
+    changed = true;
+  }
+  if (next.sizes.rightContentShare !== previous.sizes.rightContentShare) {
+    panel.contentShare = next.sizes.rightContentShare;
+    changed = true;
+  }
+  if (next.hidden.right !== previous.hidden.right) {
+    panel.hidden = next.hidden.right === true;
+    changed = true;
+  }
+  for (const [group, id] of rightPanelSelections(next)) {
+    if (id !== previous.active[group]) {
+      panel.active = { ...panel.active, [group]: id };
+      changed = true;
+    }
+  }
+  return changed
+    ? { ...next, chatRightPanels: { ...next.chatRightPanels, [chatId]: panel } }
+    : next;
 }
 export function isChatWorkspaceWindowId(id: string): boolean {
   return id === "route" || id.startsWith("chat:");
@@ -168,11 +267,12 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
           workspacePanels.includes(key as WorkspacePanel) && typeof value === "boolean",
       ),
     );
-  const active = Object.fromEntries(
-    Object.entries(record(input.active))
-      .filter((entry): entry is [string, string] => typeof entry[1] === "string")
-      .slice(-512),
-  );
+  const selections = (raw: unknown) =>
+    Object.fromEntries(
+      Object.entries(record(raw))
+        .filter((entry): entry is [string, string] => typeof entry[1] === "string")
+        .slice(-512),
+    );
   const groupWeights = Object.fromEntries(
     Object.entries(record(input.groupWeights))
       .filter(
@@ -200,12 +300,33 @@ export function restoreWorkspaceLayout(value: unknown): WorkspaceLayout {
       : null;
   const finite = (raw: unknown, initial: number, min: number, max: number) =>
     typeof raw === "number" && Number.isFinite(raw) ? Math.max(min, Math.min(max, raw)) : initial;
+  const chatRightPanels: WorkspaceLayout["chatRightPanels"] = {};
+  for (const [id, raw] of Object.entries(record(input.chatRightPanels)).slice(-512)) {
+    if (!isScopedChatWorkspaceWindowId(id)) continue;
+    const saved = record(raw);
+    const panel: WorkspaceRightPanelLayout = {};
+    if (typeof saved.width === "number" && Number.isFinite(saved.width)) {
+      panel.width = finite(saved.width, workspaceRightDefaultWidth, 180, 600);
+    }
+    if (typeof saved.contentShare === "number" && Number.isFinite(saved.contentShare)) {
+      panel.contentShare = finite(
+        saved.contentShare,
+        workspaceRightContentDefaultShare,
+        0.25,
+        0.75,
+      );
+    }
+    if (typeof saved.hidden === "boolean") panel.hidden = saved.hidden;
+    if (saved.active !== undefined) panel.active = selections(saved.active);
+    chatRightPanels[id] = panel;
+  }
   const sizes = record(input.sizes),
     floating = record(input.floating);
   return {
     ...fallback,
     placements,
-    active,
+    active: selections(input.active),
+    chatRightPanels,
     order: strings(input.order),
     hidden: flags(input.hidden),
     vertical: flags(input.vertical),

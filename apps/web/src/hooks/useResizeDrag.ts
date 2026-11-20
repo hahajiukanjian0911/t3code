@@ -13,6 +13,7 @@ interface ResizeSession {
   resize: (width: number) => number;
   finish: (width: number, moved: boolean) => void;
   cleanup?: (committed: boolean) => void;
+  preview?: boolean;
 }
 
 function clampToBounds(width: number, bounds: ResizeBounds): number {
@@ -49,6 +50,7 @@ function createResizeDrag<T extends HTMLElement>() {
     if (!active) return;
     if (active.frame !== null) cancelAnimationFrame(active.frame);
     window.removeEventListener("blur", active.onBlur);
+    document.removeEventListener("keydown", onKeyDown, true);
     if (commit) flush();
     // Release can synchronously dispatch lostpointercapture.
     drag = null;
@@ -63,12 +65,19 @@ function createResizeDrag<T extends HTMLElement>() {
     if (commit) active.session.finish(active.width, active.moved);
   };
 
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    finish(false);
+  };
+
   const end = (event: PointerEvent<T>, usePosition: boolean) => {
     const active = drag;
     if (!active || active.pointerId !== event.pointerId) return;
     event.preventDefault();
     if (usePosition) active.pendingX = event.clientX;
-    finish(true);
+    finish(usePosition || !active.session.preview);
   };
 
   return {
@@ -91,8 +100,8 @@ function createResizeDrag<T extends HTMLElement>() {
       }
       event.preventDefault();
       event.stopPropagation();
-      // Leaving the window mid-drag commits where the pointer was.
-      const onBlur = () => finish(true);
+      const onBlur = () => finish(!session.preview);
+      if (session.preview) document.addEventListener("keydown", onKeyDown, true);
       window.addEventListener("blur", onBlur);
       drag = {
         session,

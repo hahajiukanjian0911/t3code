@@ -30,9 +30,12 @@ import {
 import { useStableCallback } from "~/hooks/useStableCallback";
 
 function isDockAnimating(element: HTMLElement | null): boolean {
-  return (
-    element !== null && element.closest("[data-dock-animating], [data-workspace-moving]") !== null
-  );
+  return element !== null && element.closest("[data-workspace-moving]") !== null;
+}
+
+function timelineWidth(node: HTMLElement): string {
+  const lane = node.querySelector<HTMLElement>("[data-timeline-root]");
+  return `${node.clientWidth}:${lane?.getBoundingClientRect().width ?? 0}`;
 }
 
 function syncTimelineScrolledState(scrollNode: HTMLElement | null) {
@@ -150,7 +153,12 @@ import {
   McpAppTimelineRow,
 } from "./TimelineAssistantRows";
 import { V2EventTimelineRow } from "./TimelineV2EventRow";
-import { startTimelinePositionRestore } from "./useTimelinePositionRestore";
+import {
+  measuredEndOffset,
+  startTimelinePositionRestore,
+  timelineReadingOffset,
+} from "./useTimelinePositionRestore";
+import { captureTimelineReadingText } from "./timelineReadingText";
 import {
   attachTimelineViewport,
   nextListOpening,
@@ -458,10 +466,10 @@ const ConversationTimeline = memo(function ConversationTimeline({
   );
   // A list that opens on a thread with find open takes the opening step below,
   // so the restore runs and releases follow once for find.
-  const [positionedThreadKey, setPositionedThreadKey] = useState<string | null>(() =>
-    listState.rememberedPosition?.atEnd === false || findOpen ? null : listIdentityKey,
+  const [positionPhase, setPositionPhase] = useState<"seeking" | "aligned" | "settled">(() =>
+    listState.rememberedPosition?.atEnd === false || findOpen ? "seeking" : "settled",
   );
-  const restoringThreadPosition = positionedThreadKey !== listIdentityKey;
+  const restoringThreadPosition = positionPhase !== "settled";
   const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const [settlingListIdentity, setSettlingListIdentity] = useState<string | null>(listIdentityKey);
   const [playingAudioRows, setPlayingAudioRows] = useState<ReadonlyMap<HTMLAudioElement, string>>(
@@ -483,7 +491,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
       workGroupViewState,
       findOpenAtOpening: findOpen,
     });
-    setPositionedThreadKey(null);
+    setPositionPhase("seeking");
     setSettlingListIdentity(listIdentityKey);
     // A viewer pinned in another thread must not keep live follow off here,
     // nor when that thread comes back.
@@ -824,16 +832,28 @@ const ConversationTimeline = memo(function ConversationTimeline({
     const list = listRef.current;
     const viewport = viewportRef.current;
     if (!restoreReady || !list || !viewport) return;
-    return startTimelinePositionRestore({
-      list,
-      viewport,
-      listIdentityKey,
-      listOpenedOn,
-      rememberedPosition,
-      citationPending: citationRequest !== null,
-      releaseForFind: findOpenAtOpening,
-      onPositioned: setPositionedThreadKey,
+    const restore = () =>
+      startTimelinePositionRestore({
+        list,
+        viewport,
+        listIdentityKey,
+        listOpenedOn,
+        rememberedPosition,
+        citationPending: citationRequest !== null,
+        releaseForFind: findOpenAtOpening,
+        onAligned: () => setPositionPhase("aligned"),
+        isResizing: () => isDockAnimating(viewport.scrollNode),
+        onPositioned: () => setPositionPhase("settled"),
+      });
+    if (viewport.scrollNode.clientHeight > 0) return restore();
+    let cancelRestore: (() => void) | undefined;
+    const unobserve = observeResize(viewport.scrollNode, ([size]) => {
+      if (size?.contentRect.height && !cancelRestore) cancelRestore = restore();
     });
+    return () => {
+      unobserve();
+      cancelRestore?.();
+    };
   }, [
     citationRequest,
     findOpenAtOpening,
@@ -1009,61 +1029,185 @@ const ConversationTimeline = memo(function ConversationTimeline({
     }
   }, [listRef, restoringThreadPosition, scheduleMinimapRefresh]);
 
-  // The measurement the last remember wrote, so a follow release can rewrite
-  // it without reading render state from a listener.
+  const followsEnd =
+    liveFollowEnabled &&
+    !anchoredEndSpace &&
+    !citationPositioning &&
+    fullscreenAppRowId === null &&
+    !(restoringThreadPosition && rememberedPosition?.atEnd === false);
+  const canKeepReadingPosition =
+    !restoringThreadPosition && !findActive && !citationPositioning && fullscreenAppRowId === null;
   const lastRememberedRef = useRef<{
     readonly data: unknown;
     readonly threadKey: string;
-    readonly position: Parameters<typeof rememberTimelinePosition>[1];
+    readonly position: RememberedTimelinePosition;
   } | null>(null);
-  const rememberPosition = (followingEnd: boolean) => {
-    const state = listRef.current?.getState?.();
-    if (restoringThreadPosition || state?.data !== rows) return;
+  const readingSnapshotRef = useRef<{
+    readonly threadKey: string;
+    readonly width: string;
+    readonly position: RememberedTimelinePosition;
+  } | null>(null);
+  const readingResizeRef = useRef<{
+    readonly threadKey: string;
+    readonly position: RememberedTimelinePosition | undefined;
+    readonly release: () => void;
+    frame: number | null;
+  } | null>(null);
+
+  const rememberPosition = useStableCallback((followingEnd: boolean) => {
+    const list = listRef.current;
+    const state = list?.getState();
+    const element = list?.getScrollableNode();
+    if (restoringThreadPosition || state?.data !== rows || !element?.clientHeight) return;
     const isAtEnd = resolveTimelineIsAtEnd(state);
+    const width = canKeepReadingPosition && !followsEnd ? timelineWidth(element) : null;
+    const previous = readingSnapshotRef.current;
+    // Scroll events from LegendList or a browser clamp can arrive before ResizeObserver.
+    if (width !== null && previous?.threadKey === listIdentityKey && previous.width !== width)
+      return;
+    const text =
+      width === null ? undefined : captureTimelineReadingText(element, contentInsetEndAdjustment);
     const position = state.data.length ? resolveWorkGroupScrollAnchor(state) : undefined;
-    if (position && isAtEnd !== undefined) {
-      const index = state.indexByKey(position.rowId);
-      const row = index === undefined ? undefined : state.elementAtIndex(index);
-      const element = listRef.current?.getScrollableNode();
-      if (row && element) {
-        const measured = {
-          ...position,
-          offsetWithinRow: element.getBoundingClientRect().top - row.getBoundingClientRect().top,
-          scrollOffset: element.scrollTop,
-          atEnd: isAtEnd,
-          disclosures: {
-            runs: paintedExpandedRunIds,
-            workGroups: paintedExpandedWorkGroupIds,
-            attempts: paintedExpandedAttemptIds,
-            workGroupState: workGroupViewState,
-          },
-        };
-        lastRememberedRef.current = { data: rows, threadKey: listIdentityKey, position: measured };
-        rememberTimelinePosition(listIdentityKey, measured, followingEnd);
-      }
+    const rowId = text?.rowId ?? position?.rowId;
+    const index = rowId === undefined ? undefined : state.indexByKey(rowId);
+    const row = index === undefined ? undefined : state.elementAtIndex(index);
+    if (row && rowId && isAtEnd !== undefined) {
+      const measured = {
+        rowId,
+        offsetWithinRow: element.getBoundingClientRect().top - row.getBoundingClientRect().top,
+        scrollOffset: element.scrollTop,
+        atEnd: isAtEnd,
+        ...(text ? { text } : {}),
+        disclosures: {
+          runs: paintedExpandedRunIds,
+          workGroups: paintedExpandedWorkGroupIds,
+          attempts: paintedExpandedAttemptIds,
+          workGroupState: workGroupViewState,
+        },
+      };
+      lastRememberedRef.current = { data: rows, threadKey: listIdentityKey, position: measured };
+      readingSnapshotRef.current =
+        width === null ? null : { threadKey: listIdentityKey, width, position: measured };
+      rememberTimelinePosition(listIdentityKey, measured, followingEnd);
     }
     return isAtEnd;
-  };
-  // A follow release without a scroll after it would leave the position
-  // remembered as following.
-  const rememberReleasedPosition = () => {
+  });
+  const rememberReleasedPosition = useStableCallback(() => {
     const last = lastRememberedRef.current;
-    if (last && listRef.current?.getState().data === last.data) {
+    if (last?.threadKey === listIdentityKey && listRef.current?.getState().data === last.data) {
       rememberTimelinePosition(last.threadKey, last.position, false);
     }
-  };
+  });
 
-  const handleScroll = () => {
+  const stopReadingResize = useStableCallback(() => {
+    const resize = readingResizeRef.current;
+    readingResizeRef.current = null;
+    if (!resize) return;
+    if (resize.frame !== null) cancelAnimationFrame(resize.frame);
+    resize.release();
+  });
+
+  const applyReadingResize = useStableCallback(() => {
+    const resize = readingResizeRef.current;
+    const list = listRef.current;
+    const node = list?.getScrollableNode();
+    if (
+      !resize ||
+      !list ||
+      !node?.clientHeight ||
+      resize.threadKey !== listIdentityKey ||
+      !canKeepReadingPosition ||
+      list.getState().data !== rows
+    )
+      return false;
+    const offset =
+      followsEnd && list.getState().isFollowingEnd
+        ? measuredEndOffset(node)
+        : resize.position && timelineReadingOffset(list, node, resize.position);
+    if (offset === undefined || Math.abs(node.scrollTop - offset) <= 0.5) return false;
+    node.scrollTo({ top: offset, behavior: "instant" });
+    return true;
+  });
+
+  const handleScroll = useStableCallback(() => {
     const scrollNode = listRef.current?.getScrollableNode() ?? null;
     syncTimelineScrolledState(scrollNode);
     if (restoringThreadPosition || listRef.current?.getState?.().data !== rows) return;
-    if (isDockAnimating(scrollNode)) return;
+    if (isDockAnimating(scrollNode) || readingResizeRef.current) return;
     const isAtEnd = rememberPosition(liveFollowEnabled);
     if (isAtEnd !== undefined && !citationPositioning) {
       onIsAtEndChange(isAtEnd);
     }
     scheduleMinimapRefresh();
-  };
+  });
+
+  const settleReadingResize = useStableCallback(() => {
+    const resize = readingResizeRef.current;
+    if (!resize) return;
+    if (resize.frame !== null) cancelAnimationFrame(resize.frame);
+    let stableFrames = 0;
+    let frames = 0;
+    const reconcile = () => {
+      if (readingResizeRef.current !== resize) return;
+      resize.frame = null;
+      if (resize.threadKey !== listIdentityKey || !canKeepReadingPosition) {
+        stopReadingResize();
+        return;
+      }
+      stableFrames = applyReadingResize() ? 0 : stableFrames + 1;
+      if (++frames < 8 && stableFrames < 2) {
+        resize.frame = requestAnimationFrame(reconcile);
+      } else if (!isDockAnimating(listRef.current?.getScrollableNode() ?? null)) {
+        stopReadingResize();
+        readingSnapshotRef.current = null;
+        handleScroll();
+      }
+    };
+    resize.frame = requestAnimationFrame(reconcile);
+  });
+
+  const handleTimelineResize = useStableCallback((widthChanged: boolean) => {
+    const list = listRef.current;
+    const viewport = viewportRef.current;
+    if (
+      !canKeepReadingPosition ||
+      !list ||
+      !viewport?.scrollNode.clientHeight ||
+      list.getState().data !== rows
+    )
+      return;
+    const snapshot = readingSnapshotRef.current;
+    const position =
+      widthChanged && !followsEnd && snapshot?.threadKey === listIdentityKey
+        ? snapshot.position
+        : undefined;
+    if (!readingResizeRef.current && (position || (followsEnd && list.getState().isFollowingEnd))) {
+      readingResizeRef.current = {
+        threadKey: listIdentityKey,
+        position,
+        release: viewport.holdProgrammaticScroll(),
+        frame: null,
+      };
+    }
+    if (!readingResizeRef.current && widthChanged) {
+      readingSnapshotRef.current = null;
+      handleScroll();
+      return;
+    }
+    applyReadingResize();
+    settleReadingResize();
+  });
+
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- relinquishes the previous thread or navigation owner's resize anchor before paint
+  useLayoutEffect(() => {
+    if (!canKeepReadingPosition || readingSnapshotRef.current?.threadKey !== listIdentityKey) {
+      readingSnapshotRef.current = null;
+    }
+    if (!canKeepReadingPosition || readingResizeRef.current?.threadKey !== listIdentityKey) {
+      stopReadingResize();
+    }
+    if (canKeepReadingPosition) handleScroll();
+  }, [listIdentityKey, canKeepReadingPosition, stopReadingResize, handleScroll]);
 
   const measureTimelineGutter = (viewportElement: HTMLElement) => {
     const viewportWidth = viewportElement.getBoundingClientRect().width;
@@ -1097,80 +1241,37 @@ const ConversationTimeline = memo(function ConversationTimeline({
     if (!lane) return;
     return observeResize(lane, (entries) => {
       const width = entries.at(-1)?.contentRect.width;
-      if (width === undefined || width === measuredLaneWidthRef.current) return;
+      if (!width || width === measuredLaneWidthRef.current) return;
+      const previous = measuredLaneWidthRef.current;
       measuredLaneWidthRef.current = width;
+      if (previous !== null) handleTimelineResize(true);
       const viewportElement = lane.closest<HTMLElement>("[data-assistant-citation-viewport]");
       if (viewportElement && !isDockAnimating(viewportElement)) {
         measureTimelineGutter(viewportElement);
       }
     });
   };
-  const followsEnd =
-    liveFollowEnabled &&
-    !anchoredEndSpace &&
-    !citationPositioning &&
-    fullscreenAppRowId === null &&
-    !(restoringThreadPosition && rememberedPosition?.atEnd === false);
-  const readingResizeAnchorRef = useRef<{ readonly rowId: string; readonly relTop: number } | null>(
-    null,
-  );
   const anchorBeforeWorkspaceResize = useStableCallback(() => {
-    if (!followsEnd && !restoringThreadPosition && !findActive && !citationPositioning) {
-      listRef.current?.anchorVisibleContent();
-    }
-  });
-  const pinAnchorAfterResize = useStableCallback((viewportElement: HTMLElement) => {
-    const list = listRef.current;
-    if (restoringThreadPosition || findActive || !list) return;
-    const node = list.getScrollableNode();
-    if (!node) return;
-    if (followsEnd && list.getState().isFollowingEnd) {
-      readingResizeAnchorRef.current = null;
-      // Resizing rewraps many rows together. Follow the new end before paint so the chat
-      // doesn't animate through earlier messages after the panel stops.
-      node.scrollTo({ top: node.scrollHeight, behavior: "instant" });
-      return;
-    }
-    if (!followsEnd && isDockAnimating(viewportElement)) {
-      const scrollRect = node.getBoundingClientRect();
-      let anchor = readingResizeAnchorRef.current;
-      if (!anchor) {
-        for (const row of node.querySelectorAll<HTMLElement>("[data-timeline-row-id]")) {
-          const rect = row.getBoundingClientRect();
-          if (rect.bottom > scrollRect.top + 8) {
-            const rowId = row.dataset.timelineRowId;
-            if (rowId) {
-              anchor = { rowId, relTop: rect.top - scrollRect.top };
-              readingResizeAnchorRef.current = anchor;
-            }
-            break;
-          }
-        }
-        return;
-      }
-      const targetRow = node.querySelector<HTMLElement>(
-        `[data-timeline-row-id="${CSS.escape(anchor.rowId)}"]`,
-      );
-      if (targetRow) {
-        const delta = targetRow.getBoundingClientRect().top - scrollRect.top - anchor.relTop;
-        if (Math.abs(delta) > 0.5) {
-          node.scrollTop += delta;
-        }
-      }
-    }
+    if (!canKeepReadingPosition || followsEnd || readingResizeRef.current) return;
+    // Capture before the first width mutation. ResizeObserver can only see rewrapped text.
+    rememberPosition(liveFollowEnabled);
+    const snapshot = readingSnapshotRef.current;
+    listRef.current?.anchorVisibleContent(
+      snapshot?.threadKey === listIdentityKey ? { key: snapshot.position.rowId } : undefined,
+    );
   });
   const attachTimelineViewportElement = (viewportElement: HTMLDivElement | null) => {
     setTimelineViewportElement(viewportElement);
     if (!viewportElement) return;
     const stopResizeStart = subscribeWorkspaceResizeStart((panel) => {
-      if (panel.contains(viewportElement) && !viewportElement.closest("[inert], [hidden]"))
+      if (panel.contains(viewportElement) && !viewportElement.closest("[inert], [hidden]")) {
         anchorBeforeWorkspaceResize();
+      }
     });
     let previousSize: DOMRectReadOnly | undefined;
     let deferredPostAnimationMeasure = false;
     const stopObserving = observeResize(viewportElement, ([entry]) => {
       const size = entry?.contentRect;
-      const animating = isDockAnimating(viewportElement);
       if (
         size &&
         previousSize &&
@@ -1178,30 +1279,33 @@ const ConversationTimeline = memo(function ConversationTimeline({
         size.height > 0 &&
         (size.width !== previousSize.width || size.height !== previousSize.height)
       ) {
-        pinAnchorAfterResize(viewportElement);
+        handleTimelineResize(size.width !== previousSize.width);
       }
       previousSize = size;
-      if (animating) {
+      if (isDockAnimating(viewportElement)) {
         deferredPostAnimationMeasure = true;
         return;
       }
-      readingResizeAnchorRef.current = null;
       measureTimelineGutter(viewportElement);
       scheduleMinimapRefresh();
     });
     const stopWorkspaceLayout = subscribeWorkspaceLayout(() => {
-      if (!deferredPostAnimationMeasure || isDockAnimating(viewportElement)) return;
+      if (isDockAnimating(viewportElement)) return;
+      if (readingResizeRef.current) {
+        applyReadingResize();
+        settleReadingResize();
+      }
+      if (!deferredPostAnimationMeasure) return;
       deferredPostAnimationMeasure = false;
-      readingResizeAnchorRef.current = null;
       measureTimelineGutter(viewportElement);
       scheduleMinimapRefresh();
       syncTimelineScrolledState(listRef.current?.getScrollableNode() ?? null);
+      handleScroll();
     });
     return () => {
       stopWorkspaceLayout();
       stopResizeStart();
       stopObserving();
-      readingResizeAnchorRef.current = null;
       setTimelineViewportElement(null);
     };
   };
@@ -1365,9 +1469,26 @@ const ConversationTimeline = memo(function ConversationTimeline({
     viewportRef.current = viewport;
     const detachViewport = viewport ? onViewportAttach?.(viewport) : undefined;
     const stopRememberingRelease = viewport?.onFollowReleased(rememberReleasedPosition);
-    const stopDisclosureReveal = viewport?.subscribe(() => {
+    const stopViewportNavigation = viewport?.subscribe((navigation) => {
       disclosureRevealRef.current = null;
+      if (navigation.source === "pointer" && !navigation.onScrollbar) return;
+      stopReadingResize();
+      readingSnapshotRef.current = null;
     });
+    let hadSelection = false;
+    const onSelectionChange = () => {
+      const selection = scrollNode?.ownerDocument.getSelection();
+      const selected =
+        !!selection &&
+        !selection.isCollapsed &&
+        !!scrollNode?.contains(selection.anchorNode) &&
+        scrollNode.contains(selection.focusNode);
+      if ((selected || hadSelection) && !readingResizeRef.current && !isDockAnimating(scrollNode)) {
+        handleScroll();
+      }
+      hadSelection = selected;
+    };
+    scrollNode?.ownerDocument.addEventListener("selectionchange", onSelectionChange);
     let contentSizeFrame: number | null = null;
     // LegendList lays rows out from layout effects; the next frame sees them settled.
     let scheduledData: unknown = null;
@@ -1392,7 +1513,10 @@ const ConversationTimeline = memo(function ConversationTimeline({
     return () => {
       stopListeningToContentSize?.();
       stopRememberingRelease?.();
-      stopDisclosureReveal?.();
+      stopViewportNavigation?.();
+      scrollNode?.ownerDocument.removeEventListener("selectionchange", onSelectionChange);
+      stopReadingResize();
+      readingSnapshotRef.current = null;
       if (contentSizeFrame !== null) cancelAnimationFrame(contentSizeFrame);
       if (disclosureRevealFrameRef.current !== null) {
         cancelAnimationFrame(disclosureRevealFrameRef.current);
@@ -1586,7 +1710,12 @@ const ConversationTimeline = memo(function ConversationTimeline({
               // Keyboard scrolling only moves the focused element; F6 and clicks land here.
               tabIndex={-1}
               data-workspace-focus-default
-              data-thread-restoring={restoringThreadPosition ? "true" : undefined}
+              data-thread-restoring={
+                restoreReady &&
+                (positionPhase === "seeking" || (normalizedFindQuery !== "" && activeFindMatch))
+                  ? "true"
+                  : undefined
+              }
               className={cn(
                 "messages-timeline-scroll scrollbar-gutter-both h-full min-h-0 overflow-x-hidden overscroll-y-contain [overflow-anchor:none]",
                 topFadeEnabled && "topbar-scroll-fade",

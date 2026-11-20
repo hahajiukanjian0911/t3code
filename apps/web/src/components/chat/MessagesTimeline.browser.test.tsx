@@ -461,6 +461,87 @@ describe("MessagesTimeline work rows", () => {
 });
 
 describe("MessagesTimeline messages", () => {
+  it.each(["lane width", "selected text", "thread restore", "live end"] as const)(
+    "keeps the reading position after narrowing via %s",
+    async (scenario) => {
+      setup();
+      const props = { ...baseProps(), liveFollowEnabled: scenario === "live end" };
+      const text = Array.from({ length: 600 }, (_, i) => `word${i}`).join(" ");
+      const entries = [message(text, { role: "assistant" })];
+      const timeline = <MessagesTimeline {...props} timelineEntries={entries} />;
+      await using screen = await renderElement(timeline);
+      screen.container.style.height = "450px";
+      const viewport = props.listRef.current!.getScrollableNode()!;
+      const paragraph = () => screen.container.querySelector("[data-thread-find-text] p")!;
+      const range = document.createRange();
+      const textTop = (offset: number) => {
+        const node = paragraph().firstChild!;
+        range.setStart(node, offset);
+        range.setEnd(node, offset + 1);
+        return range.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
+      };
+      await vi.waitFor(() => {
+        expect(viewport.scrollHeight).toBeGreaterThan(1100);
+        expect(viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop).toBeLessThan(2);
+      });
+      if (scenario === "live end") {
+        const oldHeight = viewport.scrollHeight;
+        screen.container.style.width = "480px";
+        await vi.waitFor(() => {
+          expect(viewport.scrollHeight).toBeGreaterThan(oldHeight + 200);
+          expect(viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop).toBeLessThan(
+            2,
+          );
+        });
+        return;
+      }
+      using _selection = { [Symbol.dispose]: () => document.getSelection()?.removeAllRanges() };
+      const scrolled = vi.fn();
+      viewport.addEventListener("scroll", scrolled, { once: true });
+      viewport.scrollTop = 260;
+      await vi.waitFor(() => {
+        expect(scrolled).toHaveBeenCalled();
+        expect(viewport.scrollTop).toBe(260);
+        expect(props.listRef.current!.getState().scroll).toBe(260);
+      });
+      let offset = 0;
+      while (offset < text.length && textTop(offset) < (scenario === "selected text" ? 110 : 0)) {
+        offset += 1;
+      }
+      expect(offset).toBeLessThan(text.length - 5);
+      if (scenario === "selected text") {
+        const changed = vi.fn();
+        document.addEventListener("selectionchange", changed, { once: true });
+        range.setEnd(paragraph().firstChild!, offset + 5);
+        document.getSelection()!.addRange(range.cloneRange());
+        await vi.waitFor(() => expect(changed).toHaveBeenCalled());
+      }
+      const before = textTop(offset);
+      const other = `${props.routeThreadKey}-other`;
+      if (scenario === "thread restore") {
+        await screen.rerender(
+          <MessagesTimeline
+            {...props}
+            routeThreadKey={other}
+            timelineEntries={[message("New thread", {}, "other")]}
+          />,
+        );
+        expect(
+          screen.container.querySelector("[data-timeline-row-id='entry-message-1']"),
+        ).toBeNull();
+      }
+      if (scenario === "selected text") screen.container.style.width = "480px";
+      else screen.container.style.setProperty("--chat-content-max-width", "480px");
+      if (scenario === "thread restore") {
+        await screen.rerender(<MessagesTimeline {...props} timelineEntries={entries} />);
+      }
+      await vi.waitFor(() => {
+        expect(paragraph().getBoundingClientRect().width).toBeLessThan(500);
+        expect(Math.abs(textTop(offset) - before)).toBeLessThanOrEqual(2);
+      });
+    },
+  );
+
   it("settles when equally long messages have very different rendered heights", async () => {
     const props = baseProps();
     const tall = message("a\n\n".repeat(6000), { role: "assistant" }, "tall");
@@ -1954,7 +2035,25 @@ describe("MessagesTimeline thread find", () => {
     expect(navigations).toEqual([released]);
   });
 
-  it("still restores the position of a thread it switches to whose find is open", async () => {
+  it("shows a thread's footer when switching to a timeline with no rows", async () => {
+    setup();
+    const base = baseProps();
+    await using screen = await renderElement(
+      <MessagesTimeline {...base} timelineEntries={[message("Previous thread")]} />,
+    );
+    await screen.rerender(
+      <MessagesTimeline
+        {...base}
+        routeThreadKey={`${base.routeThreadKey}-empty`}
+        timelineEntries={[]}
+        footer={<button type="button">Continue</button>}
+      />,
+    );
+    await expect.element(screen.getByRole("button", { name: "Continue" })).toBeVisible();
+    expect(getComputedStyle(base.listRef.current!.getScrollableNode()!).opacity).toBe("1");
+  });
+
+  it("restores the position of a thread with find open when its pane becomes visible", async () => {
     setup();
     const base = baseProps();
     const other = "environment-local:thread-find-open-positioned";
@@ -1969,6 +2068,7 @@ describe("MessagesTimeline thread find", () => {
     await using screen = await renderElement(
       <MessagesTimeline {...base} timelineEntries={[message("Short thread")]} />,
     );
+    screen.container.style.display = "none";
     await screen.rerender(
       <MessagesTimeline
         {...base}
@@ -1979,6 +2079,8 @@ describe("MessagesTimeline thread find", () => {
       />,
     );
     const viewport = base.listRef.current!.getScrollableNode()!;
+    expect(viewport.clientHeight).toBe(0);
+    screen.container.style.display = "flex";
     await vi.waitFor(() => {
       const row = screen.container.querySelector('[data-timeline-row-id="entry-r-20"]');
       expect(row).not.toBeNull();

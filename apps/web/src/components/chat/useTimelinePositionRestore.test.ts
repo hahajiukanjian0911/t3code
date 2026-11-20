@@ -37,6 +37,40 @@ describe("settleListScroll", () => {
 });
 
 describe("startTimelinePositionRestore", () => {
+  it("shows a fully measured short conversation before the pending scroll-to-end completes", () => {
+    const element = { clientHeight: 750, scrollHeight: 750, scrollTop: 0 };
+    const scroll = Promise.withResolvers<void>();
+    const list = {
+      getState: () => ({ data: [{ id: "reply" }], sizes: new Map([["reply", 80]]) }),
+      getScrollableNode: () => element,
+      scrollToEnd: () => scroll.promise,
+      cancelScroll: () => scroll.resolve(),
+    } as unknown as LegendListRef;
+    const viewport = {
+      scrollNode: element,
+      holdProgrammaticScroll: () => () => {},
+      subscribe: () => () => {},
+    } as unknown as TimelineViewport;
+    const onAligned = vi.fn();
+    const cancel = startTimelinePositionRestore({
+      list,
+      viewport,
+      listIdentityKey: "env:short",
+      listOpenedOn: null,
+      rememberedPosition: undefined,
+      citationPending: false,
+      releaseForFind: false,
+      isResizing: () => false,
+      onAligned,
+      onPositioned: vi.fn(),
+    });
+    try {
+      expect(onAligned).toHaveBeenCalledOnce();
+    } finally {
+      cancel();
+    }
+  });
+
   it("settles to the measured end when a remounted list opens on a thread whose initialScrollAtEnd fell short", async () => {
     vi.useFakeTimers();
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) =>
@@ -62,7 +96,12 @@ describe("startTimelinePositionRestore", () => {
       onFollowReleased: () => () => {},
     } as unknown as TimelineViewport;
 
+    let resizing = true;
     let positionedAtScrollTop: number | null = null;
+    const aligned = vi.fn(() => {
+      expect(element.scrollTop).toBe(3_200);
+      expect(positionedAtScrollTop).toBeNull();
+    });
     startTimelinePositionRestore({
       list,
       viewport,
@@ -71,16 +110,24 @@ describe("startTimelinePositionRestore", () => {
       rememberedPosition: undefined,
       citationPending: false,
       releaseForFind: false,
+      onAligned: aligned,
+      isResizing: () => resizing,
       onPositioned: () => {
         positionedAtScrollTop = element.scrollTop;
       },
     });
 
-    await vi.advanceTimersByTimeAsync(200);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(aligned).toHaveBeenCalledTimes(1);
+    expect(positionedAtScrollTop).toBeNull();
+    element.scrollHeight += 200;
+    resizing = false;
+    await vi.advanceTimersByTimeAsync(100);
     vi.useRealTimers();
     vi.unstubAllGlobals();
 
-    expect(positionedAtScrollTop).toBe(3_200);
-    expect(element.scrollTop).toBe(3_200);
+    expect(positionedAtScrollTop).toBe(3_400);
+    expect(aligned).toHaveBeenCalledTimes(1);
+    expect(element.scrollTop).toBe(3_400);
   });
 });
