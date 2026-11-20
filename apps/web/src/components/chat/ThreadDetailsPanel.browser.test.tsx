@@ -251,6 +251,11 @@ it("shows linked pull requests in a plain folder and a collapsed git summary car
   state.isRepo = true;
   await screen.rerender(<Panel fixture={fixture} isRepo />);
   // Default collapsed state shows branch, commit count, and change summary without recent commits.
+  const branchButton = page.getByRole("combobox", { name: "Branch: main" });
+  await expect.element(branchButton).toBeVisible();
+  const branchLabel = branchButton.element().querySelector<HTMLElement>("span.truncate")!;
+  expect(branchLabel.textContent).toBe("main");
+  expect(branchLabel.scrollWidth).toBeLessThanOrEqual(branchLabel.clientWidth);
   const commitsToggle = page.getByRole("button", { name: /215 commits/i });
   await expect.element(commitsToggle).toBeVisible();
   await expect.element(page.getByText("1 file changed")).toBeVisible();

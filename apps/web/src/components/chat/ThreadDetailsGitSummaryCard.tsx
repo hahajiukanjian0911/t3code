@@ -207,7 +207,7 @@ export function ThreadDetailsGitSummaryCard(props: ThreadDetailsGitSummaryCardPr
     <div className="flex flex-col gap-1.5" data-thread-details-git-summary="">
       <div className={cn(THREAD_DETAILS_PANEL_SURFACE_CARD_CLASS, "px-2.5 py-2")}>
         <div className="flex min-w-0 items-center justify-between gap-2">
-          <div className="min-w-0 flex-1">
+          <div className="-ml-1 min-w-0 flex-1">
             {props.showBranch ? (
               <BranchToolbarBranchSelector
                 displayMode="summary"

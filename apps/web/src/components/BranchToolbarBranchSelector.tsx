@@ -860,7 +860,7 @@ export function BranchToolbarBranchSelector({
           />
         ) : null}
         <span
-          className="flex min-w-0"
+          className={cn("flex min-w-0", displayMode === "summary" && "w-full")}
           onMouseDownCapture={(event) => {
             if (event.button !== 0 || event.ctrlKey) {
               event.stopPropagation();
@@ -875,7 +875,7 @@ export function BranchToolbarBranchSelector({
               ) : displayMode === "summary" ? (
                 <button
                   type="button"
-                  className="-mx-1 inline-flex h-6 min-w-0 max-w-full cursor-pointer items-center gap-1.5 rounded-md px-1 text-left outline-none transition-colors hover:bg-black/[0.045] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-60 dark:hover:bg-white/[0.07]"
+                  className="inline-flex h-6 min-w-0 max-w-full cursor-pointer items-center gap-1.5 rounded-md px-1 text-left outline-none transition-colors hover:bg-black/[0.045] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-60 dark:hover:bg-white/[0.07]"
                 />
               ) : (
                 <ComposerControl size="xs" />
